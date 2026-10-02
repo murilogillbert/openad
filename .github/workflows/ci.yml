@@ -18,13 +18,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Sem `version`: o pnpm/action-setup le o campo `packageManager` do package.json,
+      # que e a unica fonte da versao desde que o D12 foi fechado.
       - uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: pnpm
 
       - name: Install
