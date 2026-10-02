@@ -655,24 +655,6 @@ export interface PendingPairingListResponse {
   data: PendingPairingDevice[];
 }
 
-/** Manifest delta query — GET /api/v1/devices/:deviceId/manifest?sinceVersion= */
-export interface DeviceManifestQuery {
-  sinceVersion?: number;
-}
-
-/** GET /api/v1/devices/:deviceId/manifest */
-export interface ManifestDeltaResponse {
-  version: number;
-  fullSync: boolean;
-  added: Array<{
-    assetId: string;
-    url: string;
-    checksumSha256: string;
-    sizeBytes: number;
-  }>;
-  removed: string[];
-}
-
 /** PATCH /api/v1/admin/device-groups/:groupId/sync-windows */
 export interface SyncWindowsUpdateRequest {
   rules: Array<{

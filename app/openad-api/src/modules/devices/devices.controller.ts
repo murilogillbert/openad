@@ -15,7 +15,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import type { ManifestDeltaResponse } from '@openad/api-contracts';
+
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -47,7 +47,6 @@ import { RetiredDeviceGuard } from './retired-device-guard';
 import { ScreenshotUploadDto } from './dto/screenshot-upload.dto';
 import { WatchdogEventDto } from './dto/watchdog-event.dto';
 import { ScreenshotUploadService } from './screenshot-upload.service';
-import { ManifestDeltaService } from './manifest-delta.service';
 import { PairingService } from './pairing.service';
 
 type AuthedRequest = Request & {
@@ -67,7 +66,6 @@ export class DevicesController {
     private readonly deviceList: DevicesListService,
     private readonly gateway: FleetGateway,
     private readonly screenshots: ScreenshotUploadService,
-    private readonly manifestDelta: ManifestDeltaService,
     private readonly pairing: PairingService
   ) {}
 
@@ -183,27 +181,6 @@ export class DevicesController {
       deviceId: device.deviceId,
       boundVehicleId: device.boundVehicleId,
     };
-  }
-
-  @Get(':deviceId/manifest')
-  @UseGuards(DeviceJwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Manifest delta (device JWT + fingerprint)',
-  })
-  async getManifestDelta(
-    @Param('deviceId') _deviceId: string,
-    @Query('sinceVersion') sinceRaw?: string
-  ): Promise<ManifestDeltaResponse> {
-    let sinceVersion: number | undefined;
-    if (sinceRaw !== undefined && sinceRaw !== '') {
-      const n = Number(sinceRaw);
-      if (!Number.isFinite(n) || n < 0) {
-        throw new BadRequestException('sinceVersion must be a non-negative number');
-      }
-      sinceVersion = n;
-    }
-    return this.manifestDelta.getDelta(sinceVersion);
   }
 
   @Get(':deviceId/lifecycle-events')

@@ -41,12 +41,7 @@ import {
 import { DevicesListService } from './devices-list.service';
 import { DevicesRepository } from './devices.repository';
 import { VehiclesModule } from '../vehicles/vehicles.module';
-import { ManifestDeltaService } from './manifest-delta.service';
-import { ManifestVersionsRepository } from './manifest-versions.repository';
-import {
-  ManifestVersionRecord,
-  ManifestVersionSchema,
-} from './schemas/manifest-version.schema';
+
 
 @Module({
   imports: [
@@ -59,7 +54,6 @@ import {
       { name: PairingRequestRecord.name, schema: PairingRequestSchema },
       { name: PairingSecretRecord.name, schema: PairingSecretSchema },
       { name: PairingAttemptLogRecord.name, schema: PairingAttemptLogSchema },
-      { name: ManifestVersionRecord.name, schema: ManifestVersionSchema },
     ]),
     forwardRef(() => VehiclesModule),
     forwardRef(() => AuthModule),
@@ -83,15 +77,12 @@ import {
     PairingService,
     PairingAuditService,
     ScreenshotUploadService,
-    ManifestVersionsRepository,
-    ManifestDeltaService,
   ],
   exports: [
     DevicesRepository,
     MongooseModule,
     DeviceStateMachineService,
     RetiredDeviceGuard,
-    ManifestVersionsRepository,
     DeviceJwtAuthGuard,
   ],
 })
