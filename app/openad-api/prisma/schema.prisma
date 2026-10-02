@@ -1,0 +1,248 @@
+// Postgres do ecossistema OpenDriver.
+//
+// O banco e **compartilhado** entre tres servicos, e cada um e dono de um schema:
+//   public      -> hub          (fonte da verdade: hub/backend/prisma/schema.prisma)
+//   opendriver  -> opendriver   (corridas)
+//   openad      -> openad       (este repositorio)
+//
+// Regra de propriedade, igual a que `opendriver` segue (ver hub/docs/normalizacao-banco.md):
+// **so o dono altera a estrutura do seu schema.** Os modelos marcados @@schema("public")
+// aqui sao *espelhos* — replicam apenas as colunas que o openad usa, e nenhuma migration
+// deste repositorio cria, altera ou remove objeto de `public`. A unica mencao a `public` no
+// SQL das migrations e em clausula de chave estrangeira.
+//
+// Migrations sao escritas **a mao**, so aditivas, e aplicadas com `migrate deploy`. Nunca
+// `migrate dev` nem `db push` contra o banco compartilhado: isso geraria DROP em tabela do
+// hub. O historico do openad vive em `openad._prisma_migrations`, isolado do historico do
+// hub — ver prisma/bootstrap/001_migrations_table.sql.
+//
+// O operacional (frota, midia, entrega, eventos, telemetria) continua no MongoDB. Aqui mora
+// so identidade e dinheiro, que e o que o ecossistema compartilha.
+
+generator client {
+  provider = "prisma-client-js"
+  // `native` para o desenvolvimento; o alvo musl e para a imagem alpine de producao.
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  // Precisa carregar `?schema=openad`: e isso que coloca `_prisma_migrations` no schema do
+  // openad em vez de no `public` do hub.
+  url      = env("DATABASE_URL")
+  schemas  = ["openad", "public"]
+}
+
+// ---------------------------------------------------------------------------------------
+// Espelhos de `public` (dono: hub). Somente leitura, com duas excecoes documentadas.
+// ---------------------------------------------------------------------------------------
+
+/// Papeis de `public.users`, emitidos pelo hub. **Nao sao os papeis do openad**: a equipe
+/// interna da plataforma vive em `openad.users` no MongoDB, com enum proprio. Um papel daqui
+/// nunca concede permissao no openad por si so — o que concede e existir linha em
+/// `ad_advertisers`.
+enum UserRole {
+  Client
+  Passenger
+  Driver
+  Partner
+  Admin
+  Financeiro
+
+  @@schema("public")
+}
+
+/// Espelho de `public.users`. Apenas as colunas que o openad le; o hub tem muitas outras.
+///
+/// O openad **nunca escreve** nesta tabela. O repasse ao motorista nao passa por
+/// `cashback_balance`: vai para `opendriver.driver_earnings` por HTTP em `/internal/*`
+/// (decisao de 2026-10-02), entao a coluna de saldo nao esta nem espelhada aqui.
+model User {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String    @db.VarChar(160)
+  email           String    @unique @db.VarChar(180)
+  role            UserRole  @default(Client)
+  phone           String?
+  cpf             String?   @db.VarChar(20)
+  emailVerifiedAt DateTime? @map("email_verified_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  advertiser AdAdvertiser?
+
+  @@map("users")
+  @@schema("public")
+}
+
+/// Espelho de `public.service_api_keys`, para autenticar chamada servico-a-servico que
+/// **entra** no openad (`/internal/*`). Somente leitura: `last_used_at` e atualizado pelo
+/// hub, que e quem emite e revoga as chaves em Admin -> Chaves de API. O hash e SHA-256 em
+/// hexadecimal, igual a hub/backend/src/infra/auth/apiKey.ts — se mudar la, muda aqui.
+model ServiceApiKey {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  label      String   @db.VarChar(120)
+  hashedKey  String   @unique @map("hashed_key")
+  keyPreview String   @map("key_preview") @db.VarChar(16)
+  scopes     String[]
+  active     Boolean  @default(true)
+  lastUsedAt DateTime? @map("last_used_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("service_api_keys")
+  @@schema("public")
+}
+
+/// Espelho de `public.audit_logs`. O openad **escreve** aqui, sempre com `action` prefixado
+/// por `openad.`, que e como a trilha compartilhada distingue qual servico agiu. Mesma
+/// convencao do opendriver, que prefixa `opendriver.`.
+model AuditLog {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actorId     String?  @map("actor_id") @db.Uuid
+  action      String   @db.VarChar(120)
+  entityType  String?  @map("entity_type") @db.VarChar(60)
+  entityId    String?  @map("entity_id") @db.VarChar(80)
+  payloadJson String?  @map("payload_json")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("audit_logs")
+  @@schema("public")
+}
+
+// ---------------------------------------------------------------------------------------
+// Schema `openad` (dono: este repositorio).
+// ---------------------------------------------------------------------------------------
+
+enum AdAdvertiserStatus {
+  active
+  suspended
+
+  @@schema("openad")
+}
+
+enum AdStore {
+  apple
+  google
+
+  @@schema("openad")
+}
+
+enum AdReceiptStatus {
+  pending
+  validated
+  refunded
+
+  @@schema("openad")
+}
+
+enum AdLedgerDirection {
+  credit
+  debit
+
+  @@schema("openad")
+}
+
+enum AdLedgerReason {
+  purchase
+  campaign_spend
+  refund
+  adjustment
+
+  @@schema("openad")
+}
+
+/// Vinculo entre a conta do ecossistema e o parceiro anunciante.
+///
+/// Nasce `active`: criar conta ja torna a pessoa parceira (decisao de produto 1), entao nao
+/// existe fila de aprovacao de cadastro. A moderacao e do **criativo**, nao do cadastro.
+///
+/// `onDelete: Restrict` na FK para `public.users` segue a convencao do opendriver: o hub nao
+/// pode apagar um usuario por baixo dos dados do openad. Exclusao de conta e orquestrada por
+/// HTTP (`/internal/accounts/:id/purge`), nao por cascata de banco.
+model AdAdvertiser {
+  id     String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId String @unique @map("user_id") @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  legalName String @map("legal_name") @db.VarChar(180)
+
+  /// CNPJ ou CPF cifrado, e o hash para busca sem decifrar. Mesma divisao que o hub usa.
+  documentEnc  String? @map("document_enc")
+  documentHash String? @map("document_hash") @db.VarChar(64)
+
+  status AdAdvertiserStatus @default(active)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  purchases AdCreditPurchase[]
+  ledger    AdCreditLedger[]
+
+  @@index([status, createdAt])
+  @@map("ad_advertisers")
+  @@schema("openad")
+}
+
+/// Compra de pacote de credito por in-app purchase.
+///
+/// O indice unico `(store, transaction_id)` e o que impede o mesmo recibo creditar duas
+/// vezes — e ele reenvia, porque e assim que o IAP se recupera de aplicativo fechado no meio
+/// da transacao.
+///
+/// Valores em centavos inteiros: dinheiro dentro do openad e inteiro. A conversao para
+/// `Decimal(12,2)` acontece so na fronteira com o hub, que conta em reais.
+model AdCreditPurchase {
+  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  advertiserId String       @map("advertiser_id") @db.Uuid
+  advertiser   AdAdvertiser @relation(fields: [advertiserId], references: [id], onDelete: Restrict)
+
+  store      AdStore
+  productSku String  @map("product_sku") @db.VarChar(120)
+
+  creditCents   Int @map("credit_cents")
+  priceCents    Int @map("price_cents")
+  storeFeeCents Int @map("store_fee_cents")
+
+  transactionId String          @map("transaction_id") @db.VarChar(200)
+  receiptStatus AdReceiptStatus @default(pending) @map("receipt_status")
+
+  validatedAt DateTime? @map("validated_at")
+  refundedAt  DateTime? @map("refunded_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  ledger AdCreditLedger[]
+
+  @@unique([store, transactionId], map: "ad_credit_purchases_store_transaction_key")
+  @@index([advertiserId, createdAt])
+  @@index([receiptStatus])
+  @@map("ad_credit_purchases")
+  @@schema("openad")
+}
+
+/// Livro-caixa do credito de veiculacao. Append-only: saldo e a soma dos lancamentos.
+///
+/// Existe separado da carteira do hub de proposito. `public.users.cashback_balance` e
+/// **sacavel**; se o saldo comprado por IAP caisse ali, a loja o interpretaria como valor
+/// armazenado equivalente a dinheiro, e isso e recusado na revisao. Credito de veiculacao so
+/// e gastavel em veiculacao, sem resgate e sem transferencia.
+///
+/// `campaignId` aponta para `campaigns.campaignId` no MongoDB, por isso nao tem FK.
+model AdCreditLedger {
+  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  advertiserId String       @map("advertiser_id") @db.Uuid
+  advertiser   AdAdvertiser @relation(fields: [advertiserId], references: [id], onDelete: Restrict)
+
+  direction   AdLedgerDirection
+  amountCents Int               @map("amount_cents")
+  reason      AdLedgerReason
+
+  purchaseId String?           @map("purchase_id") @db.Uuid
+  purchase   AdCreditPurchase? @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
+
+  campaignId String? @map("campaign_id") @db.VarChar(64)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([advertiserId, createdAt])
+  @@index([campaignId])
+  @@map("ad_credit_ledger")
+  @@schema("openad")
+}

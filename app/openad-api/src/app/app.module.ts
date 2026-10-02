@@ -8,6 +8,7 @@ import { HttpCorrelationInterceptor } from '../infrastructure/http/http-correlat
 import { HttpExceptionFilter } from '../infrastructure/http/http-exception.filter';
 import { AppLoggerModule } from '../infrastructure/logging/logger.module';
 import { MongodbModule } from '../infrastructure/mongodb/mongodb.module';
+import { PostgresModule } from '../infrastructure/postgres/postgres.module';
 import { MqttModule } from '../infrastructure/mqtt/mqtt.module';
 import { QueuesModule } from '../infrastructure/queues/queues.module';
 import { RedisModule } from '../infrastructure/redis/redis.module';
@@ -82,6 +83,7 @@ const testRun = process.env.NODE_ENV === 'test';
     AssetStorageModule,
     AppLoggerModule,
     MongodbModule,
+    PostgresModule,
     RedisModule,
     MqttModule,
     QueuesModule,

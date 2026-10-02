@@ -54,6 +54,36 @@ services:
       retries: 10
       start_period: 15s
 
+  # Postgres do ecossistema. Em producao e um banco **compartilhado** chamado `hub`, com o
+  # schema `public` do hub, o schema `opendriver` e, a partir da federacao de identidade, o
+  # schema `openad`. O nome do banco aqui e `hub` de proposito, para que a string de conexao
+  # local tenha a mesma forma da de producao.
+  #
+  # O schema `public` e propriedade do hub: as migrations dele e que o criam. Use
+  # `node scripts/init-postgres-schemas.mjs`, que aplica as migrations do hub a partir do
+  # repositorio irmao e depois as do openad. Nenhuma migration deste repositorio toca `public`.
+  postgres:
+    image: postgres:16-alpine
+    container_name: openad-postgres
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-hub}
+      POSTGRES_USER: ${POSTGRES_USER:-openad}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-openad-dev-postgres}
+    volumes:
+      - openad-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" || exit 1',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
   redis:
     image: redis:7.4-alpine
     container_name: openad-redis
@@ -109,3 +139,4 @@ volumes:
   openad-redis-data:
   openad-rabbitmq-data:
   openad-minio-data:
+  openad-postgres-data:

@@ -16,8 +16,56 @@ const optionalPositive = (key: string, defaultValue: number) =>
     throw new Error(`Invalid ${key}: expected positive number`);
   }, z.number());
 
+/**
+ * Segredo compartilhado do ecossistema.
+ *
+ * O mesmo `JWT_SECRET` vale no hub, no opendriver e aqui — um token emitido por um servico
+ * autentica nos outros. Por isso o piso de 32 caracteres: e a mesma verificacao que o
+ * `assertProductionConfig()` do opendriver faz, e um segredo curto compromete os tres
+ * servicos de uma vez, nao so este.
+ */
+const segredoCompartilhado = (chave: string) =>
+  z
+    .string({ message: `${chave} e obrigatorio` })
+    .min(32, `${chave} precisa ter ao menos 32 caracteres (vale nos tres servicos)`);
+
+/**
+ * Obrigatorio em producao, opcional fora dela.
+ *
+ * O Postgres guarda identidade e dinheiro, e a maior parte da API nao o consulta — as suites
+ * de teste, por exemplo, rodam inteiras no Mongo em memoria. Exigir a conexao sempre
+ * obrigaria um Postgres de pe para rodar teste de reproducao de video. Em producao, ao
+ * contrario, faltar e falha de configuracao e tem de derrubar o boot.
+ */
+const obrigatorioEmProducao = (chave: string, formato: z.ZodString) =>
+  z.preprocess((bruto) => {
+    const valor = typeof bruto === 'string' ? bruto.trim() : bruto;
+    if (valor === undefined || valor === '') {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error(`${chave} e obrigatorio em producao`);
+      }
+      return undefined;
+    }
+    return valor;
+  }, formato.optional());
+
 const schema = z
   .object({
+    /**
+     * Conexao do Postgres compartilhado. **Precisa carregar `?schema=openad`**: e isso que
+     * coloca o historico de migrations no schema do openad em vez de no `public` do hub.
+     */
+    DATABASE_URL: obrigatorioEmProducao(
+      'DATABASE_URL',
+      z.string().refine((v) => v.includes('schema=openad'), {
+        message:
+          'DATABASE_URL precisa de ?schema=openad, senao as migrations do openad vao para o schema do hub',
+      })
+    ),
+    MONGO_URI: obrigatorioEmProducao('MONGO_URI', z.string().min(1)),
+    REDIS_URL: obrigatorioEmProducao('REDIS_URL', z.string().min(1)),
+    JWT_SECRET: segredoCompartilhado('JWT_SECRET'),
+    JWT_REFRESH_SECRET: segredoCompartilhado('JWT_REFRESH_SECRET'),
     POWER_ENGINE_OFF_VOLTAGE_V: optionalPositive(
       'POWER_ENGINE_OFF_VOLTAGE_V',
       12
