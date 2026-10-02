@@ -1,4 +1,15 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+
+// O jvmTarget tem de acompanhar o sourceCompatibility/targetCompatibility que o
+// capacitor.build.gradle fixa em 21; divergir faz o build falhar por alvo incompatível.
+kotlin {
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_21
+    }
+}
 
 android {
     namespace = "com.openad"
