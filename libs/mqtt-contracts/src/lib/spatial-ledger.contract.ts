@@ -34,6 +34,8 @@ export const lostOpportunityEventSchema = z.object({
     'cooldown',
     'velocity',
     'pacing',
+    // Supressao pelo leilao de repasse ao motorista.
+    'revenue_share',
     'loop_lock',
     'other',
   ]),

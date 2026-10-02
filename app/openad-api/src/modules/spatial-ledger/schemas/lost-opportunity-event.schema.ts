@@ -18,6 +18,11 @@ export class LostOpportunityEventRecord {
   @Prop({ type: String, default: null })
   winningMediaId!: string | null;
 
+  /**
+   * `revenue_share` cobre supressao pelo leilao de repasse: campanha que oferece menos ao
+   * motorista perde inventario. Sem registrar o motivo, leilao e caixa-preta e vira disputa
+   * com o parceiro.
+   */
   @Prop({
     type: String,
     required: true,
@@ -26,6 +31,7 @@ export class LostOpportunityEventRecord {
       'cooldown',
       'velocity',
       'pacing',
+      'revenue_share',
       'loop_lock',
       'other',
     ],
@@ -35,6 +41,7 @@ export class LostOpportunityEventRecord {
     | 'cooldown'
     | 'velocity'
     | 'pacing'
+    | 'revenue_share'
     | 'loop_lock'
     | 'other';
 

@@ -108,6 +108,13 @@ export async function createTestApp(): Promise<TestAppContext> {
   });
   await userModel.create({
     userId: randomUUID(),
+    email: 'moderator@test.local',
+    passwordHash: await bcrypt.hash('testpass123', 4),
+    displayName: 'Content Moderator',
+    role: 'content_moderator',
+  });
+  await userModel.create({
+    userId: randomUUID(),
     email: 'super-admin@test.local',
     passwordHash: await bcrypt.hash('testpass123', 4),
     displayName: 'Super Admin',
@@ -115,6 +122,19 @@ export async function createTestApp(): Promise<TestAppContext> {
   });
 
   return { app };
+}
+
+/** Token de moderador — unico papel, junto com super_admin, que aprova ou recusa criativo. */
+export async function loginAsContentModerator(
+  app: INestApplication
+): Promise<string> {
+  const res = await request(app.getHttpServer())
+    .post('/api/v1/auth/login')
+    .send({ email: 'moderator@test.local', password: 'testpass123' });
+  if (res.status !== 200) {
+    throw new Error(`login failed: ${res.status} ${JSON.stringify(res.body)}`);
+  }
+  return res.body.accessToken as string;
 }
 
 export async function loginAsCampaignManager(

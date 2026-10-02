@@ -2,6 +2,7 @@ import type { HealthMetrics } from '@openad/domain';
 import { HealthThresholdEvaluatorService } from './health-threshold-evaluator.service';
 import type { PlatformConfig } from '@openad/api-contracts';
 import type { PlatformConfigRuntimeService } from '../platform-config/platform-config-runtime.service';
+import { platformConfigDefaults } from '../platform-config/platform-config.service';
 
 function metrics(partial: Partial<HealthMetrics>): HealthMetrics {
   return {
@@ -16,32 +17,7 @@ function metrics(partial: Partial<HealthMetrics>): HealthMetrics {
 
 describe('HealthThresholdEvaluatorService', () => {
   const cfg: Pick<PlatformConfigRuntimeService, 'get'> = {
-    get: () =>
-      ({
-        dashboard: { mediaStorageQuotaBytes: null },
-        mediaLimits: {
-          maxVideoBytes: 1,
-          maxDurationSeconds: 1,
-          maxWidth: 1,
-          maxHeight: 1,
-        },
-        fleetHealth: {
-          minBatteryPercent: 10,
-          maxStoragePercent: 95,
-          gpsHdopMax: 5,
-          heartbeatFlaggedThresholdMs: 180_000,
-        },
-        analytics: {
-          enabled: true,
-          maxVelocityKmh: 200,
-          playBatchMaxBytes: 5_242_880,
-          reconFullPlayMinRatio: 0.9,
-          reconMinDurationSec: 3,
-          fraudBlackoutMaxLux: 5,
-          fraudHeartbeatIntervalSec: 30,
-          fraudHeartbeatMinRatio: 0.25,
-        },
-      }) satisfies PlatformConfig,
+    get: () => platformConfigDefaults(),
   };
 
   beforeEach(() => {

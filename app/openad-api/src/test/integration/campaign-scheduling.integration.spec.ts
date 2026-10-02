@@ -6,6 +6,7 @@ import { RedisService } from '../../infrastructure/redis/redis.service';
 import {
   createTestApp,
   loginAsCampaignManager,
+  loginAsContentModerator,
   loginAsFleetOperator,
   seedActiveVehicle,
   shutdownTestApp,
@@ -117,11 +118,21 @@ describe('Campaign scheduling (integration)', () => {
         priority: 1,
       });
 
+    // `draft -> pending_review -> active`: publicar exige revisao, e aprovar exige
+    // moderador — gerente de campanha nao aprova a propria campanha.
+    await request(ctx.app.getHttpServer())
+      .patch(`/api/v1/campaigns/${campaignId}/status`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ status: 'pending_review' })
+      .expect(200);
+
+    const moderatorToken = await loginAsContentModerator(ctx.app);
+
     publishSpy.mockClear();
 
     const act = await request(ctx.app.getHttpServer())
       .patch(`/api/v1/campaigns/${campaignId}/status`)
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${moderatorToken}`)
       .send({ status: 'active' });
     expect(act.status).toBe(200);
 

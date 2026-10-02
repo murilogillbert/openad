@@ -7,6 +7,7 @@ import { HeartbeatMonitorService } from './heartbeat-monitor.service';
 import { NotificationService } from './notification.service';
 import type { PlatformConfig } from '@openad/api-contracts';
 import type { PlatformConfigRuntimeService } from '../platform-config/platform-config-runtime.service';
+import { platformConfigDefaults } from '../platform-config/platform-config.service';
 
 describe('HeartbeatMonitorService', () => {
   const logger: Pick<PinoLogger, 'setContext' | 'warn'> = {
@@ -15,33 +16,19 @@ describe('HeartbeatMonitorService', () => {
   };
 
   let flaggedAfter = 180_000;
+  // Parte dos defaults e sobrescreve so o que o teste exercita, para nao reescrever o
+  // objeto inteiro a cada campo novo de configuracao.
   const cfg: Pick<PlatformConfigRuntimeService, 'get'> = {
-    get: () =>
-      ({
-        dashboard: { mediaStorageQuotaBytes: null },
-        mediaLimits: {
-          maxVideoBytes: 1,
-          maxDurationSeconds: 1,
-          maxWidth: 1,
-          maxHeight: 1,
-        },
+    get: () => {
+      const d = platformConfigDefaults();
+      return {
+        ...d,
         fleetHealth: {
-          minBatteryPercent: 10,
-          maxStoragePercent: 95,
-          gpsHdopMax: 5,
+          ...d.fleetHealth,
           heartbeatFlaggedThresholdMs: flaggedAfter,
         },
-        analytics: {
-          enabled: true,
-          maxVelocityKmh: 200,
-          playBatchMaxBytes: 5_242_880,
-          reconFullPlayMinRatio: 0.9,
-          reconMinDurationSec: 3,
-          fraudBlackoutMaxLux: 5,
-          fraudHeartbeatIntervalSec: 30,
-          fraudHeartbeatMinRatio: 0.25,
-        },
-      }) satisfies PlatformConfig,
+      } satisfies PlatformConfig;
+    },
   };
 
   const fleetStatus = {

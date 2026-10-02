@@ -268,6 +268,23 @@ export interface ImpressionEvent {
 export type UserRole =
   | 'fleet_operator'
   | 'campaign_manager'
+  | 'content_moderator'
   | 'fleet_admin'
   | 'finance_analyst'
   | 'super_admin';
+
+/**
+ * Papeis da equipe interna, em `openad.users`.
+ *
+ * O anunciante **nao** entra aqui: ele autentica com a conta do ecossistema
+ * (`public.users` no Postgres) e e resolvido para `public.ad_advertisers`. Esta lista e so
+ * de quem opera a plataforma.
+ */
+export const INTERNAL_USER_ROLES: readonly UserRole[] = [
+  'fleet_operator',
+  'campaign_manager',
+  'content_moderator',
+  'fleet_admin',
+  'finance_analyst',
+  'super_admin',
+];

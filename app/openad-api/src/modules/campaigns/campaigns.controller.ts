@@ -19,6 +19,7 @@ import * as path from 'path';
 import { memoryStorage } from 'multer';
 import { extractFleetAuditFromRequest } from '../../infrastructure/logging/fleet-audit.context';
 import { Throttle } from '@nestjs/throttler';
+import { ownerFilterFor } from '../auth/access-scope';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -49,10 +50,12 @@ export class CampaignsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('campaign_manager', 'fleet_admin', 'super_admin')
   list(@Query() q: CampaignListQueryDto, @Req() req: Request) {
+    const u = req.user as JwtUser | undefined;
     return this.lifecycle.list(
       q.page ?? 1,
       q.limit ?? 50,
-      extractFleetAuditFromRequest(req)
+      extractFleetAuditFromRequest(req),
+      ownerFilterFor({ userId: u?.userId, role: u?.role })
     );
   }
 
@@ -135,10 +138,12 @@ export class CampaignsController {
     @Body() dto: PatchCampaignStatusDto,
     @Req() req: Request
   ) {
+    const u = req.user as JwtUser | undefined;
     return this.lifecycle.patchStatus(
       campaignId,
       dto,
-      extractFleetAuditFromRequest(req)
+      extractFleetAuditFromRequest(req),
+      { userId: u?.userId ?? null, role: u?.role }
     );
   }
 }

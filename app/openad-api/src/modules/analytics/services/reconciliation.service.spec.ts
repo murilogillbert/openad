@@ -6,6 +6,7 @@ import { PlayRecord } from '../schemas/play-record.schema';
 import { MediaAsset } from '../../media-ingestion/schemas/media-asset.schema';
 import type { PlatformConfig } from '@openad/api-contracts';
 import { PlatformConfigRuntimeService } from '../../platform-config/platform-config-runtime.service';
+import { platformConfigDefaults } from '../../platform-config/platform-config.service';
 
 describe('ReconciliationService', () => {
   let svc: ReconciliationService;
@@ -17,32 +18,13 @@ describe('ReconciliationService', () => {
         {
           provide: PlatformConfigRuntimeService,
           useValue: {
-            get: () =>
-              ({
-                dashboard: { mediaStorageQuotaBytes: null },
-                mediaLimits: {
-                  maxVideoBytes: 1,
-                  maxDurationSeconds: 1,
-                  maxWidth: 1,
-                  maxHeight: 1,
-                },
-                fleetHealth: {
-                  minBatteryPercent: 10,
-                  maxStoragePercent: 95,
-                  gpsHdopMax: 5,
-                  heartbeatFlaggedThresholdMs: 180_000,
-                },
-                analytics: {
-                  enabled: true,
-                  maxVelocityKmh: 200,
-                  playBatchMaxBytes: 5_242_880,
-                  reconFullPlayMinRatio: 0.9,
-                  reconMinDurationSec: 3,
-                  fraudBlackoutMaxLux: 5,
-                  fraudHeartbeatIntervalSec: 30,
-                  fraudHeartbeatMinRatio: 0.25,
-                },
-              }) satisfies PlatformConfig,
+            get: () => {
+              const d = platformConfigDefaults();
+              return {
+                ...d,
+                analytics: { ...d.analytics, maxVelocityKmh: 200 },
+              } satisfies PlatformConfig;
+            },
           },
         },
         {

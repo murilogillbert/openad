@@ -5,6 +5,7 @@ import { MqttService } from '../../infrastructure/mqtt/mqtt.service';
 import {
   createTestApp,
   loginAsCampaignManager,
+  loginAsContentModerator,
   shutdownTestApp,
   type TestAppContext,
 } from '../test-app.factory';
@@ -123,11 +124,56 @@ describe('Campaigns REST (contract)', () => {
     expect(rule.status).toBe(201);
     expect(rule.body.ruleId).toBeTruthy();
 
-    const act = await request(ctx.app.getHttpServer())
+    // Ir ao ar agora passa por revisao: `draft -> pending_review -> active`. Antes dava
+    // para publicar direto de `draft`, sem moderacao.
+    const submit = await request(ctx.app.getHttpServer())
+      .patch(`/api/v1/campaigns/${campaignId}/status`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ status: 'pending_review' });
+    expect(submit.status).toBe(200);
+    expect(submit.body.status).toBe('pending_review');
+
+    // Aprovar exige moderador: gerente de campanha nao aprova a propria campanha.
+    const moderatorToken = await loginAsContentModerator(ctx.app);
+    const semPermissao = await request(ctx.app.getHttpServer())
       .patch(`/api/v1/campaigns/${campaignId}/status`)
       .set('Authorization', `Bearer ${token}`)
       .send({ status: 'active' });
+    expect(semPermissao.status).toBe(403);
+
+    const act = await request(ctx.app.getHttpServer())
+      .patch(`/api/v1/campaigns/${campaignId}/status`)
+      .set('Authorization', `Bearer ${moderatorToken}`)
+      .send({ status: 'active' });
     expect(act.status).toBe(200);
     expect(act.body.status).toBe('active');
+  });
+
+  it('nao permite publicar sem passar por revisao', async () => {
+    const mgrToken = await loginAsCampaignManager(ctx.app);
+    const created = await request(ctx.app.getHttpServer())
+      .post('/api/v1/campaigns')
+      .set('Authorization', `Bearer ${mgrToken}`)
+      .send({
+        name: 'Sem revisao',
+        advertiserName: 'Acme',
+        priority: 1,
+        scheduledStart: new Date().toISOString(),
+        scheduledEnd: new Date(Date.now() + 86_400_000).toISOString(),
+        budget: {
+          totalAmount: 1000,
+          currency: 'BRL',
+          ratePerImpression: 1,
+        },
+      });
+    expect(created.status).toBe(201);
+
+    const moderador = await loginAsContentModerator(ctx.app);
+    const direto = await request(ctx.app.getHttpServer())
+      .patch(`/api/v1/campaigns/${created.body.campaignId}/status`)
+      .set('Authorization', `Bearer ${moderador}`)
+      .send({ status: 'active' });
+    // Nem o moderador publica de `draft`: a transicao em si e invalida.
+    expect(direto.status).toBe(400);
   });
 });

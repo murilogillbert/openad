@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
-import type { UserRole } from '@openad/domain';
+import { INTERNAL_USER_ROLES, type UserRole } from '@openad/domain';
 
 export type UserDocument = HydratedDocument<User>;
 
@@ -33,13 +33,7 @@ export class User {
   @Prop({
     type: String,
     required: true,
-    enum: [
-      'fleet_operator',
-      'campaign_manager',
-      'fleet_admin',
-      'finance_analyst',
-      'super_admin',
-    ],
+    enum: INTERNAL_USER_ROLES,
   })
   role!: UserRole;
 }

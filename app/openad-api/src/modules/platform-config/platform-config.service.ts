@@ -4,15 +4,16 @@ import { Model } from 'mongoose';
 import { PlatformConfigDoc, PlatformConfigDocument } from './schemas/platform-config.schema';
 import type { PlatformConfig } from '@openad/api-contracts';
 
-@Injectable()
-export class PlatformConfigService {
-  constructor(
-    @InjectModel(PlatformConfigDoc.name)
-    private readonly model: Model<PlatformConfigDocument>
-  ) {}
-
-  defaults(): PlatformConfig {
-    return {
+/**
+ * Configuracao padrao da plataforma.
+ *
+ * Funcao pura, fora da classe, para que teste possa partir dela com `spread` em vez de
+ * reescrever o objeto inteiro. Quando era so metodo de instancia, quatro specs mantinham
+ * copias literais do objeto e todas quebravam a cada campo novo — foi o que aconteceu ao
+ * acrescentar `monetization`.
+ */
+export function platformConfigDefaults(): PlatformConfig {
+  return {
       dashboard: {
         mediaStorageQuotaBytes: null,
       },
@@ -38,7 +39,25 @@ export class PlatformConfigService {
         fraudHeartbeatIntervalSec: 30,
         fraudHeartbeatMinRatio: 0.25,
       },
-    };
+      monetization: {
+        driverPayoutMinPercent: 0.3,
+        driverPayoutAuctionWeight: 0.5,
+        // Conservador: sem risco de caixa ate alguem decidir antecipar pelo painel.
+        driverPayoutSettlement: 'store_cycle',
+        storeCycleSettlementDays: 45,
+      },
+  };
+}
+
+@Injectable()
+export class PlatformConfigService {
+  constructor(
+    @InjectModel(PlatformConfigDoc.name)
+    private readonly model: Model<PlatformConfigDocument>
+  ) {}
+
+  defaults(): PlatformConfig {
+    return platformConfigDefaults();
   }
 
   async getOrCreateDefaults(): Promise<PlatformConfigDocument> {
@@ -59,6 +78,7 @@ export class PlatformConfigService {
       mediaLimits: { ...d.mediaLimits, ...(p.mediaLimits ?? {}) },
       fleetHealth: { ...d.fleetHealth, ...(p.fleetHealth ?? {}) },
       analytics: { ...d.analytics, ...(p.analytics ?? {}) },
+      monetization: { ...d.monetization, ...(p.monetization ?? {}) },
     };
   }
 

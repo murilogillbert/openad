@@ -1,8 +1,15 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import {
+  allowedTransitionsFrom,
+  canTransition,
+  moderationReasonRequired,
+  requiresModeration,
+} from './campaign-status.policy';
 import { randomUUID } from 'crypto';
 import { PinoLogger } from 'nestjs-pino';
 import type { FleetAuditContext } from '../../infrastructure/logging/fleet-audit.context';
@@ -27,17 +34,31 @@ export class CampaignLifecycleService {
     this.logger.setContext(CampaignLifecycleService.name);
   }
 
-  async list(page = 1, limit = 50, audit?: FleetAuditContext) {
+  /**
+   * Lista campanhas, **sempre** escopada.
+   *
+   * `scope` vem de `MediaScopeService.ownerFilter`: `{}` para equipe interna e
+   * `{ ownerUserId }` para anunciante. Antes era `findMany({})` — toda campanha de todo
+   * mundo — e o filtro precisa estar na consulta, nao depois: escopar em memoria faria a
+   * primeira pagina de um parceiro vir vazia porque foi preenchida com registros de outro
+   * e descartada.
+   */
+  async list(
+    page = 1,
+    limit = 50,
+    audit?: FleetAuditContext,
+    scope: Record<string, unknown> = {}
+  ) {
     if (audit) {
       this.logger.info(
-        { ...audit, event: 'campaign.list', page, limit },
+        { ...audit, event: 'campaign.list', page, limit, scoped: Object.keys(scope).length > 0 },
         'list campaigns'
       );
     }
     const skip = (page - 1) * limit;
-    const total = await this.campaigns.countDocuments({});
+    const total = await this.campaigns.countDocuments(scope);
     const rows = await this.campaigns.findMany(
-      {},
+      scope,
       { skip, limit, sort: { updatedAt: -1 } }
     );
     return {
@@ -58,6 +79,10 @@ export class CampaignLifecycleService {
       name: dto.name,
       advertiserName: dto.advertiserName,
       status: 'draft',
+      // Campanha criada pelo operador nasce sem dono; a do anunciante recebe
+      // `ownerUserId` nas rotas de `/advertiser`, que entram junto com a identidade
+      // federada.
+      ownerUserId: null,
       priority: dto.priority,
       budget: dto.budget,
       scheduledStart: new Date(dto.scheduledStart),
@@ -78,7 +103,8 @@ export class CampaignLifecycleService {
   async patchStatus(
     campaignId: string,
     body: PatchCampaignStatusDto,
-    audit: FleetAuditContext
+    audit: FleetAuditContext,
+    actor?: { userId: string | null; role: string | undefined }
   ) {
     const campaign = await this.campaigns.findByCampaignId(campaignId);
     if (!campaign) {
@@ -90,10 +116,34 @@ export class CampaignLifecycleService {
         ...audit,
         event: 'campaign.status.attempt',
         campaignId,
+        fromStatus: campaign.status,
         nextStatus: body.status,
       },
       'campaign status change'
     );
+
+    if (campaign.status !== body.status) {
+      if (!canTransition(campaign.status, body.status)) {
+        throw new BadRequestException(
+          `Transicao invalida: ${campaign.status} -> ${body.status}. ` +
+            `Permitidas: ${allowedTransitionsFrom(campaign.status).join(', ') || 'nenhuma'}`
+        );
+      }
+
+      if (requiresModeration(campaign.status, body.status)) {
+        const role = actor?.role;
+        if (role !== 'content_moderator' && role !== 'super_admin') {
+          throw new ForbiddenException(
+            'Somente moderador pode aprovar ou recusar campanha'
+          );
+        }
+        if (moderationReasonRequired(body.status) && !body.reason) {
+          throw new BadRequestException(
+            'Recusa exige motivo, para o anunciante saber o que corrigir'
+          );
+        }
+      }
+    }
 
     if (body.status === 'active') {
       const activeRules = await this.rules.findActiveByCampaignId(campaignId);
@@ -112,9 +162,19 @@ export class CampaignLifecycleService {
       }
     }
 
+    const patch: Record<string, unknown> = { status: body.status };
+    if (requiresModeration(campaign.status, body.status)) {
+      patch['moderation'] = {
+        reviewedByUserId: actor?.userId ?? 'unknown',
+        reviewedAt: new Date(),
+        decision: body.status === 'active' ? 'approved' : 'rejected',
+        reason: body.reason ?? null,
+      };
+    }
+
     const updated = await this.campaigns.updateOne(
       { campaignId },
-      { $set: { status: body.status } }
+      { $set: patch }
     );
     if (!updated) {
       throw new NotFoundException('Campaign not found');

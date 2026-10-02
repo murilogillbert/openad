@@ -58,6 +58,13 @@ export class MediaAsset {
   @Prop({ type: String, index: true })
   campaignId?: string;
 
+  /**
+   * Dono da midia — `public.users.id`. Nulo em midia institucional e em tudo que foi
+   * enviado pelo operador antes da federacao de identidade.
+   */
+  @Prop({ type: String, default: null, index: true })
+  ownerUserId?: string | null;
+
   /** Raw S3 object key when using presigned VFS flow (also encodable as `r2:` + key in storageUrl). */
   @Prop({ type: String })
   storageKey?: string;
@@ -96,5 +103,9 @@ export class MediaAsset {
 export const MediaAssetSchema = SchemaFactory.createForClass(MediaAsset);
 
 MediaAssetSchema.index({ categorization: 1, createdAt: -1 });
+MediaAssetSchema.index(
+  { ownerUserId: 1, isActive: 1 },
+  { name: 'owner_active', sparse: true }
+);
 MediaAssetSchema.index({ folderId: 1, campaignId: 1 });
 MediaAssetSchema.index({ storageKey: 1 });

@@ -2,6 +2,7 @@ import { FraudDetectionService } from './fraud-detection.service';
 import { RedisService } from '../../../infrastructure/redis/redis.service';
 import type { PlatformConfig } from '@openad/api-contracts';
 import type { PlatformConfigRuntimeService } from '../../platform-config/platform-config-runtime.service';
+import { platformConfigDefaults } from '../../platform-config/platform-config.service';
 
 describe('FraudDetectionService', () => {
   describe('static helpers', () => {
@@ -63,32 +64,14 @@ describe('FraudDetectionService', () => {
         getClient: () => ({ xrange }),
       };
       const cfg: Pick<PlatformConfigRuntimeService, 'get'> = {
-        get: () =>
-          ({
-            dashboard: { mediaStorageQuotaBytes: null },
-            mediaLimits: {
-              maxVideoBytes: 1,
-              maxDurationSeconds: 1,
-              maxWidth: 1,
-              maxHeight: 1,
-            },
-            fleetHealth: {
-              minBatteryPercent: 10,
-              maxStoragePercent: 95,
-              gpsHdopMax: 5,
-              heartbeatFlaggedThresholdMs: 180_000,
-            },
-            analytics: {
-              enabled: true,
-              maxVelocityKmh: 200,
-              playBatchMaxBytes: 5_242_880,
-              reconFullPlayMinRatio: 0.9,
-              reconMinDurationSec: 3,
-              fraudBlackoutMaxLux: 5,
-              fraudHeartbeatIntervalSec: 30,
-              fraudHeartbeatMinRatio: 0.25,
-            },
-          }) satisfies PlatformConfig,
+        get: () => {
+          const d = platformConfigDefaults();
+          return {
+            ...d,
+            // Teto alto de proposito: o teste exercita a regra de velocidade.
+            analytics: { ...d.analytics, maxVelocityKmh: 200 },
+          } satisfies PlatformConfig;
+        },
       };
       return {
         svc: new FraudDetectionService(
