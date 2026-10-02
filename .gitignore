@@ -6,6 +6,7 @@ docker/.env
 !docker/.env.example
 dist/
 coverage/
+*.log
 # Local data dir at repo root only (do not use bare `storage/` — ignores API `infrastructure/storage/`)
 /storage/
 

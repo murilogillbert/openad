@@ -1,6 +1,11 @@
-# Local stack: RabbitMQ (MQTT plugin), MongoDB 7.x, Redis 7.x, MinIO (S3 + embedded console).
-# Embedded MinIO Console removed in minio/minio RELEASE.2025-05-24T17-08-30Z; we pin the prior
-# release so `pnpm docker:up` still gets a browser UI without a separate console image.
+# Local stack: RabbitMQ (MQTT plugin), MongoDB 7.x, Redis 7.x, SeaweedFS (S3 + filer UI).
+#
+# Storage: era MinIO. As imagens comunitarias da MinIO deixaram de ser pullaveis
+# (`minio/minio` e `quay.io/minio/minio` respondem 401/denied, e `bitnami/minio` saiu do
+# catalogo gratuito), o que travava o `docker compose up` inteiro. Trocado por SeaweedFS,
+# que expoe a mesma API S3 na mesma porta com as mesmas credenciais — nenhum `.env` muda.
+# Producao nao e afetada: usa Cloudflare R2 (ver `.env.example`, secao C).
+#
 # `pnpm docker:up` loads `docker/.env` + `docker/.env.<dev|test|prod>` via `scripts/with-monorepo-env.sh docker`.
 #
 # MongoDB: first-time init only — if you already have `openad-mongo-data` from a no-auth image,
@@ -65,24 +70,39 @@ services:
       start_period: 5s
 
   minio:
-    # Last release with embedded Console UI in the server image (breaking removal: 2025-05-24).
-    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    # Substituto S3-compatible da MinIO (ver nota no topo do arquivo). O nome do servico
+    # segue `minio` para nao quebrar `docker compose up minio` em scripts e documentacao;
+    # as credenciais vem de `docker/seaweedfs/s3.json` e precisam bater com S3_ACCESS_KEY_ID /
+    # S3_SECRET_ACCESS_KEY do `docker/.env.dev` e do `app/openad-api/.env.dev`.
+    image: chrislusf/seaweedfs:latest
     container_name: openad-minio
     ports:
+      # API S3 na mesma porta que a MinIO usava, para S3_ENDPOINT seguir inalterado.
       - "127.0.0.1:${MINIO_API_PORT:-9000}:9000"
-      - "127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:9001"
-    environment:
-      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:-minioadmin}
-    command: server /data --console-address ":9001"
+      # UI do filer, no lugar do console da MinIO.
+      - "127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:8888"
+    command:
+      - server
+      - -dir=/data
+      - -master.volumeSizeLimitMB=1024
+      - -volume.max=0
+      - -filer
+      - -s3
+      - -s3.port=9000
+      - -s3.config=/etc/seaweedfs/s3.json
     volumes:
       - openad-minio-data:/data
+      - ./docker/seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/minio/health/live"]
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O - http://127.0.0.1:9333/cluster/status >/dev/null 2>&1 || exit 1",
+        ]
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 15s
+      start_period: 20s
 
 volumes:
   openad-mongo-data:

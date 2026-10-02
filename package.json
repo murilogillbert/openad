@@ -18,7 +18,8 @@
     "client:android:build": "bash scripts/with-monorepo-env.sh app openad-ad-client -- pnpm exec nx run openad-ad-client:cap-sync && bash scripts/with-monorepo-env.sh app openad-ad-client -- pnpm exec nx run openad-ad-client:cap-build-android",
     "management:serve": "bash scripts/with-monorepo-env.sh app openad-management -- pnpm exec nx run openad-management:serve --skip-nx-cache",
     "e2e:management": "NODE_ENV=test bash scripts/with-monorepo-env.sh app openad-management -- pnpm exec nx run openad-management-e2e:e2e",
-    "minio:init-media-bucket": "bash scripts/with-monorepo-env.sh root -- bash scripts/minio-init-media-bucket.sh"
+    "storage:init-media-bucket": "node scripts/init-media-bucket.mjs",
+    "minio:init-media-bucket": "node scripts/init-media-bucket.mjs"
   },
   "devDependencies": {
     "@angular/language-service": "~21.2.0",
