@@ -1,0 +1,1334 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [dismissableMask]="true"
+  [contentStyle]="{ padding: '0', display: 'flex', flexDirection: 'column', height: '100%' }"
+  styleClass="campaign-wizard-dialog overflow-hidden md:rounded-xl"
+  [closable]="true"
+>
+  <ng-template pTemplate="header">
+    <!-- Mobile: matches mobile_campaign_wizard_step_* progress strip -->
+    <div
+      class="w-full border-b border-surface-200 bg-surface-100/90 px-4 py-4 dark:border-surface-300 dark:bg-surface-200/40 md:hidden"
+    >
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h2 class="font-headline text-2xl font-extrabold tracking-tight text-color">
+            New Campaign
+          </h2>
+          <div class="mt-1 flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm text-primary">edit_note</span>
+            <span class="text-sm font-medium tracking-wide text-muted-color"
+              >Drafting Mode</span
+            >
+          </div>
+        </div>
+        <button
+          type="button"
+          class="rounded-xl bg-surface-0 px-4 py-2 text-sm font-semibold text-primary shadow-sm transition-all hover:opacity-90 active:scale-95 dark:bg-surface-0"
+          (click)="saveDraft()"
+        >
+          Save Draft
+        </button>
+      </div>
+      <div class="mt-6">
+        <div class="mb-2 flex items-end justify-between">
+          <span class="text-[10px] font-bold uppercase tracking-widest text-primary"
+            >Step {{ step() }} of 5</span
+          >
+          <span class="text-xs font-bold uppercase tracking-tight text-color">{{
+            mobileStepTitle()
+          }}</span>
+        </div>
+        <div class="h-1.5 w-full overflow-hidden rounded-full bg-surface-300 dark:bg-surface-400">
+          <div
+            class="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
+            [style.width.%]="progressPercent()"
+          ></div>
+        </div>
+      </div>
+    </div>
+    <!-- Desktop: matches desktop_campaign_wizard_step_1 header -->
+    <div
+      class="hidden w-full flex-col gap-4 border-b border-surface-200 bg-surface-50/80 px-6 py-4 dark:border-surface-300 dark:bg-surface-100/50 md:flex"
+    >
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary"
+          >
+            <span class="material-symbols-outlined">campaign</span>
+          </div>
+          <div>
+            <h2
+              class="font-headline text-lg font-bold leading-tight text-color"
+            >
+              New Campaign
+            </h2>
+            <p class="text-xs font-medium text-muted-color">Drafting Mode</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="rounded-lg bg-surface-200 px-4 py-2 text-sm font-semibold text-muted-color transition-colors hover:bg-surface-300 dark:bg-surface-200 dark:hover:bg-surface-300"
+          (click)="saveDraft()"
+        >
+          Save Draft
+        </button>
+      </div>
+      <div class="relative w-full">
+        <div class="mb-4 flex h-1.5 w-full gap-2">
+          @for (i of [1, 2, 3, 4, 5]; track i) {
+            <div
+              class="flex-1 rounded-full transition-colors"
+              [class.bg-primary]="step() >= i"
+              [class.bg-surface-300]="step() < i"
+              [class.dark:bg-surface-400]="step() < i"
+            ></div>
+          }
+        </div>
+        <div
+          class="grid grid-cols-5 text-[10px] font-bold uppercase tracking-wider text-muted-color sm:text-[11px]"
+        >
+          @for (s of steps; track s.id) {
+            <div
+              [class.text-left]="s.id === 1"
+              [class.text-center]="s.id > 1 && s.id < 5"
+              [class.text-right]="s.id === 5"
+              [class.text-primary]="step() === s.id"
+              [class.opacity-50]="step() !== s.id"
+            >
+              {{ s.label }}
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </ng-template>
+
+  <div
+    class="flex min-h-0 flex-1 flex-col bg-surface-0 dark:bg-surface-50 md:max-h-[min(78vh,720px)]"
+  >
+    <div
+      class="min-h-0 flex-1 overflow-y-auto px-4 py-5 pb-40 md:px-8 md:py-8 md:pb-6"
+    >
+      <!-- Step 1: Identity (desktop_campaign_wizard_step_1) -->
+      @if (step() === 1) {
+        <!-- Desktop hero (desktop_campaign_wizard_step_1) -->
+        <div class="mb-8 hidden md:block">
+          <h3
+            class="font-headline mb-2 text-3xl font-extrabold tracking-tight text-color md:text-4xl"
+          >
+            Campaign Identity
+          </h3>
+          <p class="max-w-2xl text-base text-muted-color">
+            Define the core attributes of your campaign and select the visual
+            framework for your digital out-of-home assets.
+          </p>
+        </div>
+        <!-- Mobile: compact fields (mobile_campaign_wizard_step_1) -->
+        <section class="mb-8 space-y-6 md:hidden">
+          <div class="space-y-1.5">
+            <label
+              class="block px-1 text-[11px] font-bold uppercase tracking-wider text-muted-color"
+              for="cw-name-m"
+              >Campaign Name</label
+            >
+            <input
+              id="cw-name-m"
+              pInputText
+              class="w-full rounded-xl border-0 bg-surface-100 py-3.5 text-color placeholder:text-surface-400 focus:ring-2 focus:ring-primary/30 dark:bg-surface-200/60"
+              placeholder="e.g. Q4 City Launch"
+              [(ngModel)]="name"
+            />
+          </div>
+          <div class="space-y-1.5">
+            <label
+              class="block px-1 text-[11px] font-bold uppercase tracking-wider text-muted-color"
+              for="cw-client-m"
+              >Client Name</label
+            >
+            <input
+              id="cw-client-m"
+              pInputText
+              class="w-full rounded-xl border-0 bg-surface-100 py-3.5 text-color placeholder:text-surface-400 focus:ring-2 focus:ring-primary/30 dark:bg-surface-200/60"
+              placeholder="e.g. TechFlow Solutions"
+              [(ngModel)]="advertiser"
+            />
+          </div>
+          <div class="space-y-1.5">
+            <label
+              class="block px-1 text-[11px] font-bold uppercase tracking-wider text-muted-color"
+              for="cw-prio-m"
+              >Priority</label
+            >
+            <p-inputNumber
+              inputId="cw-prio-m"
+              [(ngModel)]="priority"
+              [min]="1"
+              class="w-full"
+              styleClass="w-full"
+            />
+          </div>
+        </section>
+        <div class="mb-10 hidden md:block">
+          <div class="mb-6 flex items-center gap-2">
+            <span
+              class="rounded bg-primary/10 px-2 py-1 text-xs font-bold text-primary"
+              >01</span
+            >
+            <h4
+              class="text-sm font-bold uppercase tracking-widest text-muted-color"
+            >
+              Core Details
+            </h4>
+          </div>
+          <div
+            class="grid grid-cols-1 gap-6 rounded-xl bg-surface-100/80 p-6 md:grid-cols-2 md:gap-8 dark:bg-surface-200/40"
+          >
+            <div class="space-y-2">
+              <label
+                class="ml-1 block text-sm font-semibold text-color/90"
+                for="cw-name"
+                >Campaign Name</label
+              >
+              <input
+                id="cw-name"
+                pInputText
+                class="w-full rounded-lg border-0 bg-surface-0 py-3 ring-1 ring-surface-300 transition-all focus:ring-2 focus:ring-primary/30 dark:bg-surface-0 dark:ring-surface-400"
+                placeholder="e.g., Summer Refresh 2024"
+                [(ngModel)]="name"
+              />
+            </div>
+            <div class="space-y-2">
+              <label
+                class="ml-1 block text-sm font-semibold text-color/90"
+                for="cw-client"
+                >Client Name</label
+              >
+              <input
+                id="cw-client"
+                pInputText
+                class="w-full rounded-lg border-0 bg-surface-0 py-3 ring-1 ring-surface-300 transition-all focus:ring-2 focus:ring-primary/30 dark:bg-surface-0 dark:ring-surface-400"
+                placeholder="e.g., Starbucks"
+                [(ngModel)]="advertiser"
+              />
+            </div>
+            <div class="space-y-2 md:col-span-2">
+              <label
+                class="ml-1 block text-sm font-semibold text-color/90"
+                for="cw-prio"
+                >Priority (1 = highest)</label
+              >
+              <p-inputNumber
+                inputId="cw-prio"
+                [(ngModel)]="priority"
+                [min]="1"
+                class="w-full"
+                styleClass="w-full"
+              />
+            </div>
+          </div>
+        </div>
+        <!-- Mobile layout list -->
+        <section class="mb-8 md:hidden">
+          <h3 class="font-headline mb-6 text-lg font-bold tracking-tight text-color">
+            Select Layout Template
+          </h3>
+          <div class="space-y-4">
+            <button
+              type="button"
+              class="w-full text-left"
+              (click)="layoutTemplateId = 'full'"
+            >
+              <div
+                class="flex items-center gap-4 rounded-xl bg-surface-0 p-4 shadow-sm ring-1 ring-surface-300/80 transition-all dark:bg-surface-100"
+                [class.ring-2]="layoutTemplateId === 'full'"
+                [class.ring-primary]="layoutTemplateId === 'full'"
+              >
+                <div
+                  class="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-surface-200 dark:bg-surface-300"
+                >
+                  <div
+                    class="flex h-10 w-10 items-center justify-center rounded border-2 border-primary/40"
+                  >
+                    <span class="material-symbols-outlined text-primary/50"
+                      >fullscreen</span
+                    >
+                  </div>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm font-bold text-color">Full Screen Video</p>
+                  <p class="text-xs text-muted-color">
+                    Maximize visual impact with zero borders.
+                  </p>
+                </div>
+                @if (layoutTemplateId === 'full') {
+                  <span
+                    class="material-symbols-outlined shrink-0 text-primary"
+                    style="font-variation-settings: 'FILL' 1"
+                    >check_circle</span
+                  >
+                }
+              </div>
+            </button>
+            <button
+              type="button"
+              class="w-full text-left"
+              (click)="layoutTemplateId = 'split70'"
+            >
+              <div
+                class="flex items-center gap-4 rounded-xl bg-surface-0 p-4 shadow-md ring-2 ring-primary dark:bg-surface-100"
+              >
+                <div
+                  class="flex h-16 w-16 shrink-0 gap-1 rounded-lg bg-surface-200 p-1 dark:bg-surface-300"
+                >
+                  <div class="h-full w-[70%] rounded-sm bg-primary/40"></div>
+                  <div class="h-full w-[30%] rounded-sm bg-surface-400/40"></div>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm font-bold text-color">Split Screen (70/30)</p>
+                  <p class="text-xs text-muted-color">
+                    Primary content with sidebar details.
+                  </p>
+                </div>
+                <span
+                  class="material-symbols-outlined shrink-0 text-primary"
+                  style="font-variation-settings: 'FILL' 1"
+                  >check_circle</span
+                >
+              </div>
+            </button>
+            <button
+              type="button"
+              class="w-full text-left"
+              (click)="layoutTemplateId = 'ticker'"
+            >
+              <div
+                class="flex items-center gap-4 rounded-xl bg-surface-0 p-4 shadow-sm ring-1 ring-surface-300/80 dark:bg-surface-100"
+                [class.ring-2]="layoutTemplateId === 'ticker'"
+                [class.ring-primary]="layoutTemplateId === 'ticker'"
+              >
+                <div
+                  class="flex h-16 w-16 shrink-0 flex-col gap-1 rounded-lg bg-surface-200 p-1 dark:bg-surface-300"
+                >
+                  <div class="flex-1 rounded-sm bg-surface-400/50"></div>
+                  <div class="h-3 rounded-sm bg-primary/40"></div>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm font-bold text-color">Video with Bottom Ticker</p>
+                  <p class="text-xs text-muted-color">
+                    Ideal for news or live price updates.
+                  </p>
+                </div>
+                @if (layoutTemplateId === 'ticker') {
+                  <span
+                    class="material-symbols-outlined shrink-0 text-primary"
+                    style="font-variation-settings: 'FILL' 1"
+                    >check_circle</span
+                  >
+                }
+              </div>
+            </button>
+            <button
+              type="button"
+              class="w-full text-left"
+              (click)="layoutTemplateId = 'split50'"
+            >
+              <div
+                class="flex items-center gap-4 rounded-xl bg-surface-0 p-4 shadow-sm ring-1 ring-surface-300/80 dark:bg-surface-100"
+                [class.ring-2]="layoutTemplateId === 'split50'"
+                [class.ring-primary]="layoutTemplateId === 'split50'"
+              >
+                <div
+                  class="flex h-16 w-16 shrink-0 gap-1 rounded-lg bg-surface-200 p-1 dark:bg-surface-300"
+                >
+                  <div class="h-full w-1/2 rounded-sm bg-surface-400/50"></div>
+                  <div class="h-full w-1/2 rounded-sm bg-surface-400/50"></div>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm font-bold text-color">Split Screen (50/50)</p>
+                  <p class="text-xs text-muted-color">
+                    Balanced layout for dual-message ads.
+                  </p>
+                </div>
+                @if (layoutTemplateId === 'split50') {
+                  <span
+                    class="material-symbols-outlined shrink-0 text-primary"
+                    style="font-variation-settings: 'FILL' 1"
+                    >check_circle</span
+                  >
+                }
+              </div>
+            </button>
+          </div>
+        </section>
+        <div class="mb-8 hidden md:block">
+          <div class="mb-6 flex items-center gap-2">
+            <span
+              class="rounded bg-primary/10 px-2 py-1 text-xs font-bold text-primary"
+              >02</span
+            >
+            <h4
+              class="text-sm font-bold uppercase tracking-widest text-muted-color"
+            >
+              Layout Template
+            </h4>
+          </div>
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
+            <button
+              type="button"
+              class="group relative rounded-xl border-2 bg-surface-0 p-5 text-left ring-1 ring-black/5 transition-all active:scale-[0.98] dark:bg-surface-0"
+              [class.border-primary]="layoutTemplateId === 'full'"
+              [class.border-transparent]="layoutTemplateId !== 'full'"
+              [class.hover:border-primary/40]="layoutTemplateId !== 'full'"
+              (click)="layoutTemplateId = 'full'"
+            >
+              <div
+                class="relative mb-4 aspect-video overflow-hidden rounded-lg bg-surface-200 dark:bg-surface-300"
+              >
+                <div
+                  class="absolute inset-0 flex items-center justify-center opacity-40"
+                >
+                  <span class="material-symbols-outlined text-4xl">movie</span>
+                </div>
+                <div
+                  class="h-full w-full bg-gradient-to-br from-primary/20 to-primary/5"
+                ></div>
+              </div>
+              <h5
+                class="font-bold text-color transition-colors group-hover:text-primary"
+              >
+                Full Screen Video
+              </h5>
+              <p class="mt-1 text-xs leading-relaxed text-muted-color">
+                16:9 cinematic display optimized for high-impact visual
+                storytelling.
+              </p>
+            </button>
+            <button
+              type="button"
+              class="group relative rounded-xl border-2 bg-surface-0 p-5 text-left ring-1 ring-black/5 transition-all active:scale-[0.98] dark:bg-surface-0"
+              [class.border-primary]="layoutTemplateId === 'split70'"
+              [class.border-transparent]="layoutTemplateId !== 'split70'"
+              [class.bg-primary/5]="layoutTemplateId === 'split70'"
+              (click)="layoutTemplateId = 'split70'"
+            >
+              <div
+                class="mb-4 flex aspect-video gap-1 overflow-hidden rounded-lg bg-surface-200 dark:bg-surface-300"
+              >
+                <div
+                  class="flex h-full w-[70%] items-center justify-center bg-primary/20"
+                >
+                  <span class="material-symbols-outlined text-2xl opacity-40"
+                    >play_circle</span
+                  >
+                </div>
+                <div class="flex h-full w-[30%] flex-col gap-2 bg-primary/10 p-2">
+                  <div class="h-2 w-full rounded bg-primary/20"></div>
+                  <div class="h-2 w-full rounded bg-primary/20"></div>
+                  <div class="h-2 w-full rounded bg-primary/20"></div>
+                </div>
+              </div>
+              <div class="flex items-center justify-between">
+                <h5 class="font-bold text-primary">Split Screen (70/30)</h5>
+                @if (layoutTemplateId === 'split70') {
+                  <span
+                    class="material-symbols-outlined text-sm text-primary"
+                    style="font-variation-settings: 'FILL' 1"
+                    >check_circle</span
+                  >
+                }
+              </div>
+              <p class="mt-1 text-xs leading-relaxed text-muted-color">
+                Dynamic split with motion creative and live RSS feeds.
+              </p>
+            </button>
+            <button
+              type="button"
+              class="group relative rounded-xl border-2 border-transparent bg-surface-0 p-5 text-left ring-1 ring-black/5 transition-all hover:border-primary/40 active:scale-[0.98] dark:bg-surface-0"
+              [class.border-primary]="layoutTemplateId === 'ticker'"
+              (click)="layoutTemplateId = 'ticker'"
+            >
+              <div
+                class="mb-4 flex aspect-video flex-col overflow-hidden rounded-lg bg-surface-200 dark:bg-surface-300"
+              >
+                <div
+                  class="flex flex-1 items-center justify-center bg-primary/10"
+                >
+                  <span class="material-symbols-outlined text-3xl opacity-40"
+                    >videocam</span
+                  >
+                </div>
+                <div
+                  class="flex h-4 w-full items-center bg-primary/30 px-2"
+                >
+                  <div class="h-1 w-2/3 rounded bg-white/50"></div>
+                </div>
+              </div>
+              <h5
+                class="font-bold text-color transition-colors group-hover:text-primary"
+              >
+                Video with Bottom Ticker
+              </h5>
+              <p class="mt-1 text-xs leading-relaxed text-muted-color">
+                Standard broadcast layout featuring a real-time scrolling
+                ticker.
+              </p>
+            </button>
+            <button
+              type="button"
+              class="group relative rounded-xl border-2 border-transparent bg-surface-0 p-5 text-left ring-1 ring-black/5 transition-all hover:border-primary/40 active:scale-[0.98] dark:bg-surface-0"
+              [class.border-primary]="layoutTemplateId === 'split50'"
+              (click)="layoutTemplateId = 'split50'"
+            >
+              <div
+                class="mb-4 flex aspect-video gap-1 overflow-hidden rounded-lg bg-surface-200 dark:bg-surface-300"
+              >
+                <div
+                  class="flex h-full w-1/2 items-center justify-center bg-primary/20"
+                >
+                  <span class="material-symbols-outlined text-2xl opacity-40"
+                    >view_column</span
+                  >
+                </div>
+                <div
+                  class="flex h-full w-1/2 items-center justify-center border-l border-white/20 bg-primary/20"
+                >
+                  <span class="material-symbols-outlined text-2xl opacity-40"
+                    >view_column</span
+                  >
+                </div>
+              </div>
+              <h5
+                class="font-bold text-color transition-colors group-hover:text-primary"
+              >
+                Split Screen (50/50)
+              </h5>
+              <p class="mt-1 text-xs leading-relaxed text-muted-color">
+                Balanced dual-panel layout for side-by-side creative
+                comparisons.
+              </p>
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Step 2: Scheduling (desktop_campaign_wizard_step_4 style) -->
+      @if (step() === 2) {
+        <!-- Mobile: mobile_campaign_wizard_step_4 -->
+        <section class="mb-8 space-y-6 md:hidden">
+          <div>
+            <h3 class="font-headline text-2xl font-extrabold tracking-tight text-color">
+              Scheduling &amp; Logic
+            </h3>
+            <p class="mt-1 text-sm text-muted-color">
+              Define when and how often your creative appears across the network.
+            </p>
+          </div>
+          <div>
+            <div class="mb-3 flex items-center gap-2">
+              <span class="material-symbols-outlined text-lg text-primary">calendar_today</span>
+              <h4 class="text-xs font-bold uppercase tracking-widest text-muted-color">
+                Date Range
+              </h4>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-1.5">
+                <label class="ml-1 text-[10px] font-bold uppercase text-muted-color" for="cw-start-m"
+                  >Start Date</label
+                >
+                <input
+                  id="cw-start-m"
+                  type="date"
+                  class="w-full rounded-xl border border-surface-200 bg-surface-0 p-3 text-sm font-medium text-color shadow-sm dark:border-surface-300"
+                  [(ngModel)]="startDate"
+                />
+              </div>
+              <div class="space-y-1.5">
+                <label class="ml-1 text-[10px] font-bold uppercase text-muted-color" for="cw-end-m"
+                  >End Date</label
+                >
+                <input
+                  id="cw-end-m"
+                  type="date"
+                  class="w-full rounded-xl border border-surface-200 bg-surface-0 p-3 text-sm font-medium text-color shadow-sm dark:border-surface-300"
+                  [(ngModel)]="endDate"
+                />
+              </div>
+            </div>
+          </div>
+          <div class="rounded-xl border border-surface-200 bg-surface-100/50 p-4 dark:border-surface-300">
+            <p class="text-sm text-color">
+              @if (morningRushActive) {
+                <span class="font-semibold text-primary">Mon–Fri</span>
+                <span class="text-muted-color"> · 07:00–09:00 UTC</span>
+              } @else {
+                <span class="text-muted-color">Mon–Sun · all day UTC</span>
+              }
+            </p>
+            <div class="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                class="flex flex-1 items-center justify-center gap-1 rounded-lg bg-primary/15 px-3 py-2 text-xs font-bold text-primary"
+                (click)="applyMorningRush()"
+              >
+                <span class="material-symbols-outlined text-[16px]">bolt</span>
+                Morning Rush
+              </button>
+              <button
+                type="button"
+                class="rounded-lg bg-surface-200 px-3 py-2 text-xs font-semibold text-muted-color"
+                (click)="clearSchedulePreset()"
+              >
+                Clear
+              </button>
+            </div>
+            <div class="mt-3 flex items-center justify-between gap-2">
+              <span class="text-xs text-muted-color">Dwell (sec)</span>
+              <p-inputNumber
+                [(ngModel)]="dwellThresholdSeconds"
+                [min]="1"
+                [max]="3600"
+                styleClass="w-24"
+              />
+            </div>
+          </div>
+        </section>
+        <div class="mb-8 hidden md:block">
+          <h3
+            class="font-headline mb-2 text-2xl font-extrabold tracking-tight text-color md:text-3xl"
+          >
+            Campaign Duration &amp; Rules
+          </h3>
+          <p class="max-w-xl text-muted-color">
+            Define when your campaign runs and how often it can repeat in the
+            loop.
+          </p>
+        </div>
+        <section
+          class="mb-10 hidden grid-cols-1 gap-6 md:grid md:grid-cols-12 md:gap-8"
+        >
+          <div class="md:col-span-4">
+            <h4 class="mb-2 text-lg font-bold text-color">Campaign Duration</h4>
+            <p class="text-sm leading-relaxed text-muted-color">
+              The window of time your campaign is eligible to deliver across
+              the network.
+            </p>
+          </div>
+          <div
+            class="md:col-span-8 grid grid-cols-1 gap-4 rounded-xl border border-surface-200 bg-surface-100/50 p-5 sm:grid-cols-2 sm:gap-6 dark:border-surface-300 dark:bg-surface-200/30"
+          >
+            <div class="flex flex-col gap-2">
+              <label
+                class="text-xs font-bold uppercase tracking-wider text-muted-color"
+                for="cw-start"
+                >Start date</label
+              >
+              <div class="relative">
+                <span
+                  class="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary"
+                  >calendar_today</span
+                >
+                <input
+                  id="cw-start"
+                  type="date"
+                  class="w-full rounded-xl border-0 bg-surface-0 py-3 pl-10 pr-3 font-medium text-color ring-1 ring-surface-300 focus:ring-2 focus:ring-primary/20 dark:bg-surface-0"
+                  [(ngModel)]="startDate"
+                />
+              </div>
+            </div>
+            <div class="flex flex-col gap-2">
+              <label
+                class="text-xs font-bold uppercase tracking-wider text-muted-color"
+                for="cw-end"
+                >End date</label
+              >
+              <div class="relative">
+                <span
+                  class="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary"
+                  >calendar_month</span
+                >
+                <input
+                  id="cw-end"
+                  type="date"
+                  class="w-full rounded-xl border-0 bg-surface-0 py-3 pl-10 pr-3 font-medium text-color ring-1 ring-surface-300 focus:ring-2 focus:ring-primary/20 dark:bg-surface-0"
+                  [(ngModel)]="endDate"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="mb-8 hidden space-y-4 md:block">
+          <div
+            class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"
+          >
+            <div>
+              <h4 class="mb-2 text-lg font-bold text-color">Day-parting</h4>
+              <p class="text-sm text-muted-color">
+                Quick presets for common commute windows (UTC).
+              </p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button
+                type="button"
+                class="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/15 px-4 py-2 text-sm font-semibold text-primary transition-transform active:scale-95"
+                (click)="applyMorningRush()"
+              >
+                <span class="material-symbols-outlined text-[18px]">bolt</span>
+                Morning Rush
+              </button>
+              <button
+                type="button"
+                class="rounded-lg bg-surface-200 px-4 py-2 text-sm font-semibold text-muted-color transition-colors hover:bg-surface-300 dark:bg-surface-300"
+                (click)="clearSchedulePreset()"
+              >
+                Clear preset
+              </button>
+            </div>
+          </div>
+          <div
+            class="rounded-xl border border-surface-200 bg-surface-100/40 p-4 dark:border-surface-300"
+          >
+            <p class="text-sm text-color">
+              @if (morningRushActive) {
+                <span class="font-semibold text-primary">Mon–Fri</span>
+                <span class="text-muted-color">
+                  &nbsp;·&nbsp;07:00–09:00 UTC · dwell at least
+                </span>
+              } @else {
+                <span class="text-muted-color">Mon–Sun · all day UTC · dwell at least</span>
+              }
+            </p>
+            <div class="mt-4 flex flex-wrap items-center gap-3">
+              <label class="text-sm text-muted-color" for="cw-dwell"
+                >Dwell threshold (seconds)</label
+              >
+              <p-inputNumber
+                inputId="cw-dwell"
+                [(ngModel)]="dwellThresholdSeconds"
+                [min]="1"
+                [max]="3600"
+                class="w-28"
+              />
+            </div>
+          </div>
+        </section>
+      }
+
+      <!-- Step 3: Content / creative (mobile step 2 slot mapping + desktop upload) -->
+      @if (step() === 3) {
+        <input
+          id="cw-creative-file"
+          type="file"
+          class="sr-only"
+          accept="image/png,image/jpeg,video/mp4"
+          (change)="onFileInput($event)"
+        />
+        <!-- Mobile: mobile_campaign_wizard_step_2 -->
+        <div class="md:hidden">
+          <div class="mb-8">
+            <h3 class="font-headline text-xl font-bold tracking-tight text-color">
+              Slot Mapping
+            </h3>
+            <p class="mt-2 max-w-sm text-sm leading-relaxed text-muted-color">
+              Configure your layout. Assign high-impact video to the primary
+              zone (one file for this campaign).
+            </p>
+          </div>
+          <div class="mb-10 flex gap-4">
+            <button
+              type="button"
+              class="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl bg-primary py-4 text-on-primary shadow-lg shadow-primary/20 transition-transform active:scale-[0.98]"
+              (click)="triggerPrimaryFileInput()"
+            >
+              <span class="material-symbols-outlined">cloud_upload</span>
+              <span class="text-xs font-bold tracking-tight">Upload New</span>
+            </button>
+            <button
+              type="button"
+              class="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-primary/15 bg-surface-0 py-4 text-primary shadow-sm transition-transform active:scale-[0.98] dark:bg-surface-100"
+              (click)="libraryComingSoon()"
+            >
+              <span class="material-symbols-outlined">grid_view</span>
+              <span class="text-xs font-bold tracking-tight">From Library</span>
+            </button>
+          </div>
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-extrabold tracking-tight text-color"
+                >Primary Zone</span
+              >
+              <span
+                class="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary"
+                >ACTIVE</span
+              >
+            </div>
+            <button
+              type="button"
+              class="flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-surface-300 bg-surface-100 transition-colors active:bg-primary/5 dark:border-surface-400 dark:bg-surface-200/40"
+              (click)="triggerPrimaryFileInput()"
+            >
+              <div
+                class="flex h-12 w-12 items-center justify-center rounded-full bg-surface-0 shadow-sm dark:bg-surface-100"
+              >
+                <span class="material-symbols-outlined text-primary">movie</span>
+              </div>
+              <span class="text-xs font-medium text-muted-color"
+                >Tap to choose primary asset</span
+              >
+              @if (file) {
+                <span class="max-w-full truncate px-2 text-xs font-bold text-primary">{{
+                  file.name
+                }}</span>
+              }
+            </button>
+            <div class="space-y-2 rounded-xl bg-surface-100/80 p-4 dark:bg-surface-200/40">
+              <h4
+                class="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-color"
+              >
+                Requirements
+              </h4>
+              <div class="flex items-center gap-3">
+                <span
+                  class="material-symbols-outlined text-lg text-primary"
+                  style="font-variation-settings: 'FILL' 1"
+                  >check_circle</span
+                >
+                <span class="text-xs font-medium text-color">PNG, JPEG, or MP4</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-lg text-muted-color"
+                  >info</span
+                >
+                <span class="text-xs font-medium text-color">Max ~50MB typical</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Desktop -->
+        <div class="hidden md:block">
+          <div class="mb-8">
+            <h3
+              class="font-headline mb-2 text-2xl font-extrabold tracking-tight text-color md:text-3xl"
+            >
+              Creative Upload
+            </h3>
+            <p class="max-w-xl text-muted-color">
+              Upload your hero asset. Supported: PNG, JPEG, MP4.
+            </p>
+          </div>
+          <label
+            class="flex min-h-[280px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-surface-300 bg-surface-100/50 p-8 transition-colors hover:border-primary dark:border-surface-400 dark:bg-surface-200/30"
+          >
+            <input
+              type="file"
+              class="sr-only"
+              accept="image/png,image/jpeg,video/mp4"
+              (change)="onFileInput($event)"
+            />
+            <div
+              class="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary/15 transition-transform group-hover:scale-110"
+            >
+              <span class="material-symbols-outlined text-4xl text-primary"
+                >movie</span
+              >
+            </div>
+            <h4 class="mb-2 text-xl font-bold text-color">Primary creative</h4>
+            <p class="mb-4 max-w-sm text-center text-sm text-muted-color">
+              Click or drop a file. One asset is used for the first playable
+              schedule rule.
+            </p>
+            @if (file) {
+              <span
+                class="rounded-full bg-primary/15 px-4 py-1.5 text-xs font-bold text-primary"
+                >{{ file.name }}</span
+              >
+            } @else {
+              <span
+                class="rounded-full bg-surface-200 px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-color dark:bg-surface-300"
+                >Waiting for asset</span
+              >
+            }
+          </label>
+        </div>
+      }
+
+      <!-- Step 4: Targeting (mobile_campaign_wizard_step_3 inspired) -->
+      @if (step() === 4) {
+        <div class="mb-6 md:mb-6">
+          <h3
+            class="font-headline mb-2 text-xl font-extrabold tracking-tight text-color md:text-3xl"
+          >
+            Geofencing &amp; Targeting
+          </h3>
+          <p class="max-w-xl text-sm text-muted-color md:text-base">
+            Choose which geo zone this campaign is allowed to run in.
+          </p>
+        </div>
+        <div class="mb-4">
+          <label
+            class="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-color"
+            for="cw-zone"
+            >Geo zone</label
+          >
+          <p-select
+            inputId="cw-zone"
+            [options]="zones()"
+            optionLabel="name"
+            optionValue="zoneId"
+            [(ngModel)]="selectedZoneId"
+            placeholder="Select a zone"
+            class="w-full"
+            styleClass="w-full"
+          />
+        </div>
+        <div
+          class="relative -mx-4 h-64 overflow-hidden bg-surface-800 md:mx-0 md:h-64 md:rounded-xl"
+        >
+          <div
+            class="absolute inset-0 bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900"
+          ></div>
+          <div
+            class="absolute inset-0 flex items-center justify-center opacity-30"
+          >
+            <span class="material-symbols-outlined text-6xl text-surface-0/50"
+              >map</span
+            >
+          </div>
+          <div
+            class="absolute left-1/2 top-1/2 flex h-40 w-40 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-primary/50 bg-primary/15"
+          >
+            <div class="h-3 w-3 rounded-full bg-primary shadow-lg"></div>
+          </div>
+          <div
+            class="absolute bottom-4 left-4 right-4 rounded-xl bg-surface-0/95 p-3 shadow-lg backdrop-blur-sm dark:bg-surface-100/95"
+          >
+            <p class="text-[10px] font-bold uppercase text-muted-color">
+              Selected zone
+            </p>
+            <p class="font-headline text-sm font-extrabold text-primary">
+              {{ selectedZoneName() }}
+            </p>
+          </div>
+        </div>
+      }
+
+      <!-- Step 5: Review & budget (desktop_campaign_wizard_step_5) -->
+      @if (step() === 5) {
+        <!-- Mobile: mobile_campaign_wizard_step_5 -->
+        <section class="mb-6 space-y-6 lg:hidden">
+          <div class="flex items-end justify-between gap-2">
+            <div>
+              <h2 class="font-headline text-xs font-bold uppercase tracking-widest text-primary">
+                Step 5 of 5
+              </h2>
+              <h1 class="font-headline text-xl font-extrabold tracking-tight text-color">
+                Pricing &amp; Budgeting
+              </h1>
+            </div>
+            <span
+              class="rounded-md bg-surface-200 px-2 py-1 text-[10px] font-medium text-muted-color dark:bg-surface-300"
+              >Drafting Mode</span
+            >
+          </div>
+          <div class="h-1 w-full overflow-hidden rounded-full bg-surface-300 dark:bg-surface-400">
+            <div class="h-full w-full bg-gradient-to-r from-primary to-[#74d1fe]"></div>
+          </div>
+          <p class="text-xs font-medium italic text-muted-color">New Campaign (Drafting Mode)</p>
+          <div>
+            <h3 class="font-headline mb-4 flex items-center gap-2 text-sm font-bold text-color">
+              <span class="material-symbols-outlined text-sm">payments</span>
+              Pricing Model
+            </h3>
+            <div class="space-y-4">
+              <div
+                class="relative overflow-hidden rounded-xl border-2 border-primary bg-surface-0 p-5 shadow-sm dark:bg-surface-100"
+              >
+                <div class="mb-4 flex justify-between">
+                  <div>
+                    <span class="font-headline font-bold text-color">CPM-style budget</span>
+                    <p class="text-xs text-muted-color">Rate per play &amp; total budget cap</p>
+                  </div>
+                  <div
+                    class="flex h-5 w-5 items-center justify-center rounded-full border-2 border-primary"
+                  >
+                    <div class="h-2.5 w-2.5 rounded-full bg-primary"></div>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="space-y-1">
+                    <label
+                      class="text-[10px] font-bold uppercase tracking-wider text-muted-color"
+                      for="cw-rate-m"
+                      >Rate / impression</label
+                    >
+                    <div class="relative">
+                      <span
+                        class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-color"
+                        >$</span
+                      >
+                      <input
+                        id="cw-rate-m"
+                        pInputText
+                        type="number"
+                        step="0.001"
+                        class="w-full rounded-md border-0 bg-surface-100 py-2 pl-7 pr-2 text-sm font-semibold focus:ring-2 focus:ring-primary/30 dark:bg-surface-200/80"
+                        [(ngModel)]="ratePerImpression"
+                      />
+                    </div>
+                  </div>
+                  <div class="space-y-1">
+                    <label
+                      class="text-[10px] font-bold uppercase tracking-wider text-muted-color"
+                      for="cw-total-m"
+                      >Total budget</label
+                    >
+                    <input
+                      id="cw-total-m"
+                      pInputText
+                      type="number"
+                      class="w-full rounded-md border-0 bg-surface-100 py-2 px-3 text-sm font-semibold focus:ring-2 focus:ring-primary/30 dark:bg-surface-200/80"
+                      [(ngModel)]="totalAmount"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div
+                class="rounded-xl bg-surface-100/80 p-4 opacity-80 dark:bg-surface-200/50"
+              >
+                <div class="flex justify-between">
+                  <span class="font-headline font-bold text-muted-color">Fixed / Flat Rate</span>
+                </div>
+                <p class="text-xs text-muted-color">Coming soon — single flat buy for a fixed window.</p>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="mb-4 flex items-center justify-between">
+              <h3 class="font-headline flex items-center gap-2 text-sm font-bold text-color">
+                <span class="material-symbols-outlined text-sm">trending_up</span>
+                Cost Multipliers
+              </h3>
+              <span class="text-[10px] font-bold text-primary">Illustrative</span>
+            </div>
+            <div class="space-y-3">
+              <div
+                class="flex items-center justify-between rounded-xl border-l-4 border-primary bg-surface-0 p-4 dark:bg-surface-100"
+              >
+                <div class="flex items-center gap-3">
+                  <div
+                    class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"
+                  >
+                    <span class="material-symbols-outlined text-primary">workspace_premium</span>
+                  </div>
+                  <div>
+                    <span class="block text-xs font-bold text-color">Premium Tier</span>
+                    <span class="text-[10px] text-muted-color">High-traffic metro</span>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="block text-sm font-bold text-primary">1.5x</span>
+                  <span class="text-[10px] text-muted-color">Example</span>
+                </div>
+              </div>
+              <div
+                class="flex items-center justify-between rounded-xl border-l-4 border-surface-300 bg-surface-0 p-4 dark:border-surface-400 dark:bg-surface-100"
+              >
+                <div class="flex items-center gap-3">
+                  <div
+                    class="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-200 dark:bg-surface-300"
+                  >
+                    <span class="material-symbols-outlined text-muted-color">location_on</span>
+                  </div>
+                  <div>
+                    <span class="block text-xs font-bold text-color">Standard Tier</span>
+                    <span class="text-[10px] text-muted-color">General coverage</span>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="block text-sm font-bold text-color">1.0x</span>
+                  <span class="text-[10px] text-muted-color">Baseline</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            class="rounded-xl bg-surface-0/90 p-5 shadow-[0px_8px_24px_rgba(44,51,57,0.06)] ring-1 ring-surface-200 backdrop-blur-sm dark:bg-surface-100/90 dark:ring-surface-300"
+          >
+            <h4 class="mb-4 text-base font-bold text-color">Budget summary</h4>
+            <div class="space-y-3 border-b border-surface-200 pb-4 dark:border-surface-300">
+              <div class="flex justify-between text-sm">
+                <span class="text-muted-color">Rate / impression</span>
+                <span class="font-bold text-primary">${{ ratePerImpression }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-muted-color">Total budget</span>
+                <span class="text-2xl font-extrabold text-color">${{ totalAmount }}</span>
+              </div>
+            </div>
+            <div class="mt-4 rounded-lg border border-primary/15 bg-primary/5 p-3">
+              <div class="flex gap-2">
+                <span class="material-symbols-outlined text-primary text-sm">info</span>
+                <p class="text-xs leading-relaxed text-muted-color">
+                  Estimates depend on inventory and the schedule you set. Actual delivery may vary.
+                </p>
+              </div>
+            </div>
+          </div>
+          <section
+            class="rounded-xl border border-surface-200 bg-surface-100/40 p-4 dark:border-surface-300"
+          >
+            <h5 class="mb-3 text-sm font-bold text-color">Campaign summary</h5>
+            <dl class="space-y-2 text-sm">
+              <div class="flex justify-between gap-4">
+                <dt class="text-muted-color">Campaign</dt>
+                <dd class="font-semibold text-color">{{ name || '—' }}</dd>
+              </div>
+              <div class="flex justify-between gap-4">
+                <dt class="text-muted-color">Client</dt>
+                <dd class="font-semibold text-color">{{ advertiser || '—' }}</dd>
+              </div>
+              <div class="flex justify-between gap-4">
+                <dt class="text-muted-color">Layout</dt>
+                <dd class="text-right font-semibold text-color">{{ layoutLabel() }}</dd>
+              </div>
+              <div class="flex justify-between gap-4">
+                <dt class="text-muted-color">Schedule</dt>
+                <dd class="text-right text-xs font-semibold text-color">
+                  {{ startDate }} → {{ endDate }}
+                </dd>
+              </div>
+              <div class="flex justify-between gap-4">
+                <dt class="text-muted-color">Zone</dt>
+                <dd class="text-right text-xs font-semibold text-color">
+                  {{ selectedZoneName() }}
+                </dd>
+              </div>
+            </dl>
+          </section>
+        </section>
+        <!-- Desktop -->
+        <div class="mb-8 hidden lg:block">
+          <h3
+            class="font-headline mb-2 text-2xl font-extrabold tracking-tight text-color md:text-3xl"
+          >
+            Pricing &amp; Review
+          </h3>
+          <p class="text-muted-color">
+            Confirm budget inputs and launch your campaign.
+          </p>
+        </div>
+        <div class="hidden grid-cols-1 gap-8 lg:grid lg:grid-cols-12">
+          <div class="space-y-8 lg:col-span-8">
+            <section>
+              <h4
+                class="mb-4 flex items-center gap-2 text-xl font-bold text-color"
+              >
+                <span class="material-symbols-outlined text-primary"
+                  >payments</span
+                >
+                Budget
+              </h4>
+              <div class="grid gap-4 md:grid-cols-2">
+                <div
+                  class="rounded-xl bg-surface-100/80 p-5 ring-2 ring-primary dark:bg-surface-200/40"
+                >
+                  <label
+                    class="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-color"
+                    for="cw-total-budget"
+                    >Total budget ({{ currency }})</label
+                  >
+                  <div class="relative">
+                    <span
+                      class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-color"
+                      >$</span
+                    >
+                    <input
+                      id="cw-total-budget"
+                      pInputText
+                      type="number"
+                      class="w-full rounded-lg border-0 bg-surface-0 py-2 pl-8 ring-1 ring-surface-300 focus:ring-2 focus:ring-primary/30"
+                      [(ngModel)]="totalAmount"
+                    />
+                  </div>
+                </div>
+                <div
+                  class="rounded-xl bg-surface-100/80 p-5 dark:bg-surface-200/40"
+                >
+                  <label
+                    class="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-color"
+                    for="cw-rate"
+                    >Rate per impression ({{ currency }})</label
+                  >
+                  <input
+                    id="cw-rate"
+                    pInputText
+                    type="number"
+                    step="0.001"
+                    class="w-full rounded-lg border-0 bg-surface-0 py-2 ring-1 ring-surface-300 focus:ring-2 focus:ring-primary/30"
+                    [(ngModel)]="ratePerImpression"
+                  />
+                </div>
+              </div>
+            </section>
+            <section
+              class="rounded-xl border border-surface-200 bg-surface-100/40 p-5 dark:border-surface-300"
+            >
+              <h5 class="mb-3 text-sm font-bold text-color">Campaign summary</h5>
+              <dl class="space-y-2 text-sm">
+                <div class="flex justify-between gap-4">
+                  <dt class="text-muted-color">Campaign</dt>
+                  <dd class="font-semibold text-color">{{ name || '—' }}</dd>
+                </div>
+                <div class="flex justify-between gap-4">
+                  <dt class="text-muted-color">Client</dt>
+                  <dd class="font-semibold text-color">{{ advertiser || '—' }}</dd>
+                </div>
+                <div class="flex justify-between gap-4">
+                  <dt class="text-muted-color">Layout</dt>
+                  <dd class="font-semibold text-color">{{ layoutLabel() }}</dd>
+                </div>
+                <div class="flex justify-between gap-4">
+                  <dt class="text-muted-color">Schedule</dt>
+                  <dd class="text-right font-semibold text-color">
+                    {{ startDate }} → {{ endDate }}
+                  </dd>
+                </div>
+                <div class="flex justify-between gap-4">
+                  <dt class="text-muted-color">Creative</dt>
+                  <dd class="truncate font-semibold text-color">
+                    {{ file?.name ?? '—' }}
+                  </dd>
+                </div>
+                <div class="flex justify-between gap-4">
+                  <dt class="text-muted-color">Zone</dt>
+                  <dd class="text-right font-semibold text-color">
+                    {{ selectedZoneName() }}
+                  </dd>
+                </div>
+              </dl>
+            </section>
+          </div>
+          <aside class="lg:col-span-4">
+            <div
+              class="rounded-xl bg-surface-0 p-6 shadow-[0px_8px_24px_rgba(44,51,57,0.06)] ring-1 ring-surface-200 dark:bg-surface-100 dark:ring-surface-300"
+            >
+              <h4 class="mb-4 text-lg font-bold text-color">Budget summary</h4>
+              <div
+                class="space-y-4 border-b border-surface-200 pb-4 dark:border-surface-300"
+              >
+                <div class="flex justify-between">
+                  <span class="text-sm text-muted-color">Avg. rate / play</span>
+                  <span class="font-bold text-primary"
+                    >${{ ratePerImpression }}</span
+                  >
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-sm text-muted-color">Total budget</span>
+                  <span class="text-2xl font-extrabold text-color"
+                    >${{ totalAmount }}</span
+                  >
+                </div>
+              </div>
+              <div
+                class="mt-4 rounded-lg border border-primary/15 bg-primary/5 p-3"
+              >
+                <div class="flex gap-2">
+                  <span class="material-symbols-outlined text-primary">info</span>
+                  <p class="text-xs leading-relaxed text-muted-color">
+                    Final delivery still depends on device availability and the
+                    schedule rules you configured.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      }
+    </div>
+
+    <!-- Footer: mobile = Back then full-width CTA (matches mobile wizard); desktop = bar -->
+    <div
+      class="flex flex-shrink-0 flex-col gap-3 border-t border-surface-200 bg-surface-50/95 px-4 py-3 backdrop-blur-md dark:border-surface-300 dark:bg-surface-100/95 md:flex-row md:items-center md:justify-between md:px-8 md:py-4"
+      style="padding-bottom: max(0.75rem, env(safe-area-inset-bottom))"
+    >
+      @if (step() > 1) {
+        <button
+          type="button"
+          class="flex w-full items-center justify-center gap-2 rounded-lg border border-surface-300 py-3 text-sm font-bold text-muted-color transition-colors hover:bg-surface-200 dark:border-surface-400 md:hidden"
+          (click)="prevStep()"
+        >
+          <span class="material-symbols-outlined text-lg">arrow_back</span>
+          Back
+        </button>
+      }
+      <button
+        type="button"
+        class="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-[#006788] to-[#74d1fe] py-4 text-base font-bold text-white shadow-lg shadow-[#006788]/25 transition-transform active:scale-[0.98] disabled:opacity-60 md:hidden"
+        [disabled]="saving()"
+        (click)="nextStep()"
+      >
+        @if (step() < 5) {
+          <span>Next Step</span>
+          <span class="material-symbols-outlined text-lg">arrow_forward</span>
+        } @else {
+          <span>Complete Campaign</span>
+          <span class="material-symbols-outlined text-lg">check</span>
+        }
+      </button>
+      @if (step() === 1) {
+        <div class="flex justify-center md:hidden">
+          <button
+            type="button"
+            class="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-muted-color transition-colors hover:text-primary"
+            (click)="close()"
+          >
+            <span class="material-symbols-outlined text-lg">close</span>
+            Exit wizard
+          </button>
+        </div>
+      }
+      <div class="hidden flex-wrap items-center gap-3 md:flex md:justify-start">
+        @if (step() === 1) {
+          <button
+            type="button"
+            class="flex items-center gap-2 text-sm font-semibold text-muted-color transition-colors hover:text-red-600"
+            (click)="close()"
+          >
+            <span class="material-symbols-outlined text-sm">close</span>
+            Exit wizard
+          </button>
+        } @else {
+          <button
+            type="button"
+            class="flex items-center gap-2 rounded-lg border border-surface-300 px-4 py-2.5 text-sm font-bold text-muted-color transition-colors hover:bg-surface-200 dark:border-surface-400"
+            (click)="prevStep()"
+          >
+            <span class="material-symbols-outlined text-lg">arrow_back</span>
+            Back
+          </button>
+        }
+      </div>
+      <div class="hidden items-center justify-end gap-3 md:flex">
+        <button
+          type="button"
+          class="flex items-center gap-2 rounded-lg bg-gradient-to-br from-[#006788] to-[#74d1fe] px-6 py-3 font-bold text-white shadow-lg shadow-[#006788]/20 transition-transform hover:scale-[1.02] active:scale-95 disabled:opacity-60"
+          [disabled]="saving()"
+          (click)="nextStep()"
+        >
+          @if (step() < 5) {
+            <span>Next step</span>
+            <span class="material-symbols-outlined">arrow_forward</span>
+          } @else {
+            <span>Complete campaign</span>
+            <span class="material-symbols-outlined">check</span>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+</p-dialog>

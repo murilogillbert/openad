@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MDM Release Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary": "#535d85",
+                    "surface-container": "#e9eef4",
+                    "surface-container-low": "#f0f4f8",
+                    "secondary": "#4f626e",
+                    "on-secondary-fixed-variant": "#4b5e6a",
+                    "on-primary": "#f3faff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-error": "#fff7f6",
+                    "secondary-fixed": "#d1e5f4",
+                    "error-dim": "#67040d",
+                    "surface-tint": "#006788",
+                    "on-error-container": "#6e0a12",
+                    "tertiary-fixed-dim": "#b8c2ef",
+                    "secondary-fixed-dim": "#c3d7e5",
+                    "outline": "#747c82",
+                    "on-secondary-fixed": "#2f424d",
+                    "inverse-primary": "#74d1fe",
+                    "surface-variant": "#dce3ea",
+                    "inverse-surface": "#0b0f11",
+                    "on-tertiary-container": "#3b466c",
+                    "outline-variant": "#abb3b9",
+                    "on-surface": "#2c3339",
+                    "tertiary-fixed": "#c6d0fe",
+                    "primary-fixed": "#74d1fe",
+                    "error": "#a83836",
+                    "surface-bright": "#f7f9fd",
+                    "surface-container-high": "#e3e9ef",
+                    "on-tertiary": "#faf8ff",
+                    "on-background": "#2c3339",
+                    "error-container": "#fa746f",
+                    "inverse-on-surface": "#9a9da0",
+                    "on-tertiary-fixed-variant": "#454f76",
+                    "on-primary-fixed-variant": "#004f69",
+                    "secondary-container": "#d1e5f4",
+                    "background": "#f7f9fd",
+                    "primary-fixed-dim": "#65c4ef",
+                    "surface-container-highest": "#dce3ea",
+                    "on-surface-variant": "#586066",
+                    "tertiary-dim": "#475178",
+                    "on-secondary-container": "#415460",
+                    "primary-container": "#74d1fe",
+                    "on-primary-fixed": "#003042",
+                    "on-secondary": "#f4faff",
+                    "on-primary-container": "#00465d",
+                    "tertiary-container": "#c6d0fe",
+                    "surface-dim": "#d3dbe2",
+                    "secondary-dim": "#435661",
+                    "on-tertiary-fixed": "#283257",
+                    "primary-dim": "#005a77",
+                    "primary": "#006788",
+                    "surface": "#f7f9fd"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {},
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "display": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            },
+            "fontSize": {}
+    },
+        },
+      }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body antialiased flex flex-col min-h-screen">
+<!-- TopAppBar -->
+<header class="docked full-width top-0 no-border bg-[#f7f9fd] dark:bg-slate-950 flat no-shadows flex items-center justify-between px-8 py-6 max-w-full fixed w-full z-40">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#006788] dark:text-[#74d1fe] text-2xl" data-icon="settings">settings</span>
+<h1 class="font-['Manrope'] font-bold tracking-tight text-3xl text-[#006788] dark:text-[#74d1fe]">Platform Settings</h1>
+</div>
+<div class="scale-105 active:scale-95 transition-transform hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors rounded-full p-1 cursor-pointer">
+<img alt="User Profile Photo" class="w-10 h-10 rounded-full object-cover shadow-sm border border-outline-variant/15" data-alt="close up professional headshot portrait of a user in natural lighting against a neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTwdvrX9_eGIYnS9dyXLt8NvHKHZMnP6sv246dAJU31BF8sWKd9X-lr0Z8D4nhemO3pkmAwO2ashV5ajw6jA3lonv2iKH1_F_xtb3yBsedkQkUkctuV374W5XPLRjLAb-uI7K6eA4d0xvRcpmHG2cHgkFEWNA-swzP9pSM9SJG_pmEuSUIa5QhPGtDjQhte-RYD74HtPEkyg7Rn4Mvui-Q6rFD-P2vEUndAjA7Mjh8JBhyzfEOSpvHirzDq1wasOfv8c7RCe49n67z"/>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 pt-28 pb-32 px-4 sm:px-6 md:px-8 max-w-4xl mx-auto w-full flex flex-col gap-8">
+<!-- Contextual Header -->
+<div class="flex flex-col gap-1 px-2">
+<h2 class="font-headline text-3xl font-extrabold text-on-surface tracking-tight" style="letter-spacing: -0.02em;">Release Management</h2>
+<p class="font-body text-sm text-on-surface-variant max-w-lg">Manage Android Enterprise provisioning configs and oversee remote APK deployments to fleet devices.</p>
+</div>
+<!-- Hero Card: Provisioning -->
+<section class="bg-surface-container-low rounded-xl p-8 flex flex-col items-center text-center gap-6 relative overflow-hidden shadow-[0_8px_24px_rgba(44,51,57,0.02)]">
+<!-- Glass/Gradient decorative element -->
+<div class="absolute -top-16 -right-16 w-48 h-48 bg-primary-fixed-dim/10 rounded-full blur-3xl pointer-events-none"></div>
+<div class="z-10 flex flex-col items-center">
+<h3 class="font-headline text-lg font-bold text-on-surface">Device Owner Provisioning</h3>
+<div class="inline-flex items-center gap-2 mt-2 px-3 py-1 bg-surface-container-lowest rounded-full shadow-sm border border-outline-variant/15">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="font-label text-xs font-semibold text-primary uppercase tracking-wide">v1.2.4 Active</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-[0_8px_24px_rgba(44,51,57,0.06)] z-10 w-56 h-56 flex items-center justify-center border border-outline-variant/15">
+<img alt="Device Owner Provisioning QR code" class="w-full h-full object-contain mix-blend-multiply" data-alt="high contrast black and white qr code graphic optimized for scanning on a clean white background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDpCgWYpZk1zALQpqqeJciWz3oguZTVMD8hMiMMKF_jc0kcO0DJV3DMKJvvpxTIymFNV9-ufE_TXHsGakBEIidyBgkH7mp2iUNpL2vxDuhqhJuFDNWc7vwHYQPqX-BToBGUoCr46jKWGezyr44VmG2Chrp3b753uoKM522dd3fGY6Nrb-ryGqXH6pukkUopRewAH9yGwHqY_GX-F03H3U3H-BSd5EcLc1IJZqiJSLwHnQE_u4touBzRyInQileMTUN21AFKK2mU-4cm"/>
+</div>
+<p class="text-sm text-on-surface-variant font-body max-w-sm z-10">
+                Scan during Android Enterprise setup to enroll physical hardware into this environment.
+            </p>
+<div class="flex gap-3 w-full sm:w-auto mt-2 z-10">
+<button class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-lg border border-outline/20 text-on-surface hover:bg-surface-variant transition-colors text-sm font-semibold font-body">
+<span class="material-symbols-outlined text-[20px]" data-icon="print">print</span> Print
+                </button>
+<button class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-br from-primary to-primary-container text-on-primary hover:scale-[1.02] transition-transform text-sm font-bold shadow-[0_8px_24px_rgba(0,103,136,0.15)] font-body">
+<span class="material-symbols-outlined text-[20px]" data-icon="download">download</span> Download
+                </button>
+</div>
+</section>
+<!-- Release List -->
+<section class="flex flex-col gap-5">
+<div class="flex items-center justify-between px-2">
+<h3 class="font-headline text-xl font-bold text-on-surface">APK Packages</h3>
+<button class="flex items-center gap-2 px-4 py-2 bg-secondary-fixed text-on-secondary-fixed font-semibold text-sm rounded-lg hover:bg-secondary-fixed-dim transition-colors shadow-sm font-body">
+<span class="material-symbols-outlined text-[18px]" data-icon="upload">upload</span> Upload New Release
+                </button>
+</div>
+<div class="flex flex-col gap-3">
+<!-- Stable Card -->
+<div class="bg-surface-container-lowest p-5 rounded-xl flex items-center justify-between group cursor-pointer border border-outline-variant/15 hover:shadow-[0_8px_24px_rgba(44,51,57,0.06)] transition-shadow">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-primary-fixed/20 flex items-center justify-center text-primary-dim shrink-0">
+<span class="material-symbols-outlined text-2xl" data-icon="android">android</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-3">
+<span class="font-headline font-bold text-lg text-on-surface">v1.2.4</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary">Stable</span>
+</div>
+<span class="font-body text-xs text-on-surface-variant mt-1">Deployed Oct 24, 2023 • 14.2 MB</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors" data-icon="more_vert">more_vert</span>
+</div>
+<!-- Staged Card -->
+<div class="bg-surface-container-lowest p-5 rounded-xl flex items-center justify-between group cursor-pointer border border-outline-variant/15 hover:shadow-[0_8px_24px_rgba(44,51,57,0.06)] transition-shadow">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-tertiary-fixed/20 flex items-center justify-center text-tertiary text-tertiary-dim shrink-0">
+<span class="material-symbols-outlined text-2xl" data-icon="android">android</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-3">
+<span class="font-headline font-bold text-lg text-on-surface">v1.3.0-rc1</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-tertiary/10 text-tertiary">Staged</span>
+</div>
+<span class="font-body text-xs text-on-surface-variant mt-1">Nov 02, 2023 • 15.1 MB • 20% Rollout</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors" data-icon="more_vert">more_vert</span>
+</div>
+<!-- Historical Card -->
+<div class="bg-surface-container-lowest p-5 rounded-xl flex items-center justify-between group cursor-pointer border border-outline-variant/15 opacity-60 hover:opacity-100 transition-opacity">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center text-outline shrink-0">
+<span class="material-symbols-outlined text-2xl" data-icon="android">android</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-3">
+<span class="font-headline font-bold text-lg text-on-surface">v1.2.3</span>
+</div>
+<span class="font-body text-xs text-on-surface-variant mt-1">Archived Sep 15, 2023 • 14.0 MB</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors" data-icon="more_vert">more_vert</span>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 w-full rounded-t-2xl border-t border-slate-200/10 shadow-[0_-8px_24px_rgba(44,51,57,0.06)] bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl z-50 flex justify-around items-center px-6 py-3 h-20 md:hidden">
+<!-- Dashboard -->
+<button class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 opacity-70 hover:opacity-100 transition-opacity active:scale-90 duration-150 gap-1.5">
+<span class="material-symbols-outlined text-2xl" data-icon="grid_view">grid_view</span>
+<span class="font-['Inter'] text-[10px] uppercase tracking-widest font-bold">Dashboard</span>
+</button>
+<!-- Screens -->
+<button class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 opacity-70 hover:opacity-100 transition-opacity active:scale-90 duration-150 gap-1.5">
+<span class="material-symbols-outlined text-2xl" data-icon="tv">tv</span>
+<span class="font-['Inter'] text-[10px] uppercase tracking-widest font-bold">Screens</span>
+</button>
+<!-- Library -->
+<button class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 opacity-70 hover:opacity-100 transition-opacity active:scale-90 duration-150 gap-1.5">
+<span class="material-symbols-outlined text-2xl" data-icon="perm_media">perm_media</span>
+<span class="font-['Inter'] text-[10px] uppercase tracking-widest font-bold">Library</span>
+</button>
+<!-- Settings (ACTIVE mapped to Platform Settings intent) -->
+<button class="flex flex-col items-center justify-center text-[#006788] dark:text-[#74d1fe] scale-110 hover:opacity-100 transition-opacity active:scale-90 duration-150 gap-1.5">
+<span class="material-symbols-outlined text-2xl" data-icon="settings" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="font-['Inter'] text-[10px] uppercase tracking-widest font-bold">Settings</span>
+</button>
+</nav>
+</body></html>

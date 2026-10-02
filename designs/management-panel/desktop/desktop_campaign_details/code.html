@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Campaign Deep Dive - Summer Refresh 2024</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed": "#003042",
+                        "on-secondary-fixed-variant": "#4b5e6a",
+                        "secondary-fixed": "#d1e5f4",
+                        "surface-tint": "#006788",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#f0f4f8",
+                        "surface-bright": "#f7f9fd",
+                        "tertiary-fixed-dim": "#b8c2ef",
+                        "on-primary-fixed-variant": "#004f69",
+                        "primary-fixed": "#74d1fe",
+                        "secondary-container": "#d1e5f4",
+                        "primary-fixed-dim": "#65c4ef",
+                        "on-tertiary-container": "#3b466c",
+                        "on-secondary-fixed": "#2f424d",
+                        "surface-container-high": "#e3e9ef",
+                        "background": "#f7f9fd",
+                        "inverse-primary": "#74d1fe",
+                        "secondary-dim": "#435661",
+                        "on-secondary-container": "#415460",
+                        "primary-container": "#74d1fe",
+                        "on-tertiary": "#faf8ff",
+                        "tertiary-fixed": "#c6d0fe",
+                        "on-surface": "#2c3339",
+                        "surface-container": "#e9eef4",
+                        "outline": "#747c82",
+                        "surface-dim": "#d3dbe2",
+                        "secondary-fixed-dim": "#c3d7e5",
+                        "tertiary-container": "#c6d0fe",
+                        "error-dim": "#67040d",
+                        "error": "#a83836",
+                        "secondary": "#4f626e",
+                        "on-secondary": "#f4faff",
+                        "on-tertiary-fixed": "#283257",
+                        "on-error": "#fff7f6",
+                        "surface-variant": "#dce3ea",
+                        "surface-container-highest": "#dce3ea",
+                        "on-primary-container": "#00465d",
+                        "inverse-on-surface": "#9a9da0",
+                        "inverse-surface": "#0b0f11",
+                        "on-tertiary-fixed-variant": "#454f76",
+                        "tertiary-dim": "#475178",
+                        "tertiary": "#535d85",
+                        "primary": "#006788",
+                        "on-background": "#2c3339",
+                        "surface": "#f7f9fd",
+                        "on-primary": "#f3faff",
+                        "error-container": "#fa746f",
+                        "on-error-container": "#6e0a12",
+                        "outline-variant": "#abb3b9",
+                        "on-surface-variant": "#586066",
+                        "primary-dim": "#005a77"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        h1, h2, h3 {
+            font-family: 'Manrope', sans-serif;
+        }
+        .heatmap-gradient {
+            background: radial-gradient(circle, rgba(0,103,136,0.6) 0%, rgba(116,209,254,0.2) 50%, rgba(247,249,253,0) 100%);
+        }
+        .bento-card {
+            transition: transform 0.2s ease-out;
+        }
+        .bento-card:hover {
+            transform: scale(1.01);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface">
+<!-- TopNavBar -->
+<header class="w-full top-0 sticky bg-[#f7f9fd] z-50">
+<div class="flex justify-between items-center px-8 h-16 w-full max-w-[1920px] mx-auto">
+<div class="flex items-center gap-12">
+<div class="text-xl font-extrabold tracking-tighter text-[#006788]">Precision DOOH</div>
+<div class="hidden md:flex items-center gap-1 bg-surface-container-low px-4 py-2 rounded-full">
+<span class="material-symbols-outlined text-outline text-lg">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm font-label w-64 text-on-surface-variant" placeholder="Search campaign data..." type="text"/>
+</div>
+<nav class="hidden md:flex gap-6 items-center">
+<a class="font-['Manrope'] tracking-tight font-medium text-sm text-[#586066] hover:text-[#006788] transition-colors duration-200" href="#">Dashboard</a>
+<a class="font-['Manrope'] tracking-tight font-medium text-sm text-[#586066] hover:text-[#006788] transition-colors duration-200" href="#">Live Fleet</a>
+<a class="font-['Manrope'] tracking-tight font-medium text-sm text-[#586066] hover:text-[#006788] transition-colors duration-200" href="#">Devices</a>
+<a class="font-['Manrope'] tracking-tight font-bold text-sm text-[#006788] border-b-2 border-[#006788] pb-1" href="#">Campaigns</a>
+<a class="font-['Manrope'] tracking-tight font-medium text-sm text-[#586066] hover:text-[#006788] transition-colors duration-200" href="#">Media</a>
+<a class="font-['Manrope'] tracking-tight font-medium text-sm text-[#586066] hover:text-[#006788] transition-colors duration-200" href="#">Reports</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-on-surface-variant p-2 hover:bg-surface-container-low rounded-full transition-colors">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant p-2 hover:bg-surface-container-low rounded-full transition-colors">settings</button>
+<div class="h-8 w-8 rounded-full overflow-hidden border border-outline-variant/20">
+<img alt="User Profile" data-alt="Close-up professional portrait of a tech executive in a clean minimalist office environment with soft natural lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBy58hE6THIVjaR1sh2qQfFihNRGbuIUGyA99Hin4_YyXgNhGG5uOS_eJP-gz8mnxvjNOlMJJq6YPlXCu_CvgS1aIw9bj90-3x_hAIaNNhJ4DZGKGIBGZ1xlxGSuSk2NsMzK0dJqUOpTTpZrKX7QZNbImAs7T8_X5iOQkZyQrAOua0LPbVFbxglgP4vHpR_npl3PaIjMY1AYyCQIx6cyAgv2OoxfnoVnhXjILrpal6A68XYpgJ20mAOBxpPeVq30M-NLB2-VvHoT2xj"/>
+</div>
+</div>
+</div>
+</header>
+<main class="max-w-[1920px] mx-auto px-8 py-8">
+<!-- Header: Campaign Title -->
+<div class="mb-10 flex justify-between items-end">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="text-xs font-label uppercase tracking-widest text-on-surface-variant">Active Campaign</span>
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+</div>
+<h1 class="text-4xl font-headline font-extrabold text-on-surface tracking-tighter">Summer Refresh 2024</h1>
+<p class="text-lg font-body text-primary font-semibold">RefreshCo</p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-outline-variant/20 text-on-surface font-semibold text-sm bg-surface-container-lowest hover:bg-surface-container-low transition-all">
+<span class="material-symbols-outlined text-lg">edit</span>
+                    Edit Campaign
+                </button>
+<button class="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-br from-primary to-primary-container text-on-primary font-bold text-sm shadow-sm scale-102 hover:scale-[1.05] transition-all">
+<span class="material-symbols-outlined text-lg">ios_share</span>
+                    Export Insights
+                </button>
+</div>
+</div>
+<!-- Dashboard Grid -->
+<div class="grid grid-cols-12 gap-6">
+<!-- Section 1: Inventory Health (Large Bento Card) -->
+<div class="col-span-12 lg:col-span-4 bg-surface-container-lowest p-8 rounded-xl bento-card shadow-[0px_8px_24px_rgba(44,51,57,0.06)] flex flex-col justify-between">
+<div>
+<h3 class="text-on-surface-variant font-label text-sm font-semibold mb-6">Inventory Health</h3>
+<div class="flex items-baseline gap-2">
+<span class="text-7xl font-headline font-extrabold text-primary">42</span>
+<span class="text-2xl font-headline font-bold text-on-surface-variant">/ 50</span>
+</div>
+<p class="text-on-surface-variant mt-2 font-medium">Assigned Tablets Active</p>
+</div>
+<div class="mt-8">
+<div class="w-full bg-surface-container-low h-3 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 84%"></div>
+</div>
+<div class="flex justify-between mt-3 text-xs font-semibold text-on-surface-variant">
+<span>84% Reach Capacity</span>
+<span class="text-error">8 Offline</span>
+</div>
+</div>
+</div>
+<!-- Section 2: Heatmap of Plays (Visual Map Component) -->
+<div class="col-span-12 lg:col-span-8 bg-surface-container-low rounded-xl overflow-hidden relative min-h-[400px] shadow-[0px_8px_24px_rgba(44,51,57,0.06)] bento-card">
+<div class="absolute inset-0 z-0">
+<img class="w-full h-full object-cover opacity-60 grayscale" data-alt="A clean, minimalist vector map of Chicago downtown area with subtle street lines and grey tones" data-location="Chicago" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDlQbCE8Df4A9nXhdVITyKfGx2ypnODhpVqcI9zDmS4Fj80W74UFBgtBN5qSiNZnEMQruGGPEoxPh_cRBt-qAnbmDnrIHj1F9e69WDpj3Aax0_jPvMlmFMbbl49G7V7TuF1g3Y8o3muPOesi3DGWMyGJTuBuX7gZmDIytQdRdsrWTSD-wUb6O3lKdb2lva_RrleVGW_kjQwTTHd7HuovggvZVgvR_XwTc1kAmVy0q-aQheveHIR1rmUakI8wpR7R3Zp5nbVns-c_Vrs"/>
+</div>
+<!-- Heatmap Overlay Effect -->
+<div class="absolute inset-0 z-10 pointer-events-none">
+<div class="heatmap-gradient absolute top-[20%] left-[30%] w-48 h-48 rounded-full"></div>
+<div class="heatmap-gradient absolute top-[40%] left-[45%] w-64 h-64 rounded-full opacity-80"></div>
+<div class="heatmap-gradient absolute bottom-[30%] left-[60%] w-40 h-40 rounded-full opacity-50"></div>
+</div>
+<div class="absolute top-6 left-6 z-20 bg-surface-container-lowest/90 backdrop-blur-md p-4 rounded-xl shadow-lg border border-white/20">
+<h3 class="text-on-surface font-headline font-bold text-base mb-1">Play Intensity Heatmap</h3>
+<p class="text-on-surface-variant text-xs font-medium">Downtown / Shopping Districts</p>
+<div class="mt-4 flex items-center gap-3">
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full bg-primary/20 border-2 border-primary"></div>
+<div class="w-6 h-6 rounded-full bg-primary/40 border-2 border-primary"></div>
+<div class="w-6 h-6 rounded-full bg-primary/80 border-2 border-primary"></div>
+</div>
+<span class="text-[10px] font-bold uppercase text-on-surface-variant tracking-wider">Frequency Scale</span>
+</div>
+</div>
+<div class="absolute bottom-6 right-6 z-20 flex gap-2">
+<button class="bg-surface-container-lowest p-2 rounded-lg shadow-md hover:bg-primary hover:text-white transition-colors">
+<span class="material-symbols-outlined">layers</span>
+</button>
+<button class="bg-surface-container-lowest p-2 rounded-lg shadow-md hover:bg-primary hover:text-white transition-colors">
+<span class="material-symbols-outlined">my_location</span>
+</button>
+</div>
+</div>
+<!-- Section 3: Hourly Distribution (Bar Chart Section) -->
+<div class="col-span-12 lg:col-span-6 bg-surface-container-lowest p-8 rounded-xl shadow-[0px_8px_24px_rgba(44,51,57,0.06)] bento-card">
+<div class="flex justify-between items-start mb-8">
+<div>
+<h3 class="text-on-surface font-headline font-bold text-lg">Hourly Distribution</h3>
+<p class="text-on-surface-variant text-sm">Ad play counts per hour</p>
+</div>
+<div class="text-right">
+<span class="text-xs font-bold text-primary bg-primary-container/20 px-3 py-1 rounded-full">Peak: 5:00 PM</span>
+</div>
+</div>
+<div class="flex items-end justify-between h-48 gap-1.5 px-2">
+<!-- Morning -->
+<div class="flex-1 bg-surface-container-low rounded-t-sm h-[20%]" title="8 AM"></div>
+<div class="flex-1 bg-surface-container-low rounded-t-sm h-[30%]" title="9 AM"></div>
+<div class="flex-1 bg-surface-container-low rounded-t-sm h-[35%]" title="10 AM"></div>
+<div class="flex-1 bg-surface-container-low rounded-t-sm h-[45%]" title="11 AM"></div>
+<!-- Midday -->
+<div class="flex-1 bg-primary-fixed rounded-t-sm h-[60%]" title="12 PM"></div>
+<div class="flex-1 bg-primary-fixed rounded-t-sm h-[55%]" title="1 PM"></div>
+<div class="flex-1 bg-primary-fixed rounded-t-sm h-[58%]" title="2 PM"></div>
+<div class="flex-1 bg-primary-fixed rounded-t-sm h-[65%]" title="3 PM"></div>
+<!-- Peak -->
+<div class="flex-1 bg-primary-dim rounded-t-sm h-[85%]" title="4 PM"></div>
+<div class="flex-1 bg-primary rounded-t-sm h-[100%]" title="5 PM"></div>
+<div class="flex-1 bg-primary-dim rounded-t-sm h-[80%]" title="6 PM"></div>
+<div class="flex-1 bg-primary-fixed rounded-t-sm h-[60%]" title="7 PM"></div>
+<div class="flex-1 bg-surface-container-low rounded-t-sm h-[40%]" title="8 PM"></div>
+<div class="flex-1 bg-surface-container-low rounded-t-sm h-[25%]" title="9 PM"></div>
+</div>
+<div class="flex justify-between mt-4 text-[10px] font-bold text-outline-variant uppercase tracking-widest px-1">
+<span>08:00</span>
+<span>12:00</span>
+<span>17:00</span>
+<span>21:00</span>
+</div>
+</div>
+<!-- Section 4: Sync Progress (High Density Table) -->
+<div class="col-span-12 lg:col-span-6 bg-surface-container-lowest p-8 rounded-xl shadow-[0px_8px_24px_rgba(44,51,57,0.06)] bento-card">
+<div class="flex justify-between items-start mb-6">
+<h3 class="text-on-surface font-headline font-bold text-lg">Fleet Sync Status</h3>
+<button class="text-primary text-xs font-bold hover:underline">View All Fleet</button>
+</div>
+<div class="space-y-1">
+<!-- Table Header -->
+<div class="grid grid-cols-12 px-4 py-2 text-[10px] font-bold text-outline-variant uppercase tracking-widest border-b border-outline-variant/10">
+<div class="col-span-6">Vehicle ID</div>
+<div class="col-span-6 text-right">Progress</div>
+</div>
+<!-- Row 1 -->
+<div class="grid grid-cols-12 px-4 py-4 items-center hover:bg-surface-container-low rounded-lg transition-colors group">
+<div class="col-span-6 flex items-center gap-3">
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">local_taxi</span>
+<div>
+<p class="text-sm font-semibold text-on-surface">Taxi-402</p>
+<p class="text-xs text-on-surface-variant font-label">ABC-123</p>
+</div>
+</div>
+<div class="col-span-6 flex flex-col items-end gap-1.5">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-xs font-bold text-primary">Downloaded</span>
+</div>
+<div class="w-32 bg-surface-container-high h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-full"></div>
+</div>
+</div>
+</div>
+<!-- Row 2 -->
+<div class="grid grid-cols-12 px-4 py-4 items-center hover:bg-surface-container-low rounded-lg transition-colors group">
+<div class="col-span-6 flex items-center gap-3">
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">local_taxi</span>
+<div>
+<p class="text-sm font-semibold text-on-surface">Taxi-518</p>
+<p class="text-xs text-on-surface-variant font-label">XYZ-987</p>
+</div>
+</div>
+<div class="col-span-6 flex flex-col items-end gap-1.5">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-sm animate-spin">sync</span>
+<span class="text-xs font-bold text-on-surface">Downloading 45%</span>
+</div>
+<div class="w-32 bg-surface-container-high h-1.5 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full w-[45%]"></div>
+</div>
+</div>
+</div>
+<!-- Row 3 -->
+<div class="grid grid-cols-12 px-4 py-4 items-center hover:bg-surface-container-low rounded-lg transition-colors group">
+<div class="col-span-6 flex items-center gap-3">
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">local_taxi</span>
+<div>
+<p class="text-sm font-semibold text-on-surface">Taxi-109</p>
+<p class="text-xs text-on-surface-variant font-label">LMN-456</p>
+</div>
+</div>
+<div class="col-span-6 flex flex-col items-end gap-1.5">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-outline-variant text-sm">schedule</span>
+<span class="text-xs font-bold text-outline-variant">Pending</span>
+</div>
+<div class="w-32 bg-surface-container-high h-1.5 rounded-full overflow-hidden">
+<div class="bg-outline-variant/30 h-full w-[0%]"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Global Floating Action Control (Subtle integrated style) -->
+<div class="fixed bottom-8 right-8 z-50">
+<div class="bg-surface-container-lowest shadow-[0px_8px_32px_rgba(0,0,0,0.12)] border border-white/50 backdrop-blur-xl p-2 rounded-2xl flex gap-1">
+<button class="p-3 hover:bg-surface-container-low rounded-xl text-on-surface transition-colors" title="Download Full Report">
+<span class="material-symbols-outlined">download</span>
+</button>
+<button class="p-3 hover:bg-surface-container-low rounded-xl text-on-surface transition-colors" title="Share Snapshot">
+<span class="material-symbols-outlined">share</span>
+</button>
+<div class="w-px bg-outline-variant/20 mx-1 my-2"></div>
+<button class="p-3 bg-primary text-on-primary rounded-xl shadow-lg shadow-primary/20 transition-transform active:scale-95" title="Run Audit">
+<span class="material-symbols-outlined">analytics</span>
+</button>
+</div>
+</div>
+</body></html>

@@ -1,0 +1,123 @@
+<div
+  class="bg-surface-50 text-color relative flex min-h-dvh flex-col dark:bg-surface-100"
+>
+  <!-- Mobile: ambient blobs (designs/management-panel/mobile_login) -->
+  <div
+    class="pointer-events-none fixed inset-0 -z-10 overflow-hidden md:hidden"
+    aria-hidden="true"
+  >
+    <div
+      class="bg-primary/10 fixed top-[-10%] right-[-10%] h-[40%] w-[40%] rounded-full blur-[100px]"
+    ></div>
+    <div
+      class="fixed bottom-[-5%] left-[-5%] h-[30%] w-[30%] rounded-full bg-violet-400/10 blur-[80px] dark:bg-violet-500/15"
+    ></div>
+  </div>
+
+  <!-- Desktop: top branding only (designs/management-panel/desktop_login — no page footer) -->
+  <header class="hidden w-full justify-center px-6 py-8 md:flex">
+    <div class="flex items-center gap-3">
+      <img src="/logo.svg" width="40" height="40" alt="OpenAD" class="h-10 w-10 object-contain" />
+      <span class="app-font-display text-color text-xl font-bold tracking-tight">OpenAD</span>
+    </div>
+  </header>
+
+  <!-- Mobile: brand block (no footer links) -->
+  <div class="flex flex-col items-center px-8 pt-6 pb-2 md:hidden">
+    <div class="bg-surface-100 text-primary mb-4 rounded-xl p-4 dark:bg-surface-300">
+      <img src="/logo.svg" width="48" height="48" alt="" class="h-12 w-12 object-contain" role="presentation" />
+    </div>
+    <h1 class="app-font-display text-primary text-4xl font-black tracking-tighter">OpenAD</h1>
+    <p class="text-muted-color mt-2 text-sm font-medium tracking-wide uppercase">
+      Precision DOOH Ecosystem
+    </p>
+  </div>
+
+  <main
+    class="flex w-full flex-1 flex-col items-center justify-center px-4 md:max-w-4xl md:px-4 md:py-0"
+  >
+    <div
+      class="login-card flex w-full max-w-md flex-col gap-8 rounded-xl bg-transparent p-6 md:tonal-layer-shadow md:bg-surface-0 md:p-10 dark:md:border dark:md:border-surface-300 dark:md:bg-surface-200"
+    >
+      <div class="text-center">
+        <h2 class="app-font-display mb-2 text-2xl font-extrabold tracking-tighter md:text-3xl">
+          Welcome Back
+        </h2>
+        <p class="text-muted-color font-body text-sm">
+          Enter your credentials to access the DOOH console.
+        </p>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" class="flex flex-col gap-6 md:gap-6">
+        @if (error()) {
+          <p
+            class="rounded-lg border border-red-300/80 bg-red-50 px-3 py-2 text-sm text-red-900 dark:border-red-800 dark:bg-red-950/40 dark:text-red-100"
+            role="alert"
+          >
+            {{ error() }}
+          </p>
+        }
+
+        <div class="flex flex-col gap-2">
+          <label
+            for="login-email"
+            class="text-muted-color font-label text-xs font-semibold tracking-wider uppercase"
+            >Email</label
+          >
+          <p-iconfield iconPosition="left" class="login-iconfield w-full">
+            <p-inputicon class="pi pi-envelope text-muted-color" />
+            <input
+              id="login-email"
+              pInputText
+              type="email"
+              formControlName="email"
+              autocomplete="username"
+              placeholder="name@company.com"
+              class="login-input w-full"
+              fluid
+            />
+          </p-iconfield>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <label
+            for="login-password"
+            class="text-muted-color font-label text-xs font-semibold tracking-wider uppercase"
+            >Password</label
+          >
+          <p-iconfield iconPosition="left" class="login-iconfield login-iconfield-password w-full">
+            <p-inputicon class="pi pi-lock text-muted-color" />
+            <p-password
+              inputId="login-password"
+              formControlName="password"
+              [feedback]="false"
+              [toggleMask]="true"
+              placeholder="••••••••"
+              styleClass="login-password-wrap w-full"
+              inputStyleClass="login-password-input w-full"
+              autocomplete="current-password"
+              fluid
+            />
+          </p-iconfield>
+        </div>
+
+        <button
+          type="submit"
+          [disabled]="form.invalid"
+          class="login-cta app-font-display flex items-center justify-center gap-2 rounded-xl py-4 font-bold transition-all duration-150 hover:scale-[1.02] enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 md:mt-2 md:rounded-lg"
+        >
+          Login
+          <span class="material-symbols-outlined text-lg">arrow_forward</span>
+        </button>
+      </form>
+
+      <!-- Desktop only: atmospheric accent (inside card) -->
+      <div class="mt-2 hidden flex-col items-center gap-4 md:flex">
+        <div class="login-gradient-bar h-1 w-12 rounded-full opacity-30"></div>
+        <p class="text-muted-color/60 font-label text-center text-xs">
+          Precision Atmosphere DOOH Management Platform
+        </p>
+      </div>
+    </div>
+  </main>
+</div>

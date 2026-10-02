@@ -1,0 +1,45 @@
+---
+description: Project Development Guidelines
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# openad-monorepo Development Guidelines
+
+Auto-generated from all feature plans. Last updated: 2026-04-22
+
+## Active Technologies
+- TypeScript 5.9, Node.js 20 LTS + Nx, NestJS 11 (`app/openad-api`), Angular 21 + PrimeNG + SSR (`app/openad-management`), Zod (`libs/api-contracts`), Mongoose/MongoDB driver, AWS SDK (S3 presigned URLs / delete), client multipart upload (e.g. `@aws-sdk/lib-storage` or equivalent) (007-media-management-vfs)
+- MongoDB (catalog: folders + `media_assets` documents), Amazon S3 (or compatible) for object bytes (007-media-management-vfs)
+- TypeScript 5.9, Node.js 20 LTS + Nx, NestJS 11, Mongoose, Angular 21 (management app), Zod (`libs/api-contracts`), JWT auth, MQTT (`app/openad-api` infrastructure) (008-vehicle-device-lifecycle)
+- MongoDB (`vehicles`, `devices`, new `vehicle_binding_audit_events` or equivalent — see data-model) (008-vehicle-device-lifecycle)
+- TypeScript (Angular 21) + Node.js (NestJS 11) + Java (Android host) + Nx monorepo, Angular 21 (tablet client), NestJS 11 (API), Capacitor 8 (Android app), MQTT command channel (009-mdm-apk-distribution)
+- MongoDB (existing API), S3-compatible object storage (existing API) + local filesystem for APK artifacts (009-mdm-apk-distribution)
+- TypeScript (Nx monorepo) + Angular (admin UI), NestJS (API), MongoDB/Mongoose, PrimeNG (UI components) (010-admin-profile-security)
+- MongoDB for domain entities; object storage used for APK artifacts (existing infrastructure) (010-admin-profile-security)
+
+- TypeScript 5.9, Node.js 20 LTS + NestJS 11, Angular 21, Capacitor 8, Mongoose/MongoDB driver, Zod (mqtt-contracts), JWT (`@nestjs/jwt`), MQTT (`mqtt` / `@capgo/capacitor-mqtt`) (003-tablet-ops-pipeline)
+
+## Project Structure
+
+```text
+src/
+tests/
+```
+
+## Commands
+
+npm test && npm run lint
+
+## Code Style
+
+TypeScript 5.9, Node.js 20 LTS: Follow standard conventions
+
+## Recent Changes
+- 010-admin-profile-security: Added TypeScript (Nx monorepo) + Angular (admin UI), NestJS (API), MongoDB/Mongoose, PrimeNG (UI components)
+- 009-mdm-apk-distribution: Added TypeScript (Angular 21) + Node.js (NestJS 11) + Java (Android host) + Nx monorepo, Angular 21 (tablet client), NestJS 11 (API), Capacitor 8 (Android app), MQTT command channel
+- 009-mdm-apk-distribution: Added [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
+
+
+<!-- MANUAL ADDITIONS START -->
+<!-- MANUAL ADDITIONS END -->

@@ -1,0 +1,105 @@
+<div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+  <div
+    class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden md:flex-row md:rounded-2xl md:border md:border-surface-200 md:bg-surface-0 md:shadow-sm dark:md:border-surface-300 dark:md:bg-surface-100"
+  >
+  <!-- Desktop sidenav -->
+  <aside
+    class="hidden w-80 shrink-0 border-r border-surface-200 bg-surface-0 px-5 py-6 dark:border-surface-300 dark:bg-surface-100 md:block"
+  >
+    <h1 class="text-lg font-bold text-color">Settings</h1>
+    <p class="mt-1 text-xs font-medium text-muted-color">
+      Management &amp; MDM
+    </p>
+
+    <nav class="mt-6 flex flex-col gap-2">
+      @for (item of navItems; track item.id) {
+        <button
+          type="button"
+          class="active:scale-98 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium shadow-sm transition-all"
+          [class.border-surface-200]="activeItem()?.id !== item.id"
+          [class.bg-surface-0]="activeItem()?.id !== item.id"
+          [class.text-muted-color]="activeItem()?.id !== item.id"
+          [class.dark:border-surface-600]="activeItem()?.id !== item.id"
+          [class.dark:bg-surface-800]="activeItem()?.id !== item.id"
+          [class.hover:translate-x-1]="activeItem()?.id !== item.id"
+          [class.hover:text-primary]="activeItem()?.id !== item.id"
+          [class.hover:bg-surface-50]="activeItem()?.id !== item.id"
+          [class.dark:hover:bg-surface-700]="activeItem()?.id !== item.id"
+          [class.border-primary/30]="activeItem()?.id === item.id"
+          [class.bg-primary/10]="activeItem()?.id === item.id"
+          [class.text-primary]="activeItem()?.id === item.id"
+          [class.dark:border-primary/30]="activeItem()?.id === item.id"
+          [class.dark:bg-primary/15]="activeItem()?.id === item.id"
+          (click)="open(item)"
+        >
+          <i class="{{ item.icon }} text-base"></i>
+          <div class="min-w-0">
+            <p class="truncate text-sm font-semibold">{{ item.label }}</p>
+            <p class="truncate text-xs text-muted-color">{{ item.description }}</p>
+          </div>
+        </button>
+      }
+    </nav>
+  </aside>
+
+  <!-- Content -->
+  <section class="min-h-0 min-w-0 flex-1 overflow-y-auto">
+    @if (mobile()) {
+      @if (showIndex()) {
+        <!-- Mobile index: full-screen settings nav -->
+        <div class="px-4 pt-4 pb-6">
+          <h1 class="text-2xl font-extrabold tracking-tight text-color">Settings</h1>
+          <p class="mt-1 text-sm text-muted-color">Management &amp; MDM</p>
+        </div>
+        <div class="px-4 pb-6">
+          <div class="flex flex-col gap-2">
+            @for (item of navItems; track item.id) {
+              <button
+                type="button"
+                class="flex w-full items-start gap-3 rounded-2xl border border-surface-200 bg-surface-0 px-4 py-4 text-left shadow-sm transition-colors hover:bg-surface-50 dark:border-surface-300 dark:bg-surface-100 dark:hover:bg-surface-200"
+                (click)="open(item)"
+              >
+                <div
+                  class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"
+                >
+                  <i class="{{ item.icon }}"></i>
+                </div>
+                <div class="min-w-0">
+                  <p class="text-sm font-semibold text-color">{{ item.label }}</p>
+                  <p class="mt-1 text-xs text-muted-color">{{ item.description }}</p>
+                </div>
+              </button>
+            }
+          </div>
+        </div>
+      } @else {
+        <!-- Mobile header -->
+        <div class="sticky top-0 z-10 border-b border-surface-200 bg-transparent py-2 dark:border-surface-300">
+          <div class="grid grid-cols-[2.75rem_1fr_2.75rem] items-center">
+            <button
+              type="button"
+              class="flex h-11 w-11 items-center justify-center rounded-full text-color hover:bg-surface-100 active:bg-surface-200 dark:hover:bg-surface-200 dark:active:bg-surface-300"
+              aria-label="Back to Settings"
+              (click)="goBackToIndex()"
+            >
+              <i class="pi pi-arrow-left text-lg"></i>
+            </button>
+            <div class="text-center">
+              <h2 class="text-lg font-bold text-color">
+                {{ mobileTitle() }}
+              </h2>
+            </div>
+            <span></span>
+          </div>
+        </div>
+        <router-outlet />
+      }
+    } @else {
+      <div class="px-6 py-6">
+        <router-outlet />
+      </div>
+    }
+  </section>
+</div>
+</div>
+

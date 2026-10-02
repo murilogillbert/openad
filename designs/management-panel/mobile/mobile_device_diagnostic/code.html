@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Precision DOOH - Device Diagnostic</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary-fixed-dim": "#65c4ef",
+                        "outline-variant": "#abb3b9",
+                        "secondary": "#4f626e",
+                        "on-background": "#2c3339",
+                        "inverse-on-surface": "#9a9da0",
+                        "on-error-container": "#6e0a12",
+                        "surface-container": "#e9eef4",
+                        "on-secondary-container": "#415460",
+                        "error-container": "#fa746f",
+                        "on-surface-variant": "#586066",
+                        "primary": "#006788",
+                        "surface": "#f7f9fd",
+                        "inverse-primary": "#74d1fe",
+                        "on-primary-fixed-variant": "#004f69",
+                        "outline": "#747c82",
+                        "on-secondary": "#f4faff",
+                        "on-error": "#fff7f6",
+                        "on-secondary-fixed-variant": "#4b5e6a",
+                        "secondary-fixed": "#d1e5f4",
+                        "on-tertiary": "#faf8ff",
+                        "tertiary-fixed": "#c6d0fe",
+                        "primary-fixed": "#74d1fe",
+                        "on-primary": "#f3faff",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed-dim": "#b8c2ef",
+                        "secondary-container": "#d1e5f4",
+                        "on-tertiary-fixed": "#283257",
+                        "on-tertiary-fixed-variant": "#454f76",
+                        "on-primary-fixed": "#003042",
+                        "primary-container": "#74d1fe",
+                        "surface-container-high": "#e3e9ef",
+                        "on-surface": "#2c3339",
+                        "surface-container-low": "#f0f4f8",
+                        "on-secondary-fixed": "#2f424d",
+                        "error": "#a83836",
+                        "surface-tint": "#006788",
+                        "inverse-surface": "#0b0f11",
+                        "tertiary": "#535d85",
+                        "surface-variant": "#dce3ea",
+                        "surface-dim": "#d3dbe2",
+                        "secondary-fixed-dim": "#c3d7e5",
+                        "on-primary-container": "#00465d",
+                        "on-tertiary-container": "#3b466c",
+                        "primary-dim": "#005a77",
+                        "error-dim": "#67040d",
+                        "tertiary-container": "#c6d0fe",
+                        "tertiary-dim": "#475178",
+                        "surface-container-highest": "#dce3ea",
+                        "background": "#f7f9fd",
+                        "surface-bright": "#f7f9fd",
+                        "secondary-dim": "#435661"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .health-gauge {
+            background: conic-gradient(from 180deg at 50% 50%, #006788 82%, #dce3ea 0%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body selection:bg-primary-container">
+<header class="bg-[#f7f9fd] flex justify-between items-center w-full px-6 py-4 fixed top-0 z-50">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#006788] text-2xl" data-icon="precision_manufacturing">precision_manufacturing</span>
+<span class="font-['Manrope'] tracking-tighter font-black text-xl text-[#006788]">OpenAd</span>
+</div>
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container hover:scale-105 transition-transform duration-200 cursor-pointer">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="Close-up portrait of a professional male software engineer with short hair, smiling warmly in a bright office environment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDX4RVtlUk5eFvFpA6i2GAzlWDGRXNUtjTp69_n8-ouVOVxWgM6yi_ALGnnB0MR5n1os4o6EfPNzby9svR9-nC62y0xQ1FBjWNJn3tFZNsjlFd-oS5TDPcBU002uXMsiRMQIKx_Mhc2GLJyZJxY3UCp_kLHQ-6yveofGucrld81vEBbtQUQCPWTG_UmodCk1d7iHKZYckw5567FStLTNd05VHiZk2rD_mQN180Yv3tk7ENI19BxIR6deFdI42dggnlv9VvRdT8ThWVA"/>
+</div>
+</header>
+<main class="pt-20 pb-28 px-4 max-w-md mx-auto space-y-6">
+<section class="space-y-4">
+<div class="flex justify-between items-end">
+<h2 class="font-headline text-2xl font-extrabold tracking-tight text-on-surface">Live Pulse</h2>
+<span class="font-label text-[10px] uppercase font-bold tracking-widest text-primary bg-primary-container/20 px-2 py-1 rounded">Real-time</span>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-[0px_8px_24px_rgba(44,51,57,0.06)] flex flex-col items-center justify-center space-y-3">
+<div class="relative w-24 h-24 rounded-full health-gauge flex items-center justify-center">
+<div class="absolute inset-2 bg-surface-container-lowest rounded-full flex flex-col items-center justify-center">
+<span class="font-headline font-bold text-xl text-primary">82%</span>
+<span class="font-label text-[10px] text-on-surface-variant font-semibold">STABLE</span>
+</div>
+</div>
+<span class="font-label text-xs font-bold text-on-surface">Health Score</span>
+</div>
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0px_8px_24px_rgba(44,51,57,0.06)] flex flex-col">
+<div class="relative h-24 w-full bg-surface-container">
+<img alt="Live Display" class="w-full h-full object-cover" data-alt="Digital billboard in a busy city square displaying a vibrant advertisement with bright colors during the afternoon" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxHMoqFS5PS9umRypviNEQ23WpyRG-oyW0eNGYt036v2-eYYzhl2jv0I_7JrNFgg2yaaES4EPeyThjypD_1E6faL3dSlUrS-YDqJ8Ea5pv1Exo6A_IyLOX7H0VGoLnJ83ZP-eT2wq1VFB_aqjECdqlEnvrLVbe8vwzfVhnb5BZXak77QgOoC1Ajt6UG4OSKWj8pDuv3lgNYhNSo1wXKxsPFMh3v1wLnA5twYPL-HnElp2BtEDay4xmwzDZNa4LQsHeZQoMXQUqkIqL"/>
+<div class="absolute top-2 left-2 flex items-center gap-1 bg-black/50 backdrop-blur-md px-1.5 py-0.5 rounded text-[8px] text-white">
+<div class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div>
+                            LIVE
+                        </div>
+</div>
+<div class="p-3 text-center">
+<span class="font-label text-xs font-bold text-on-surface">Ad Playback</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0px_8px_24px_rgba(44,51,57,0.06)]">
+<div class="h-32 w-full bg-surface-container-low">
+<img alt="Map" class="w-full h-full object-cover opacity-80" data-alt="Stylized minimalist city map view with soft blue and grey tones showing street blocks and a central marker" data-location="New York City" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQJxllrPp7SOmMtCpuZKcri4AU3RU5AwG6sN1mSXqKsHDvVYoIWRItzVGrDbpvLABWXVGimgY1an2H9N1VMWtewrX9lHtSqcQRuzjZKCbQJXxpLZeWtRUK5SzItmlK0HJBBWel2klps7qqBUqvhzL1aG5jkfMWYRCBRmufHIQ2yCzALh4Dg_C75mVWkHw1iKgBKwujPM7f6C4WI7LxwhAJcifLGYcfpQspeVvFLlyhtBmj8PL4thYid6r5Zg029F7xoZO_9tlzhLGt"/>
+</div>
+<div class="p-4 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="location_on">location_on</span>
+<span class="font-body text-sm font-semibold">Times Square Cluster B-4</span>
+</div>
+<span class="font-label text-[10px] text-on-surface-variant">40.7580° N, 73.9855° W</span>
+</div>
+</div>
+</section>
+<section class="grid grid-cols-1 gap-3">
+<div class="grid grid-cols-2 gap-3">
+<div class="bg-surface-container-low p-4 rounded-xl space-y-1">
+<span class="font-label text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Plays Today</span>
+<div class="flex items-baseline gap-2">
+<span class="font-headline text-2xl font-bold text-on-surface">412</span>
+<span class="text-primary text-xs font-bold flex items-center">+14% <span class="material-symbols-outlined text-sm" data-icon="arrow_upward">arrow_upward</span></span>
+</div>
+</div>
+<div class="bg-surface-container-low p-4 rounded-xl space-y-1">
+<span class="font-label text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Geofence Hits</span>
+<div class="flex items-baseline gap-2">
+<span class="font-headline text-2xl font-bold text-on-surface">12</span>
+</div>
+<span class="font-label text-[10px] text-primary font-bold">Last: Starbucks</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-4 rounded-xl space-y-3">
+<div class="flex justify-between items-center">
+<span class="font-label text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Data Usage</span>
+<span class="font-label text-xs font-bold text-on-surface">4.2 <span class="text-on-surface-variant font-normal">/ 10GB</span></span>
+</div>
+<div class="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-primary to-primary-container" style="width: 42%"></div>
+</div>
+</div>
+</section>
+<section class="space-y-3">
+<h3 class="font-headline text-lg font-bold tracking-tight px-1">Active Campaigns</h3>
+<div class="space-y-2">
+<div class="bg-surface-container-lowest p-3 rounded-xl flex items-center justify-between border-l-4 border-primary shadow-sm hover:scale-[1.02] transition-transform duration-200">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-primary-container/20 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="movie">movie</span>
+</div>
+<div>
+<p class="font-body text-sm font-bold truncate w-32 text-on-surface">starbucks_latte_v1.mp4</p>
+<span class="text-[10px] text-primary font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 bg-primary rounded-full"></span> Playing</span>
+</div>
+</div>
+<button class="bg-surface-container-low p-2 rounded-lg text-primary hover:bg-primary hover:text-white transition-colors">
+<span class="material-symbols-outlined text-xl" data-icon="sync">sync</span>
+</button>
+</div>
+<div class="bg-surface-container-lowest p-3 rounded-xl flex items-center justify-between border-l-4 border-outline-variant shadow-sm hover:scale-[1.02] transition-transform duration-200">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-surface-container rounded-lg flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="image">image</span>
+</div>
+<div>
+<p class="font-body text-sm font-bold truncate w-32 text-on-surface">nike_run_promo.jpg</p>
+<span class="text-[10px] text-on-surface-variant font-medium">Cached on device</span>
+</div>
+</div>
+<button class="bg-primary text-on-primary text-[10px] font-bold px-3 py-2 rounded-lg shadow-sm active:scale-95 transition-transform">
+                        FORCE PUSH
+                    </button>
+</div>
+</div>
+</section>
+<section class="space-y-3">
+<div class="flex items-center justify-between px-1">
+<h3 class="font-headline text-lg font-bold tracking-tight">Technical Logs</h3>
+<span class="material-symbols-outlined text-on-surface-variant text-xl cursor-pointer" data-icon="terminal">terminal</span>
+</div>
+<div class="bg-inverse-surface rounded-xl p-4 font-mono text-[11px] text-primary-fixed leading-relaxed shadow-xl max-h-40 overflow-y-auto scrollbar-hide">
+<p class="opacity-50">[2023-10-27 14:22:01] System boot complete...</p>
+<p><span class="text-error-container">[ERROR]</span> GPS Signal Lost - Intermittent Tunneling</p>
+<p class="text-primary-fixed-dim">[INFO] Re-establishing handshake with master server</p>
+<p><span class="text-primary-container">[SUCCESS]</span> GPS Reacquired - Lock stable (7 sats)</p>
+<p class="text-primary-fixed-dim">[INFO] Buffer synchronization: 100%</p>
+<p><span class="text-primary-container">[SUCCESS]</span> Playback log synced to analytics</p>
+<p class="opacity-50">_</p>
+</div>
+</section>
+<section class="bg-white/40 backdrop-blur-md rounded-2xl p-5 border border-white/20 space-y-4">
+<h3 class="font-headline text-lg font-bold tracking-tight text-on-surface">Hardware Intelligence</h3>
+<div class="grid grid-cols-2 gap-y-4 gap-x-2">
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-on-surface-variant text-lg" data-icon="tablet_android">tablet_android</span>
+<div>
+<p class="text-[9px] uppercase font-bold text-on-surface-variant tracking-tighter">Model</p>
+<p class="text-xs font-bold">Samsung Tab S9</p>
+</div>
+</div>
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-on-surface-variant text-lg" data-icon="settings_suggest">settings_suggest</span>
+<div>
+<p class="text-[9px] uppercase font-bold text-on-surface-variant tracking-tighter">OS Version</p>
+<p class="text-xs font-bold">Android 14</p>
+</div>
+</div>
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-on-surface-variant text-lg" data-icon="database">database</span>
+<div>
+<p class="text-[9px] uppercase font-bold text-on-surface-variant tracking-tighter">Storage</p>
+<p class="text-xs font-bold">128GB <span class="text-[10px] font-medium text-on-surface-variant">(45GB Free)</span></p>
+</div>
+</div>
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-on-surface-variant text-lg" data-icon="thermostat">thermostat</span>
+<div>
+<p class="text-[9px] uppercase font-bold text-on-surface-variant tracking-tighter">Temp</p>
+<p class="text-xs font-bold text-primary">38°C <span class="text-[10px] text-on-surface-variant font-medium">Optimal</span></p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-[#abb3b9]/15 shadow-[0px_-8px_24px_rgba(44,51,57,0.06)] rounded-t-xl">
+<a class="flex flex-col items-center justify-center text-[#586066] px-3 py-2 hover:bg-[#f7f9fd] transition-transform active:scale-95" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="dataset">dataset</span>
+<span class="font-['Inter'] text-[10px] uppercase font-semibold tracking-wider mt-1">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#586066] px-3 py-2 hover:bg-[#f7f9fd] transition-transform active:scale-95" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="router">router</span>
+<span class="font-['Inter'] text-[10px] uppercase font-semibold tracking-wider mt-1">Live Fleet</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-[#f0f4f8] text-[#006788] rounded-xl px-3 py-2 transition-transform active:scale-95" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="ads_click" style="font-variation-settings: 'FILL' 1;">ads_click</span>
+<span class="font-['Inter'] text-[10px] uppercase font-semibold tracking-wider mt-1">Devices</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#586066] px-3 py-2 hover:bg-[#f7f9fd] transition-transform active:scale-95" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="perm_media">perm_media</span>
+<span class="font-['Inter'] text-[10px] uppercase font-semibold tracking-wider mt-1">Campaigns</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#586066] px-3 py-2 hover:bg-[#f7f9fd] transition-transform active:scale-95" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="analytics">analytics</span>
+<span class="font-['Inter'] text-[10px] uppercase font-semibold tracking-wider mt-1">Reports</span>
+</a>
+</nav>
+</body></html>

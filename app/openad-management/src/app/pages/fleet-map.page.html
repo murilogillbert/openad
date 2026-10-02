@@ -1,0 +1,328 @@
+<div
+  #fleetRoot
+  class="fleet-map-host relative isolate z-0 flex h-full min-h-0 w-full flex-col overflow-hidden [transform:translateZ(0)]"
+>
+  <!-- Single column fills the shell; bottom nav (z-50) overlays the map — no flex spacer (avoids empty strip). -->
+  <div class="relative min-h-0 flex-1">
+    <div #mapHost class="absolute inset-0 z-0"></div>
+
+    <div
+      class="pointer-events-none absolute left-3 z-[45] flex max-w-[min(100%-1.5rem,28rem)] flex-wrap gap-2 md:left-4 md:top-4"
+      [ngClass]="
+        browserMapFullscreen() ? 'max-md:top-2' : 'max-md:top-[4.75rem]'
+      "
+    >
+      <span
+        class="pointer-events-auto rounded-full border border-surface-200 bg-surface-0/90 px-3 py-1.5 text-xs font-medium text-surface-900 shadow-md backdrop-blur-md dark:border-surface-600 dark:bg-surface-900/90 dark:text-surface-0"
+        >{{ countsLine() }}</span
+      >
+      @if (loading()) {
+        <span
+          class="pointer-events-auto rounded-full border border-surface-200 bg-surface-0/85 px-2 py-1 text-[10px] text-surface-700 backdrop-blur-md dark:border-surface-600 dark:bg-surface-900/85 dark:text-surface-200"
+          >Updating…</span
+        >
+      }
+    </div>
+
+    <!-- Custom zoom + my location (Leaflet defaults removed — full control above mobile nav) -->
+    <div
+      class="fleet-map-zoom-chrome pointer-events-auto absolute right-3 z-[46] flex flex-col divide-y divide-surface-200 overflow-hidden rounded-lg border border-surface-200 bg-surface-0/95 shadow-lg backdrop-blur-md dark:divide-surface-600 dark:border-surface-600 dark:bg-surface-900/95 md:right-4"
+      [style.bottom]="mapZoomChromeBottom()"
+      (click)="$event.stopPropagation()"
+    >
+      <button
+        type="button"
+        class="fleet-map-zoom-chrome__btn flex h-10 w-10 items-center justify-center border-0 bg-transparent text-surface-900 hover:bg-surface-100 active:bg-surface-200 dark:text-surface-0 dark:hover:bg-surface-800 dark:active:bg-surface-700"
+        aria-label="Zoom in"
+        (click)="mapZoomIn()"
+      >
+        <span class="material-symbols-outlined text-[22px] leading-none">add</span>
+      </button>
+      <button
+        type="button"
+        class="fleet-map-zoom-chrome__btn flex h-10 w-10 items-center justify-center border-0 bg-transparent text-surface-900 hover:bg-surface-100 active:bg-surface-200 dark:text-surface-0 dark:hover:bg-surface-800 dark:active:bg-surface-700"
+        aria-label="Zoom out"
+        (click)="mapZoomOut()"
+      >
+        <span class="material-symbols-outlined text-[22px] leading-none">remove</span>
+      </button>
+      <button
+        type="button"
+        class="fleet-map-zoom-chrome__btn flex h-10 w-10 items-center justify-center border-0 bg-transparent text-primary hover:bg-primary/10 active:bg-primary/15"
+        aria-label="Center on my location"
+        (click)="locateUser()"
+      >
+        <span class="material-symbols-outlined text-[22px] leading-none">my_location</span>
+      </button>
+    </div>
+
+    <div
+      class="absolute right-3 top-1/2 z-[45] flex -translate-y-1/2 touch-manipulation flex-col gap-2 md:right-4 md:top-4 md:flex-row md:translate-y-0"
+    >
+      <div
+        class="flex flex-col gap-2 rounded-2xl border border-surface-200 bg-surface-0/90 p-2 shadow-lg backdrop-blur-md dark:border-surface-600 dark:bg-surface-900/90 md:flex-row"
+      >
+        <button
+          type="button"
+          pButton
+          class="p-button-rounded p-button-text text-surface-800 dark:text-surface-0"
+          pTooltip="Filters"
+          [tooltipDisabled]="isMobileLayout()"
+          (click)="openFilterDrawer()"
+        >
+          <span class="material-symbols-outlined">filter_list</span>
+        </button>
+        <button
+          type="button"
+          pButton
+          class="p-button-rounded p-button-text text-surface-800 dark:text-surface-0"
+          pTooltip="Legend"
+          [tooltipDisabled]="isMobileLayout()"
+          (click)="toggleLegend()"
+        >
+          <span class="material-symbols-outlined">info</span>
+        </button>
+        <button
+          type="button"
+          pButton
+          class="p-button-rounded p-button-text text-surface-800 dark:text-surface-0"
+          pTooltip="Fullscreen"
+          [tooltipDisabled]="isMobileLayout()"
+          (click)="toggleFullscreen()"
+        >
+          <span class="material-symbols-outlined">fullscreen</span>
+        </button>
+        <button
+          type="button"
+          pButton
+          class="p-button-rounded p-button-text text-surface-800 dark:text-surface-0"
+          pTooltip="Map options"
+          [tooltipDisabled]="isMobileLayout()"
+          (click)="openMapConfig()"
+        >
+          <span class="material-symbols-outlined">tune</span>
+        </button>
+      </div>
+    </div>
+
+    @if (legendOpen()) {
+      <div
+        class="absolute bottom-24 left-3 z-[45] flex max-h-[min(40vh,20rem)] max-w-[min(calc(100%-1.5rem),18rem)] flex-col overflow-y-auto rounded-xl border border-surface-200 bg-surface-0/95 p-4 text-sm text-surface-900 shadow-lg backdrop-blur-md dark:border-surface-600 dark:bg-surface-900/95 dark:text-surface-0 md:bottom-4 md:left-4"
+      >
+        <div class="mb-2 font-semibold">Legend</div>
+        <ul class="flex flex-col gap-2 text-xs">
+          <li class="flex items-center gap-2">
+            <span class="inline-block h-3 w-3 shrink-0 rounded-full bg-green-500"></span> Moving
+          </li>
+          <li class="flex items-center gap-2">
+            <span class="inline-block h-3 w-3 shrink-0 rounded-full bg-slate-500"></span> Idle
+          </li>
+          <li class="flex items-center gap-2">
+            <span class="inline-block h-3 w-3 shrink-0 rounded-full bg-amber-500"></span> Syncing
+          </li>
+          <li class="flex items-center gap-2">
+            <span class="inline-block h-3 w-3 shrink-0 rounded-full bg-red-600"></span> Offline
+          </li>
+          <li class="flex items-center gap-2">
+            <span class="inline-block h-3 w-3 shrink-0 border border-cyan-400 bg-cyan-400/25"></span> Geofence
+          </li>
+        </ul>
+      </div>
+    }
+  </div>
+
+  @if (filterDrawerOpen()) {
+    <div
+      class="fleet-map-local-backdrop absolute inset-0 z-[3000] bg-surface-950/35 backdrop-blur-[1px]"
+      aria-hidden="true"
+      (click)="onFilterDrawerVisible(false)"
+    ></div>
+  }
+
+  <p-drawer
+    [visible]="filterDrawerOpen()"
+    (visibleChange)="onFilterDrawerVisible($event)"
+    position="right"
+    [appendTo]="drawerMountEl"
+    [fullScreen]="isMobileLayout()"
+    [modal]="false"
+    [baseZIndex]="5000"
+    [blockScroll]="false"
+    [style]="filterDrawerPanelStyle()"
+    header="Fleet filters"
+  >
+    <div class="flex flex-col gap-4 text-sm">
+      @if (meta(); as m) {
+        <div>
+          <label class="mb-1 block font-medium">Cities</label>
+          <p-multiSelect
+            [options]="m.cities"
+            [ngModel]="filterCities()"
+            (ngModelChange)="filterCities.set($event)"
+            placeholder="All cities"
+            display="chip"
+            styleClass="w-full"
+            [filter]="true"
+          />
+        </div>
+        <div>
+          <label class="mb-1 block font-medium">Device status</label>
+          <p-multiSelect
+            [options]="statusOptions"
+            [ngModel]="filterDeviceStatuses()"
+            (ngModelChange)="filterDeviceStatuses.set($event)"
+            placeholder="All statuses"
+            display="chip"
+            styleClass="w-full"
+          />
+        </div>
+        <div>
+          <label class="mb-1 block font-medium">Commercial tier</label>
+          <p-multiSelect
+            [options]="m.commercialTiers.slice()"
+            [ngModel]="filterCategories()"
+            (ngModelChange)="filterCategories.set($event)"
+            placeholder="All"
+            display="chip"
+            styleClass="w-full"
+          />
+        </div>
+        <div>
+          <label class="mb-1 block font-medium">Campaigns</label>
+          <p-multiSelect
+            [options]="m.campaigns"
+            [ngModel]="filterCampaignIds()"
+            (ngModelChange)="filterCampaignIds.set($event)"
+            optionLabel="name"
+            optionValue="campaignId"
+            placeholder="All campaigns"
+            display="chip"
+            styleClass="w-full"
+            [filter]="true"
+          />
+        </div>
+        <div>
+          <label class="mb-1 block font-medium" for="flt-plate">Plate contains</label>
+          <input id="flt-plate" pInputText class="w-full" [ngModel]="filterPlates()" (ngModelChange)="filterPlates.set($event)" />
+        </div>
+        <div>
+          <label class="mb-1 block font-medium" for="flt-dev">Device name / ID</label>
+          <input id="flt-dev" pInputText class="w-full" [ngModel]="filterDeviceName()" (ngModelChange)="filterDeviceName.set($event)" />
+        </div>
+      }
+      <button pButton type="button" label="Apply filters" class="w-full" (click)="applyFilters()"></button>
+    </div>
+  </p-drawer>
+
+  @if (configOpen()) {
+    <div
+      class="absolute inset-0 z-[5000] flex items-center justify-center bg-surface-950/35 p-4 backdrop-blur-[1px]"
+      (click)="onConfigVisible(false)"
+      role="presentation"
+    >
+      <div
+        class="border-surface-200 bg-surface-0 text-color w-full max-w-md rounded-xl border p-4 shadow-xl"
+        (click)="$event.stopPropagation()"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="fleet-map-config-title"
+      >
+        <div class="mb-4 flex items-center justify-between gap-2">
+          <h2 id="fleet-map-config-title" class="app-font-display text-lg font-semibold">Map configuration</h2>
+          <button
+            type="button"
+            pButton
+            class="p-button-text p-button-sm"
+            (click)="onConfigVisible(false)"
+            aria-label="Close"
+          >
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="flex flex-col gap-3 text-sm">
+          <div class="flex items-center justify-between gap-4">
+            <span>Enable clustering</span>
+            <p-toggleSwitch [ngModel]="mapClustering()" (ngModelChange)="mapClustering.set($event); onClusteringChange()" />
+          </div>
+          <div class="flex items-center justify-between gap-4">
+            <span>Show geofence polygons</span>
+            <p-toggleSwitch [ngModel]="mapGeofences()" (ngModelChange)="mapGeofences.set($event); onGeofenceToggle()" />
+          </div>
+          <div class="flex items-center justify-between gap-4">
+            <span>Transit overlay</span>
+            <p-toggleSwitch [ngModel]="mapTransit()" (ngModelChange)="mapTransit.set($event); onTransitToggle()" />
+          </div>
+          <div class="flex items-center justify-between gap-4">
+            <span>Device names on markers</span>
+            <p-toggleSwitch
+              [ngModel]="mapShowNames()"
+              (ngModelChange)="mapShowNames.set($event); onMapShowNamesChange()"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (selectedDeviceId()) {
+    <div
+      class="border-surface-200 fixed z-[48] flex max-h-[60vh] w-full flex-col overflow-auto rounded-t-2xl border bg-surface-0/95 p-4 text-color shadow-2xl backdrop-blur-md dark:border-surface-600 dark:bg-surface-900/95 md:bottom-4 md:left-4 md:top-20 md:max-h-[calc(100vh-6rem)] md:w-[min(400px,calc(100vw-2rem))] md:rounded-xl bottom-0"
+    >
+      <div class="mb-3 flex items-start justify-between gap-2">
+        @if (detail(); as d) {
+          <div>
+            <div class="app-font-display text-lg font-semibold">{{ d.deviceLabel }}</div>
+            <div class="text-muted-color text-xs">{{ d.registrationPlate }} · {{ d.zoneCity ?? '—' }}</div>
+          </div>
+        } @else {
+          <div class="app-font-display text-lg font-semibold">Device</div>
+        }
+        <button type="button" pButton class="p-button-text p-button-sm" (click)="closeDetail()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      @if (detailLoading()) {
+        <p class="text-muted-color text-sm">Loading…</p>
+      } @else if (detail(); as d) {
+        <div class="flex flex-col gap-4 text-sm">
+          <p-card header="Live pulse">
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <div>Motion</div>
+              <div class="font-medium capitalize">{{ d.motionState }}</div>
+              <div>GPS accuracy</div>
+              <div class="font-medium">
+                {{ d.lastAccuracyMeters != null ? d.lastAccuracyMeters + ' m' : '—' }}
+              </div>
+              <div>Storage used</div>
+              <div class="font-medium">{{ d.dataUsagePercent }}%</div>
+              <div>Last report</div>
+              <div class="font-medium">{{ d.reportedAt | date: 'medium' }}</div>
+            </div>
+          </p-card>
+          <p-card header="Ad proof">
+            @if (d.currentAd.thumbnailUrl) {
+              <img [src]="d.currentAd.thumbnailUrl" alt="Creative" class="max-h-40 w-full rounded object-contain" />
+            } @else {
+              <p class="text-muted-color text-xs">No image for current campaign asset.</p>
+            }
+            <div class="mt-2 text-xs">{{ d.currentAd.campaignName ?? '—' }}</div>
+            <div class="mt-3 flex h-16 items-end gap-px">
+              @for (h of d.hourlyPlays; track h.hour) {
+                <div
+                  class="min-w-0 flex-1 rounded-sm bg-primary"
+                  [style.height.%]="sparkHeight(h.count, d.hourlyPlays)"
+                  [title]="h.hour + ': ' + h.count"
+                ></div>
+              }
+            </div>
+            <div class="text-muted-color mt-1 text-[10px]">Hourly plays (24h)</div>
+          </p-card>
+          <div class="flex gap-2">
+            <button pButton type="button" label="Edit device" class="flex-1" severity="secondary" (click)="editDevice()"></button>
+            <button pButton type="button" label="Ping (MQTT)" class="flex-1" (click)="pingDevice()"></button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

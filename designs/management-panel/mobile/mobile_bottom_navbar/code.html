@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Precision Atmosphere - Mobile Navigation</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&amp;family=Inter:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-tertiary-container": "#3b466c",
+              "on-secondary-fixed": "#2f424d",
+              "inverse-surface": "#0b0f11",
+              "surface-bright": "#f7f9fd",
+              "surface": "#f7f9fd",
+              "on-primary-container": "#00465d",
+              "secondary-container": "#d1e5f4",
+              "on-primary-fixed-variant": "#004f69",
+              "primary-fixed": "#74d1fe",
+              "tertiary-fixed-dim": "#b8c2ef",
+              "primary-dim": "#005a77",
+              "error-dim": "#67040d",
+              "on-secondary-fixed-variant": "#4b5e6a",
+              "secondary-fixed-dim": "#c3d7e5",
+              "on-error-container": "#6e0a12",
+              "on-primary": "#f3faff",
+              "outline-variant": "#abb3b9",
+              "tertiary-container": "#c6d0fe",
+              "error-container": "#fa746f",
+              "on-secondary-container": "#415460",
+              "surface-container-high": "#e3e9ef",
+              "surface-container-low": "#f0f4f8",
+              "primary": "#006788",
+              "surface-dim": "#d3dbe2",
+              "on-background": "#2c3339",
+              "tertiary-dim": "#475178",
+              "on-secondary": "#f4faff",
+              "surface-variant": "#dce3ea",
+              "on-error": "#fff7f6",
+              "on-tertiary-fixed": "#283257",
+              "primary-container": "#74d1fe",
+              "secondary": "#4f626e",
+              "inverse-primary": "#74d1fe",
+              "tertiary": "#535d85",
+              "surface-container-highest": "#dce3ea",
+              "on-tertiary-fixed-variant": "#454f76",
+              "secondary-fixed": "#d1e5f4",
+              "secondary-dim": "#435661",
+              "surface-container": "#e9eef4",
+              "on-tertiary": "#faf8ff",
+              "tertiary-fixed": "#c6d0fe",
+              "surface-container-lowest": "#ffffff",
+              "outline": "#747c82",
+              "on-surface-variant": "#586066",
+              "inverse-on-surface": "#9a9da0",
+              "on-primary-fixed": "#003042",
+              "surface-tint": "#006788",
+              "error": "#a83836",
+              "background": "#f7f9fd",
+              "primary-fixed-dim": "#65c4ef",
+              "on-surface": "#2c3339"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        .active-glow {
+            filter: drop-shadow(0 0 8px rgba(0, 103, 136, 0.4));
+        }
+        .glass-nav {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            background: rgba(255, 255, 255, 0.75);
+            border-top: 1px solid rgba(171, 179, 185, 0.15);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface-container-low min-h-screen flex items-center justify-center font-body">
+<!-- Mobile Bottom Navigation Bar: Variation 2 (Glassmorphism/High-Tech) -->
+<!-- Applying Shared Component Logic: BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 py-3 pb-safe glass-nav rounded-t-xl z-50 shadow-[0px_-8px_24px_rgba(44,51,57,0.06)]">
+<!-- Dashboard (Active) -->
+<a class="flex items-center justify-center bg-sky-50 text-sky-700 rounded-xl p-3 active:scale-110 duration-150 ease-out transition-all active-glow" href="#" title="Dashboard">
+<span class="material-symbols-outlined" data-icon="dashboard" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+</a>
+<!-- Live Fleet (Map/Location) -->
+<a class="flex items-center justify-center text-slate-400 p-3 hover:text-sky-600 active:scale-110 duration-150 ease-out transition-colors" href="#" title="Live Fleet">
+<span class="material-symbols-outlined" data-icon="shuttle">airport_shuttle</span>
+</a>
+<!-- Devices -->
+<a class="flex items-center justify-center text-slate-400 p-3 hover:text-sky-600 active:scale-110 duration-150 ease-out transition-colors" href="#" title="Devices">
+<span class="material-symbols-outlined" data-icon="devices">devices</span>
+</a>
+<!-- Campaigns -->
+<a class="flex items-center justify-center text-slate-400 p-3 hover:text-sky-600 active:scale-110 duration-150 ease-out transition-colors" href="#" title="Campaigns">
+<span class="material-symbols-outlined" data-icon="campaign">campaign</span>
+</a>
+<!-- Media -->
+<a class="flex items-center justify-center text-slate-400 p-3 hover:text-sky-600 active:scale-110 duration-150 ease-out transition-colors" href="#" title="Media">
+<span class="material-symbols-outlined" data-icon="perm_media">perm_media</span>
+</a>
+<!-- Reports -->
+<a class="flex items-center justify-center text-slate-400 p-3 hover:text-sky-600 active:scale-110 duration-150 ease-out transition-colors" href="#" title="Reports">
+<span class="material-symbols-outlined" data-icon="bar_chart">bar_chart</span>
+</a>
+</nav>
+<!-- Contextual background visualization to showcase glassmorphism effect -->
+<div class="absolute inset-0 z-[-1] overflow-hidden opacity-40">
+<div class="absolute top-1/2 left-1/4 w-64 h-64 bg-primary-container rounded-full blur-[100px]"></div>
+<div class="absolute bottom-0 right-1/4 w-80 h-80 bg-tertiary-container rounded-full blur-[120px]"></div>
+</div>
+</body></html>

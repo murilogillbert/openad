@@ -1,0 +1,57 @@
+<nav
+  class="flex w-full items-center justify-between border-b border-surface-200 bg-surface-50 px-6 py-4 dark:border-surface-300 dark:bg-surface-100"
+>
+  <div class="flex items-center gap-8">
+    <a
+      routerLink="/dashboard"
+      class="app-font-display flex items-center gap-3 text-2xl font-extrabold tracking-tighter text-primary no-underline dark:text-primary"
+    >
+      <img src="/logo.svg" width="32" height="32" alt="OpenAD" class="h-8 w-8 shrink-0" />
+      <span>OpenAD</span>
+    </a>
+    <div class="flex items-center gap-6">
+      @for (item of navItems(); track item.routerLink.join()) {
+        <a
+          [routerLink]="item.routerLink"
+          routerLinkActive
+          #rla="routerLinkActive"
+          [routerLinkActiveOptions]="linkActiveOptions(item)"
+          class="border-b-2 border-transparent pb-1 text-sm font-medium text-muted-color no-underline transition-colors hover:text-primary dark:hover:text-primary"
+          [class.border-primary]="rla.isActive"
+          [class.text-primary]="rla.isActive"
+          [class.dark:border-primary]="rla.isActive"
+          [class.font-semibold]="rla.isActive"
+        >
+          {{ item.label }}
+        </a>
+      }
+    </div>
+  </div>
+
+  <div class="flex flex-grow"></div>
+
+  <div class="flex items-center gap-1 sm:gap-2">
+    <p-menu #profileMenu [model]="userMenuItems" [popup]="true" appendTo="body" />
+    <button
+      type="button"
+      class="text-primary border-primary/20 bg-primary/10 hover:border-outline/20 ml-2 flex items-center gap-2 rounded-full border py-1 pr-1 pl-3 transition-all dark:bg-surface-300/50"
+      (click)="profileMenu.toggle($event)"
+      [attr.aria-label]="'Account menu (' + shellDisplayName() + ')'"
+      aria-haspopup="menu"
+      aria-expanded="false"
+    >
+      <span class="hidden text-right sm:block">
+        <span
+          class="text-muted-color block text-[11px] leading-none font-bold tracking-wider uppercase"
+          >{{ shellRoleLabel() }}</span
+        >
+        <span class="text-primary text-xs font-semibold">{{ shellDisplayName() }}</span>
+      </span>
+      <span
+        class="border-primary/20 bg-primary-container/30 text-primary flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border"
+      >
+        <span class="material-symbols-outlined filled text-xl">account_circle</span>
+      </span>
+    </button>
+  </div>
+</nav>

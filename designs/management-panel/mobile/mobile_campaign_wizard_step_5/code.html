@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "background": "#f7f9fd",
+                    "tertiary-container": "#c6d0fe",
+                    "on-error": "#fff7f6",
+                    "inverse-surface": "#0b0f11",
+                    "on-primary-container": "#00465d",
+                    "on-secondary-fixed-variant": "#4b5e6a",
+                    "on-tertiary": "#faf8ff",
+                    "secondary": "#4f626e",
+                    "on-tertiary-container": "#3b466c",
+                    "surface-variant": "#dce3ea",
+                    "surface-container-high": "#e3e9ef",
+                    "secondary-fixed-dim": "#c3d7e5",
+                    "on-surface-variant": "#586066",
+                    "on-primary": "#f3faff",
+                    "on-error-container": "#6e0a12",
+                    "secondary-container": "#d1e5f4",
+                    "primary-fixed": "#74d1fe",
+                    "surface-dim": "#d3dbe2",
+                    "on-background": "#2c3339",
+                    "inverse-on-surface": "#9a9da0",
+                    "error-dim": "#67040d",
+                    "primary-container": "#74d1fe",
+                    "on-surface": "#2c3339",
+                    "on-secondary-fixed": "#2f424d",
+                    "on-tertiary-fixed": "#283257",
+                    "surface": "#f7f9fd",
+                    "primary-dim": "#005a77",
+                    "tertiary-fixed-dim": "#b8c2ef",
+                    "surface-tint": "#006788",
+                    "surface-container-low": "#f0f4f8",
+                    "on-secondary-container": "#415460",
+                    "surface-container": "#e9eef4",
+                    "on-secondary": "#f4faff",
+                    "surface-container-highest": "#dce3ea",
+                    "secondary-dim": "#435661",
+                    "secondary-fixed": "#d1e5f4",
+                    "tertiary-dim": "#475178",
+                    "primary": "#006788",
+                    "on-primary-fixed": "#003042",
+                    "surface-container-lowest": "#ffffff",
+                    "outline-variant": "#abb3b9",
+                    "tertiary": "#535d85",
+                    "surface-bright": "#f7f9fd",
+                    "primary-fixed-dim": "#65c4ef",
+                    "outline": "#747c82",
+                    "error": "#a83836",
+                    "inverse-primary": "#74d1fe",
+                    "tertiary-fixed": "#c6d0fe",
+                    "error-container": "#fa746f",
+                    "on-primary-fixed-variant": "#004f69",
+                    "on-tertiary-fixed-variant": "#454f76"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-summary {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body min-h-screen pb-40">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-[#f7f9fd] dark:bg-slate-900">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#006788]">menu</span>
+<span class="text-2xl font-black italic tracking-tighter text-[#006788] dark:text-[#74d1fe]">OpenAd</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-slate-500">search</span>
+<button class="font-['Manrope'] font-bold tracking-tight text-slate-800 dark:text-slate-100 hover:scale-105 transition-transform duration-200">Save Draft</button>
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center overflow-hidden">
+<img alt="Profile" data-alt="close-up portrait of a professional woman in business attire with a confident smile in a bright modern office" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0jPQ-yHdEOPzU5PnoBRxfE_dkZCvf8FCCenptYGo9Pmckft9QVUbjb0ZQTepPblsvNnuoSf5hM2sejUf1mlTGn2byTxkyZ6C2dk9U9z51NSztPJO7dxSB7FrmYGXKraZA090HcMmRhPz_Ef3jv3SmiTriJ9wih-RzCmlMDpztfhNNWhIECtPR_iBM2d-pc_e5lT1c39qDc26Rl4PL8ViFu2JuflndgvnPBRxC7i3TjHb8aB-KGZitnl4kDpbk7kz5fzCIOuNh0FIe"/>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="mt-16 px-4 py-6 max-w-md mx-auto">
+<!-- Progress Stepper -->
+<section class="mb-8">
+<div class="flex justify-between items-end mb-2">
+<div>
+<h2 class="font-headline font-bold text-xs uppercase tracking-widest text-primary">Step 5 of 5</h2>
+<h1 class="font-headline font-extrabold text-xl tracking-tight text-on-surface">Pricing &amp; Budgeting</h1>
+</div>
+<span class="text-[10px] font-medium text-on-surface-variant bg-surface-container px-2 py-1 rounded-md">Drafting Mode</span>
+</div>
+<div class="h-1 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full w-full bg-gradient-to-r from-primary to-primary-container"></div>
+</div>
+<p class="text-xs text-on-surface-variant mt-2 font-medium italic">New Campaign (Drafting Mode)</p>
+</section>
+<!-- Pricing Model Selection -->
+<section class="mb-8">
+<h3 class="font-headline font-bold text-sm mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">payments</span> Pricing Model
+            </h3>
+<div class="space-y-4">
+<!-- CPM Option -->
+<div class="bg-surface-container-lowest p-5 rounded-xl border-2 border-primary shadow-sm relative overflow-hidden group">
+<div class="flex justify-between items-start mb-4">
+<div>
+<span class="font-headline font-bold text-on-surface">CPM (Cost Per Mille)</span>
+<p class="text-xs text-on-surface-variant">Pay per 1,000 advertisement plays</p>
+</div>
+<div class="w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center">
+<div class="w-2.5 h-2.5 rounded-full bg-primary"></div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-1">
+<label class="text-[10px] font-bold uppercase text-on-surface-variant tracking-wider">Cost per 1k plays</label>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">$</span>
+<input class="w-full bg-surface-container-low border-none rounded-md py-2 pl-7 pr-3 text-sm font-semibold focus:ring-2 focus:ring-primary/30" type="number" value="12.50"/>
+</div>
+</div>
+<div class="space-y-1">
+<label class="text-[10px] font-bold uppercase text-on-surface-variant tracking-wider">Impression Cap</label>
+<input class="w-full bg-surface-container-low border-none rounded-md py-2 px-3 text-sm font-semibold focus:ring-2 focus:ring-primary/30" type="text" value="500,000"/>
+</div>
+</div>
+</div>
+<!-- Fixed Rate Option -->
+<div class="bg-surface-container-low p-5 rounded-xl transition-all hover:bg-surface-container">
+<div class="flex justify-between items-start mb-2">
+<div>
+<span class="font-headline font-bold text-on-surface-variant">Fixed / Flat Rate</span>
+<p class="text-xs text-on-surface-variant">Set a total budget for the entire campaign duration</p>
+</div>
+<div class="w-5 h-5 rounded-full border-2 border-outline-variant"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Variable Costing (Multipliers) -->
+<section class="mb-8">
+<div class="flex justify-between items-center mb-4">
+<h3 class="font-headline font-bold text-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">trending_up</span> Cost Multipliers
+                </h3>
+<span class="text-[10px] text-primary font-bold">2 Tiers Active</span>
+</div>
+<div class="space-y-3">
+<div class="flex items-center justify-between p-4 bg-surface-container-lowest rounded-xl border-l-4 border-primary">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">workspace_premium</span>
+</div>
+<div>
+<span class="text-xs font-bold block">Premium Tier</span>
+<span class="text-[10px] text-on-surface-variant">High-traffic metro locations</span>
+</div>
+</div>
+<div class="text-right">
+<span class="text-sm font-bold text-primary">1.5x</span>
+<span class="text-[10px] block text-on-surface-variant">Base Rate</span>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container-lowest rounded-xl border-l-4 border-slate-300">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant">location_on</span>
+</div>
+<div>
+<span class="text-xs font-bold block">Standard Tier</span>
+<span class="text-[10px] text-on-surface-variant">Suburban and regional screens</span>
+</div>
+</div>
+<div class="text-right">
+<span class="text-sm font-bold text-on-surface">1.0x</span>
+<span class="text-[10px] block text-on-surface-variant">Base Rate</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Action Buttons -->
+<div class="grid grid-cols-2 gap-4 mt-8">
+<button class="py-4 rounded-lg bg-surface-container-high text-on-surface font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-sm">arrow_back</span> Back
+            </button>
+<button class="py-4 rounded-lg bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold text-sm shadow-md active:scale-95 transition-all">
+                Complete Campaign
+            </button>
+</div>
+</main>
+<!-- Budget Summary Floating Canvas -->
+<div class="fixed bottom-24 left-4 right-4 z-40 glass-summary rounded-2xl p-5 border border-white/20 shadow-[0px_-8px_24px_rgba(44,51,57,0.06)]">
+<div class="flex items-center justify-between mb-4">
+<span class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Estimate Summary</span>
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+</div>
+<div class="grid grid-cols-3 gap-2">
+<div class="text-center">
+<span class="block text-[10px] text-on-surface-variant mb-1">Est. Reach</span>
+<span class="block text-sm font-extrabold text-on-surface">1.2M</span>
+</div>
+<div class="text-center border-x border-slate-200">
+<span class="block text-[10px] text-on-surface-variant mb-1">Avg. CPM</span>
+<span class="block text-sm font-extrabold text-on-surface">$14.20</span>
+</div>
+<div class="text-center">
+<span class="block text-[10px] text-on-surface-variant mb-1">Total Cost</span>
+<span class="block text-sm font-extrabold text-primary">$17,040</span>
+</div>
+</div>
+</div>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-safe h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-slate-200/10 shadow-[0px_-8px_24px_rgba(44,51,57,0.06)] rounded-t-xl">
+<div class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 hover:text-[#006788] active:scale-90 transition-transform">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-wide uppercase">Dashboard</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 hover:text-[#006788] active:scale-90 transition-transform">
+<span class="material-symbols-outlined">dataset</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-wide uppercase">Fleet</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 hover:text-[#006788] active:scale-90 transition-transform">
+<span class="material-symbols-outlined">router</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-wide uppercase">Devices</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-[#f0f4f8] dark:bg-slate-800 text-[#006788] dark:text-[#74d1fe] rounded-xl px-3 py-1.5 active:scale-90 transition-transform">
+<span class="material-symbols-outlined">ads_click</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-wide uppercase">Campaigns</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 hover:text-[#006788] active:scale-90 transition-transform">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-wide uppercase">Reports</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 hover:text-[#006788] active:scale-90 transition-transform">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-wide uppercase">Settings</span>
+</div>
+</nav>
+</body></html>

@@ -1,0 +1,145 @@
+<p-drawer
+  header="Vehicle detail"
+  [visible]="vehicle() !== null"
+  (visibleChange)="onVisibleChange($event)"
+  position="right"
+  [style]="drawerStyle"
+  [modal]="true"
+  [dismissible]="true"
+>
+  @if (vehicle(); as v) {
+    <div class="flex flex-col gap-6 pb-8">
+      <div>
+        <p class="text-muted-color mb-1 text-xs font-semibold tracking-wider uppercase">
+          Registration
+        </p>
+        <p class="app-font-display text-color text-2xl font-extrabold tracking-tight">
+          {{ v.registrationPlate }}
+        </p>
+        <p class="text-muted-color mt-1 font-mono text-xs">{{ v.vehicleId }}</p>
+      </div>
+
+      <div class="flex flex-wrap gap-2">
+        <p-tag
+          [value]="v.status"
+          [severity]="severityForStatus(v.status)"
+          styleClass="uppercase"
+        />
+        <p-tag
+          [value]="bindingLabel(v.bindingStatus)"
+          [severity]="bindingSeverity(v.bindingStatus)"
+          styleClass="text-xs uppercase"
+        />
+        <p-tag
+          [value]="v.make + ' ' + v.model"
+          severity="secondary"
+          styleClass="max-w-full"
+        />
+      </div>
+
+      @if (auditItems().length > 0) {
+        <div
+          class="border-surface-200 bg-surface-50 rounded-xl border p-4 dark:border-surface-300 dark:bg-surface-100"
+          data-testid="vehicle-binding-audit"
+        >
+          <p class="text-muted-color mb-3 text-xs font-bold tracking-wider uppercase">
+            Binding history
+          </p>
+          <p-table
+            [value]="auditItems()"
+            styleClass="p-datatable-sm"
+            [tableStyle]="{ 'min-width': '100%' }"
+            [paginator]="false"
+          >
+            <ng-template pTemplate="header">
+              <tr>
+                <th scope="col">When</th>
+                <th scope="col">Action</th>
+                <th scope="col">Device</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-row>
+              <tr>
+                <td class="text-sm">{{ relative(row.createdAt) }}</td>
+                <td class="text-sm">{{ auditActionLabel(row.action) }}</td>
+                <td class="font-mono text-xs">{{ row.deviceId ?? '—' }}</td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+      }
+
+      <div
+        class="border-surface-200 bg-surface-50 rounded-xl border p-4 dark:border-surface-300 dark:bg-surface-100"
+      >
+        <p class="text-muted-color mb-3 text-xs font-bold tracking-wider uppercase">
+          Paired tablets ({{ v.pairedDeviceIds.length }})
+        </p>
+        @if (v.pairedDeviceIds.length === 0) {
+          <p class="text-muted-color text-sm">No tablets paired.</p>
+        } @else {
+          <ul class="space-y-2 text-sm">
+            @for (id of v.pairedDeviceIds; track id) {
+              <li class="font-mono text-xs">{{ id }}</li>
+            }
+          </ul>
+        }
+        @if (v.boundDevice; as d) {
+          <p class="text-muted-color mt-3 border-surface-200 border-t pt-3 text-xs font-bold uppercase">
+            Primary tablet (detail)
+          </p>
+          <dl class="mt-2 grid grid-cols-1 gap-3 text-sm">
+            <div class="flex justify-between gap-4">
+              <dt class="text-muted-color">Lifecycle</dt>
+              <dd class="text-color text-right">{{ d.lifecycleState }}</dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-muted-color">Last seen</dt>
+              <dd class="text-color text-right">{{ relative(d.lastSeenAt) }}</dd>
+            </div>
+          </dl>
+        }
+      </div>
+
+      <div
+        class="border-surface-200 flex flex-col gap-2 rounded-xl border p-4 dark:border-surface-300"
+      >
+        <p class="text-muted-color text-xs font-bold uppercase">Maintenance</p>
+        <p class="text-muted-color text-sm">
+          When in shop, roster rules treat this unit as suppressed (see binding status).
+        </p>
+        <button
+          pButton
+          type="button"
+          class="p-button-outlined w-full"
+          [loading]="inShopBusy"
+          [disabled]="inShopBusy || v.status === 'decommissioned'"
+          (click)="toggleInShop()"
+        >
+          {{ v.inShop ? 'Mark active (leave shop)' : 'Mark in shop / maintenance' }}
+        </button>
+      </div>
+
+      <div class="mt-auto flex flex-col gap-2 border-t border-surface-200 pt-4 dark:border-surface-300">
+        <button
+          pButton
+          type="button"
+          class="p-button-danger w-full"
+          [loading]="busy"
+          [disabled]="busy || v.status === 'decommissioned'"
+          (click)="confirmDecommission()"
+        >
+          Decommission vehicle
+        </button>
+        <button
+          pButton
+          type="button"
+          class="p-button-text w-full"
+          (click)="dismiss.emit()"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  }
+</p-drawer>

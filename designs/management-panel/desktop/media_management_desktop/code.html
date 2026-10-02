@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>OpenAd Media Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-dim": "#d3dbe2",
+                    "secondary": "#4f626e",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary-container": "#d1e5f4",
+                    "outline": "#747c82",
+                    "surface-tint": "#006788",
+                    "primary-container": "#74d1fe",
+                    "inverse-on-surface": "#9a9da0",
+                    "secondary-fixed": "#d1e5f4",
+                    "primary-fixed": "#74d1fe",
+                    "surface-container-high": "#e3e9ef",
+                    "on-primary-fixed-variant": "#004f69",
+                    "on-background": "#2c3339",
+                    "background": "#f7f9fd",
+                    "on-secondary-fixed": "#2f424d",
+                    "on-tertiary": "#faf8ff",
+                    "tertiary-container": "#c6d0fe",
+                    "on-error-container": "#6e0a12",
+                    "secondary-fixed-dim": "#c3d7e5",
+                    "tertiary-fixed-dim": "#b8c2ef",
+                    "secondary-dim": "#435661",
+                    "tertiary-fixed": "#c6d0fe",
+                    "surface": "#f7f9fd",
+                    "tertiary": "#535d85",
+                    "inverse-primary": "#74d1fe",
+                    "on-tertiary-fixed": "#283257",
+                    "surface-bright": "#f7f9fd",
+                    "inverse-surface": "#0b0f11",
+                    "error": "#a83836",
+                    "surface-container": "#e9eef4",
+                    "surface-container-low": "#f0f4f8",
+                    "primary-dim": "#005a77",
+                    "on-tertiary-fixed-variant": "#454f76",
+                    "primary-fixed-dim": "#65c4ef",
+                    "on-surface": "#2c3339",
+                    "surface-variant": "#dce3ea",
+                    "error-container": "#fa746f",
+                    "surface-container-highest": "#dce3ea",
+                    "on-tertiary-container": "#3b466c",
+                    "on-surface-variant": "#586066",
+                    "on-primary": "#f3faff",
+                    "primary": "#006788",
+                    "on-primary-fixed": "#003042",
+                    "on-secondary-container": "#415460",
+                    "error-dim": "#67040d",
+                    "tertiary-dim": "#475178",
+                    "on-secondary-fixed-variant": "#4b5e6a",
+                    "on-secondary": "#f4faff",
+                    "on-error": "#fff7f6",
+                    "on-primary-container": "#00465d",
+                    "outline-variant": "#abb3b9"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, .headline { font-family: 'Manrope', sans-serif; letter-spacing: -0.02em; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .glass-panel { backdrop-filter: blur(20px); background: rgba(247, 249, 253, 0.7); }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #dce3ea; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-background text-on-surface flex flex-col h-screen overflow-hidden">
+<!-- TopNavBar -->
+<header class="bg-slate-50 dark:bg-slate-900 flex justify-between items-center w-full px-6 h-16 docked full-width top-0 z-50">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold tracking-tighter text-sky-700 dark:text-sky-400">OpenAd</span>
+<nav class="hidden md:flex gap-6 items-center">
+<a class="font-manrope font-semibold tracking-tight text-sm text-slate-500 dark:text-slate-400 hover:text-sky-600 transition-colors" href="#">Dashboard</a>
+<a class="font-manrope font-semibold tracking-tight text-sm text-slate-500 dark:text-slate-400 hover:text-sky-600 transition-colors" href="#">Live Fleet</a>
+<a class="font-manrope font-semibold tracking-tight text-sm text-slate-500 dark:text-slate-400 hover:text-sky-600 transition-colors" href="#">Devices</a>
+<a class="font-manrope font-semibold tracking-tight text-sm text-slate-500 dark:text-slate-400 hover:text-sky-600 transition-colors" href="#">Campaigns</a>
+<a class="font-manrope font-semibold tracking-tight text-sm text-sky-700 dark:text-sky-400 border-b-2 border-sky-700 dark:border-sky-400 pb-1" href="#">Media</a>
+<a class="font-manrope font-semibold tracking-tight text-sm text-slate-500 dark:text-slate-400 hover:text-sky-600 transition-colors" href="#">Reports</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative group">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary cursor-pointer p-2 hover:bg-slate-200/50 transition-colors rounded-lg">search</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer p-2 hover:bg-slate-200/50 transition-colors rounded-lg" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer p-2 hover:bg-slate-200/50 transition-colors rounded-lg" data-icon="settings">settings</span>
+<img alt="User profile" class="w-8 h-8 rounded-full border border-outline-variant/30" data-alt="Close-up portrait of a professional man with a friendly expression in a modern office setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAwe1hzsgvoNtbxI0RuX_vst-4ACh5yAonAkRkvJPKqWT7oaFbUoYFE-8w1tJjUjRyBMwh23bOKPauXGYMpLQh0u6ySdpSsSsMZyUeENCTyCQG7jJgd9zvdX1dcRsmOSsXhjXqNwNinevn4sYWCQW5EyNg1zeRWCMVo9sUTwo33GQV31R-SI7Fir2M01eKdH_zlp5uoKf8XrjxNlEFvGDVlMbd_MkqyqjW0pxwTe16bVaqY2nvxTizaf6k9dH8BSwdXd7O2xgcJNKc-"/>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- Left SideNavBar (SideNavBar from JSON) -->
+<aside class="bg-slate-100 dark:bg-slate-950 flex flex-col h-full py-4 px-3 border-r border-slate-200/15 dark:border-slate-800/15 w-64 shrink-0 overflow-y-auto custom-scrollbar">
+<div class="flex items-center gap-3 mb-8 px-2">
+<div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">perm_media</span>
+</div>
+<div>
+<h2 class="font-manrope text-lg font-bold leading-none">Media Library</h2>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-widest font-bold mt-1">Digital Curator</p>
+</div>
+</div>
+<button class="mb-8 w-full py-3 bg-gradient-to-br from-primary to-primary-container text-on-primary rounded-xl font-headline font-bold text-sm shadow-lg hover:scale-102 active:scale-98 transition-transform">
+                Upload Media
+            </button>
+<div class="space-y-1 mb-10">
+<p class="px-4 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Navigation</p>
+<div class="flex items-center gap-3 text-sky-800 dark:text-sky-200 font-bold bg-white dark:bg-slate-900 rounded-lg px-4 py-2.5 cursor-pointer">
+<span class="material-symbols-outlined text-xl" data-icon="folder" style="font-variation-settings: 'FILL' 1;">folder</span>
+<span class="font-inter text-sm font-medium">Root Folder</span>
+</div>
+<div class="flex items-center gap-3 text-slate-600 dark:text-slate-400 px-4 py-2.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-all duration-200 ease-in-out">
+<span class="material-symbols-outlined text-xl" data-icon="auto_awesome_motion">auto_awesome_motion</span>
+<span class="font-inter text-sm font-medium">Campaign Assets</span>
+</div>
+<div class="flex items-center gap-3 text-slate-600 dark:text-slate-400 px-4 py-2.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-all duration-200 ease-in-out">
+<span class="material-symbols-outlined text-xl" data-icon="palette">palette</span>
+<span class="font-inter text-sm font-medium">Brand Guidelines</span>
+</div>
+<div class="flex items-center gap-3 text-slate-600 dark:text-slate-400 px-4 py-2.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-all duration-200 ease-in-out">
+<span class="material-symbols-outlined text-xl" data-icon="description">description</span>
+<span class="font-inter text-sm font-medium">Templates</span>
+</div>
+<div class="flex items-center gap-3 text-slate-600 dark:text-slate-400 px-4 py-2.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-all duration-200 ease-in-out">
+<span class="material-symbols-outlined text-xl" data-icon="inventory_2">inventory_2</span>
+<span class="font-inter text-sm font-medium">Archive</span>
+</div>
+</div>
+<div class="space-y-1 mt-auto pt-4 border-t border-outline-variant/10">
+<div class="flex items-center gap-3 text-slate-600 dark:text-slate-400 px-4 py-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-all duration-200 ease-in-out">
+<span class="material-symbols-outlined text-xl" data-icon="cloud">cloud</span>
+<span class="font-inter text-sm font-medium">Storage Status</span>
+</div>
+<div class="flex items-center gap-3 text-slate-600 dark:text-slate-400 px-4 py-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-all duration-200 ease-in-out">
+<span class="material-symbols-outlined text-xl" data-icon="help_outline">help_outline</span>
+<span class="font-inter text-sm font-medium">Support</span>
+</div>
+</div>
+</aside>
+<!-- Main Explorer Area -->
+<main class="flex-1 flex flex-col bg-surface overflow-hidden">
+<!-- Breadcrumb & Action Bar -->
+<div class="h-20 px-8 flex items-center justify-between bg-surface-container-low">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 text-sm font-inter">
+<span class="text-on-surface-variant hover:text-primary cursor-pointer">Root</span>
+<span class="material-symbols-outlined text-xs text-outline">chevron_right</span>
+<span class="text-on-surface-variant hover:text-primary cursor-pointer">Campaigns</span>
+<span class="material-symbols-outlined text-xs text-outline">chevron_right</span>
+<span class="font-bold text-on-surface">Nike</span>
+</div>
+</div>
+<div class="flex items-center gap-4 w-1/3">
+<div class="relative w-full">
+<input class="w-full bg-white rounded-xl border-none h-10 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/30 transition-shadow placeholder:text-on-surface-variant/50 shadow-sm" placeholder="Search media files..." type="text"/>
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant/50 text-xl">search</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2 rounded-xl bg-white hover:bg-slate-100 text-on-surface transition-colors shadow-sm">
+<span class="material-symbols-outlined">filter_list</span>
+</button>
+<button class="p-2 rounded-xl bg-white hover:bg-slate-100 text-on-surface transition-colors shadow-sm">
+<span class="material-symbols-outlined">grid_view</span>
+</button>
+</div>
+</div>
+<!-- Grid Content -->
+<div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+<!-- Media Card 1: Video (Active) -->
+<div class="group bg-surface-container-lowest p-3 rounded-xl hover:shadow-xl transition-all duration-300 border border-transparent hover:border-primary/10">
+<div class="relative aspect-video rounded-lg overflow-hidden bg-surface-container-highest mb-3">
+<img alt="Media Thumbnail" class="w-full h-full object-cover" data-alt="Cinematic shot of a bright red athletic shoe against a dark studio background with professional lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAwIEacB8bzEvs6buMzIoiculB09xXi1ilQwyzW6zqc36DY3RXfqyyzg_09n1C8Al_WIjNfq-T7TvU1Aqfd-E0libPMcikoBgeJA5FQywnaWhLoro1r1V_menfJMZqNWzIoeat72gqJgMU2v7UuEDmpgEE2c0WDz5oipAXkfBAkDSBLnAk6hCbeDNmrI7t9tposl1BrORiMgSvGe2UWks91hvw8m095ywAKkivKz0zON7ksmfs_xxefYTCKndmn9Bdub7WmylkGZS8M"/>
+<div class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-white text-5xl">play_circle</span>
+</div>
+<div class="absolute top-2 right-2 px-2 py-1 bg-white/90 backdrop-blur rounded-md text-[10px] font-bold text-primary flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Success
+                            </div>
+</div>
+<div class="flex justify-between items-start">
+<div>
+<h3 class="text-sm font-bold text-on-surface truncate pr-4">Nike_Summer_Hero.mp4</h3>
+<p class="text-[11px] text-on-surface-variant mt-0.5">15s • 1920x1080 • 45MB</p>
+</div>
+<span class="material-symbols-outlined text-outline cursor-pointer hover:text-primary">more_vert</span>
+</div>
+</div>
+<!-- Media Card 2: Image (Syncing) -->
+<div class="group bg-surface-container-lowest p-3 rounded-xl hover:shadow-xl transition-all duration-300">
+<div class="relative aspect-video rounded-lg overflow-hidden bg-surface-container-highest mb-3">
+<img alt="Media Thumbnail" class="w-full h-full object-cover" data-alt="Group of diverse people in trendy urban athletic wear posing in a high-contrast industrial setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBOgKECMffHUCzYgJkzyN84jGQAzpGvH00hFprL7ED-pWIDxBMEpK0czo152FbmwwP4OcCwXqGaiZ7z2I1rSivjaiOn8opJywWivztJXHcaxJhJcFaMG875dCSKdqL_EpVY2mrFNPLL1-FwVcL6qzJxrvk1YdHS9U8KvfrzIjYSnBf5vhtUJwYBP6j9EJrFovPfwv4rnSwA9dAFQ0AH4JX5WY8gDOIivOLNtG5272S93JIU50y-v6k_cRq-N71vUad8RbNFia-SuEQG"/>
+<div class="absolute inset-0 bg-primary/20 backdrop-blur-[2px] flex items-center justify-center">
+<div class="flex flex-col items-center gap-2">
+<span class="material-symbols-outlined text-white animate-spin">sync</span>
+<span class="text-[10px] font-bold text-white uppercase tracking-widest">Syncing 82%</span>
+</div>
+</div>
+</div>
+<div class="flex justify-between items-start">
+<div>
+<h3 class="text-sm font-bold text-on-surface truncate pr-4">Urban_Athletes_Campaign.jpg</h3>
+<p class="text-[11px] text-on-surface-variant mt-0.5">4320x2160 • 8.4MB</p>
+</div>
+<span class="material-symbols-outlined text-outline cursor-pointer hover:text-primary">more_vert</span>
+</div>
+</div>
+<!-- Media Card 3: Video -->
+<div class="group bg-surface-container-lowest p-3 rounded-xl hover:shadow-xl transition-all duration-300">
+<div class="relative aspect-video rounded-lg overflow-hidden bg-surface-container-highest mb-3">
+<img alt="Media Thumbnail" class="w-full h-full object-cover" data-alt="Action shot of a marathon runner's legs in motion on a sunny city asphalt road" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDST5s8Tp1_qenm0TEvRZv-gEhohuzRJMetU1uk8IGsEpK1ZrCvCouV_erhz0uWLnTWLnSnfEh8SMgMF-gDHjgY4IQrPxkZsi7uMuyrkuRUQZ6_nMUF0TfaD4mxAcFtM_BANqSnOQLBxffj8r1XWCImXRtuBczniiVFk0ZeAQZsSI0olpy3lUDTU4oyVb3VkV2D_NcmIQeeZBA1KRwIeKNd_aDsz6cYPtV0PkK1GAJq9R4IMXQjkhoX4lrrT6IClrSlDMLibQ070BD0"/>
+<div class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-white text-5xl">play_circle</span>
+</div>
+<div class="absolute top-2 right-2 px-2 py-1 bg-white/90 backdrop-blur rounded-md text-[10px] font-bold text-primary flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Success
+                            </div>
+</div>
+<div class="flex justify-between items-start">
+<div>
+<h3 class="text-sm font-bold text-on-surface truncate pr-4">Endurance_Loop.mp4</h3>
+<p class="text-[11px] text-on-surface-variant mt-0.5">10s • 1080x1920 • 22MB</p>
+</div>
+<span class="material-symbols-outlined text-outline cursor-pointer hover:text-primary">more_vert</span>
+</div>
+</div>
+<!-- Media Card 4: Video -->
+<div class="group bg-surface-container-lowest p-3 rounded-xl hover:shadow-xl transition-all duration-300">
+<div class="relative aspect-video rounded-lg overflow-hidden bg-surface-container-highest mb-3 border-2 border-primary/40">
+<img alt="Media Thumbnail" class="w-full h-full object-cover" data-alt="Close-up profile of a modern lime green sneaker with glowing highlights in a dark environment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD34r_si_LOQXJ9FrVR8Fy9h_qXFJkop2hsCBNbxFUvwzu3jUMWitcgQLYx3XJ28ROgpEJOm8focPLXlzDCivL93J5h2AZA0JvTt5WbV-2DZVp21H358WGryuuDztrW-5YWc7hgFllrCI7GsFtWlWYcTuf4m9zS9nKbzzf7W_xOTr1VhAvMiMKKGz39THK5NLKT20reb4rg75ErF92mDeHo1AjLgzb_qc1lBukZALofcv2jCvFCVEOSh3QgALjjN-JaVwQxx4aCwuJ3"/>
+<div class="absolute top-2 left-2 bg-primary text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-tighter shadow-sm">Selected</div>
+<div class="absolute inset-0 bg-black/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-5xl">play_circle</span>
+</div>
+<div class="absolute top-2 right-2 px-2 py-1 bg-white/90 backdrop-blur rounded-md text-[10px] font-bold text-primary flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Success
+                            </div>
+</div>
+<div class="flex justify-between items-start">
+<div>
+<h3 class="text-sm font-bold text-on-surface truncate pr-4">Neon_Impact_Reveal.mp4</h3>
+<p class="text-[11px] text-on-surface-variant mt-0.5">06s • 1920x1080 • 12MB</p>
+</div>
+<span class="material-symbols-outlined text-outline cursor-pointer hover:text-primary">more_vert</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Right Side-Panel (Metadata & Preview) -->
+<aside class="w-80 bg-surface-container-low border-l border-outline-variant/15 flex flex-col overflow-y-auto custom-scrollbar">
+<!-- Preview Section -->
+<div class="p-6 bg-surface-container-lowest">
+<h2 class="font-manrope text-sm font-bold text-on-surface mb-4">Preview</h2>
+<div class="aspect-video bg-inverse-surface rounded-xl overflow-hidden relative shadow-lg">
+<img alt="Preview Video" class="w-full h-full object-cover opacity-80" data-alt="Detailed close-up of a high-tech lime green running shoe highlighting textile textures and neon glow effects" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB2TpODW0cSFJ3rIYQNKECSFa28IFIq6FcPCVznqx3IwCUg8jrjxEQLHiSej-_KKYwrU8IwD7ucnxjOZ86wBhuoqsyw2pRhVZeoVnUrwrFF-PNQwuOYxQebCYOK4RBfmMjqPE4vcVxuQXVnnU6vmyQdGmtB_TMGewHsIIh1rx5xzO9CIoidRDoF0ZRzz7UCRcQ33Ic0WB5KaBlbwfbk479vp884JgXA-LbRpWwbG4EEsvstmEhoHWSsvmzOXC28jFJWeBE1zrnIxPCy"/>
+<div class="absolute inset-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-4xl">play_arrow</span>
+</div>
+<div class="absolute bottom-2 right-2 text-[10px] text-white/80 font-mono bg-black/40 px-2 py-1 rounded">00:06</div>
+</div>
+<div class="mt-4 flex items-center justify-between">
+<h3 class="font-manrope text-lg font-bold">Neon_Impact_Reveal.mp4</h3>
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<p class="text-xs text-on-surface-variant mt-1">Uploaded Oct 24, 2023 by Alex K.</p>
+</div>
+<!-- File Specs -->
+<div class="p-6 space-y-4">
+<h4 class="text-[11px] font-black text-on-surface-variant uppercase tracking-widest">File Specifications</h4>
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-white/50 p-3 rounded-lg">
+<p class="text-[10px] text-on-surface-variant mb-1">Duration</p>
+<p class="text-sm font-bold">15s</p>
+</div>
+<div class="bg-white/50 p-3 rounded-lg">
+<p class="text-[10px] text-on-surface-variant mb-1">Dimensions</p>
+<p class="text-sm font-bold">1920 x 1080</p>
+</div>
+<div class="bg-white/50 p-3 rounded-lg">
+<p class="text-[10px] text-on-surface-variant mb-1">File Size</p>
+<p class="text-sm font-bold">45MB</p>
+</div>
+<div class="bg-white/50 p-3 rounded-lg">
+<p class="text-[10px] text-on-surface-variant mb-1">Type</p>
+<p class="text-sm font-bold">MP4 / H.264</p>
+</div>
+</div>
+<div class="bg-white/50 p-3 rounded-lg">
+<p class="text-[10px] text-on-surface-variant mb-1">MD5 Hash</p>
+<p class="text-[10px] font-mono break-all text-on-secondary-fixed">8b1a9953c4611296a827abf8c47804d7</p>
+</div>
+</div>
+<!-- Dependencies -->
+<div class="p-6 pt-0 space-y-4">
+<h4 class="text-[11px] font-black text-on-surface-variant uppercase tracking-widest">Active Dependencies</h4>
+<div class="flex items-center gap-2 px-3 py-2 bg-primary-container/20 rounded-lg">
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">ads_click</span>
+<p class="text-xs font-bold text-on-primary-container">Currently used in 3 campaigns</p>
+</div>
+<ul class="space-y-2 pl-2">
+<li class="flex items-center gap-2 text-xs text-on-surface">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                        Nike Summer Blast 2024
+                    </li>
+<li class="flex items-center gap-2 text-xs text-on-surface">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                        Q4 London Transit Takeover
+                    </li>
+<li class="flex items-center gap-2 text-xs text-on-surface">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                        Global Brand Refresh - Tier 1
+                    </li>
+</ul>
+</div>
+<!-- Quick Actions -->
+<div class="mt-auto p-6 flex flex-col gap-2">
+<div class="grid grid-cols-2 gap-2">
+<button class="flex items-center justify-center gap-2 py-2.5 bg-white hover:bg-slate-50 text-on-surface rounded-xl text-xs font-bold transition-colors shadow-sm">
+<span class="material-symbols-outlined text-sm">edit</span> Rename
+                    </button>
+<button class="flex items-center justify-center gap-2 py-2.5 bg-white hover:bg-slate-50 text-on-surface rounded-xl text-xs font-bold transition-colors shadow-sm">
+<span class="material-symbols-outlined text-sm">drive_file_move</span> Move
+                    </button>
+</div>
+<button class="flex items-center justify-center gap-2 py-2.5 bg-error-container/10 hover:bg-error-container/20 text-error font-bold rounded-xl text-xs transition-colors">
+<span class="material-symbols-outlined text-sm">delete</span> Delete File
+                </button>
+</div>
+</aside>
+</div>
+</body></html>

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Platform Configuration - OpenAd</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Manrope:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* Custom Scrollbar for sleekness */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #dce3ea; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #abb3b9; }
+
+        /* Range Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #006788;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(44, 51, 57, 0.2);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #dce3ea;
+            border-radius: 2px;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-secondary-fixed": "#2f424d",
+                      "surface": "#f7f9fd",
+                      "on-error": "#fff7f6",
+                      "surface-tint": "#006788",
+                      "on-primary-container": "#00465d",
+                      "on-surface-variant": "#586066",
+                      "secondary": "#4f626e",
+                      "on-primary-fixed": "#003042",
+                      "error-dim": "#67040d",
+                      "inverse-on-surface": "#9a9da0",
+                      "on-tertiary-fixed-variant": "#454f76",
+                      "surface-container-low": "#f0f4f8",
+                      "on-secondary-fixed-variant": "#4b5e6a",
+                      "on-primary-fixed-variant": "#004f69",
+                      "surface-dim": "#d3dbe2",
+                      "outline": "#747c82",
+                      "primary-fixed-dim": "#65c4ef",
+                      "on-tertiary": "#faf8ff",
+                      "on-secondary": "#f4faff",
+                      "tertiary-fixed-dim": "#b8c2ef",
+                      "surface-container-high": "#e3e9ef",
+                      "surface-variant": "#dce3ea",
+                      "surface-container": "#e9eef4",
+                      "error": "#a83836",
+                      "tertiary-container": "#c6d0fe",
+                      "tertiary": "#535d85",
+                      "primary-dim": "#005a77",
+                      "secondary-fixed-dim": "#c3d7e5",
+                      "background": "#f7f9fd",
+                      "primary-container": "#74d1fe",
+                      "on-tertiary-fixed": "#283257",
+                      "primary": "#006788",
+                      "on-tertiary-container": "#3b466c",
+                      "inverse-surface": "#0b0f11",
+                      "surface-container-highest": "#dce3ea",
+                      "inverse-primary": "#74d1fe",
+                      "on-background": "#2c3339",
+                      "surface-container-lowest": "#ffffff",
+                      "on-primary": "#f3faff",
+                      "on-secondary-container": "#415460",
+                      "surface-bright": "#f7f9fd",
+                      "secondary-fixed": "#d1e5f4",
+                      "primary-fixed": "#74d1fe",
+                      "tertiary-fixed": "#c6d0fe",
+                      "secondary-dim": "#435661",
+                      "on-error-container": "#6e0a12",
+                      "tertiary-dim": "#475178",
+                      "outline-variant": "#abb3b9",
+                      "on-surface": "#2c3339",
+                      "secondary-container": "#d1e5f4",
+                      "error-container": "#fa746f"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {},
+              "fontFamily": {
+                      "headline": ["Manrope", "sans-serif"],
+                      "display": ["Manrope", "sans-serif"],
+                      "body": ["Inter", "sans-serif"],
+                      "label": ["Inter", "sans-serif"]
+              },
+              "fontSize": {}
+      },
+          },
+        }
+      </script>
+</head>
+<body class="bg-background text-on-background font-body min-h-screen flex flex-col antialiased selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar (JSON Injected Styles & Content) -->
+<header class="bg-[#f7f9fd] dark:bg-slate-900 docked full-width top-0 z-50 flex justify-between items-center w-full px-8 py-4 bg-[#f7f9fd]">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-black font-manrope text-[#006788] dark:text-[#74d1fe] tracking-tighter">OpenAd</span>
+<nav class="hidden md:flex gap-6 items-center">
+<!-- Navigation Links (All inactive based on Context Rules for Settings Screen) -->
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] transition-colors text-sm" href="#">Dashboard</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] transition-colors text-sm" href="#">Live Fleet</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] transition-colors text-sm" href="#">Devices</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] transition-colors text-sm" href="#">Campaigns</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] transition-colors text-sm" href="#">Media</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] transition-colors text-sm" href="#">Reports</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-[#586066] hover:bg-[#f0f4f8] dark:hover:bg-slate-800 rounded-md p-2 scale-102 active:scale-95 transition-transform duration-200">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<div class="w-9 h-9 rounded-full bg-surface-container-high overflow-hidden hover:bg-[#f0f4f8] dark:hover:bg-slate-800 transition-colors cursor-pointer">
+<!-- Placeholder for Profile Image -->
+<div class="w-full h-full flex items-center justify-center text-primary font-bold">U</div>
+</div>
+</div>
+</header>
+<!-- Main Workspace -->
+<div class="flex flex-1 overflow-hidden relative">
+<!-- SideNavBar (JSON Injected Styles & Content) -->
+<aside class="hidden md:flex flex-col bg-[#f0f4f8] dark:bg-slate-950 h-screen w-72 left-0 sticky top-0 flex flex-col gap-2 p-6 h-full border-r border-transparent z-40">
+<div class="mb-8 px-2">
+<h2 class="text-lg font-bold font-manrope text-on-background tracking-tight">Settings</h2>
+<p class="text-sm font-medium font-inter text-[#586066] mt-1">Management &amp; MDM</p>
+</div>
+<nav class="flex flex-col gap-1">
+<!-- Inactive -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#586066] dark:text-slate-400 hover:text-[#006788] dark:hover:text-[#74d1fe] hover:bg-white/50 dark:hover:bg-slate-800/50 transition-all translate-x-1 duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="person">person</span>
+<span class="text-sm font-semibold font-inter">My Profile</span>
+</a>
+<!-- ACTIVE -->
+<a class="flex items-center gap-3 px-3 py-2.5 bg-white dark:bg-slate-800 text-[#006788] dark:text-[#74d1fe] rounded-lg shadow-sm font-bold translate-x-1 duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="settings" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="text-sm font-semibold font-inter">Platform Configuration</span>
+</a>
+<!-- Inactive -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#586066] dark:text-slate-400 hover:text-[#006788] dark:hover:text-[#74d1fe] hover:bg-white/50 dark:hover:bg-slate-800/50 transition-all translate-x-1 duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="system_update">system_update</span>
+<span class="text-sm font-semibold font-inter">Device App Releases</span>
+</a>
+<!-- Inactive -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#586066] dark:text-slate-400 hover:text-[#006788] dark:hover:text-[#74d1fe] hover:bg-white/50 dark:hover:bg-slate-800/50 transition-all translate-x-1 duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="receipt_long">receipt_long</span>
+<span class="text-sm font-semibold font-inter">Audit Logs</span>
+</a>
+</nav>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 overflow-y-auto relative">
+<div class="max-w-6xl mx-auto px-8 py-10 pb-32">
+<!-- Page Header -->
+<div class="mb-10 ml-2">
+<h1 class="text-3xl font-display font-bold text-on-background tracking-tight">Platform Configuration</h1>
+<p class="text-on-surface-variant font-body text-sm mt-2 max-w-2xl">Global parameters for fleet management, media validation, and system security thresholds.</p>
+</div>
+<!-- Bento Grid Layout for Settings -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<!-- Card 1: Pairing & Security -->
+<section class="bg-surface-container-lowest rounded-xl p-6 flex flex-col gap-6">
+<header class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-primary" data-icon="lock">lock</span>
+<h3 class="font-display font-semibold text-lg text-on-background">Pairing &amp; Security</h3>
+</header>
+<div class="flex flex-col gap-5">
+<div class="flex flex-col gap-2">
+<label class="text-sm font-semibold text-on-background">Secret TTL (ms)</label>
+<p class="text-xs text-on-surface-variant mb-1">Time-to-live for pairing registration secrets.</p>
+<input class="bg-surface-container-low text-on-surface font-body text-sm rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-primary/30 outline-none w-full transition-shadow border-none" type="number" value="300000"/>
+</div>
+<div class="flex items-center justify-between bg-surface pt-2 pb-2 rounded-lg">
+<div class="flex flex-col">
+<label class="text-sm font-semibold text-on-background">Skip Asset Rotation</label>
+<p class="text-xs text-on-surface-variant">Bypass regular cryptographic asset renewal.</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary border-none shadow-sm"></div>
+</label>
+</div>
+</div>
+</section>
+<!-- Card 2: Media Validation -->
+<section class="bg-surface-container-lowest rounded-xl p-6 flex flex-col gap-6">
+<header class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-primary" data-icon="movie_filter">movie_filter</span>
+<h3 class="font-display font-semibold text-lg text-on-background">Media Validation</h3>
+</header>
+<div class="grid grid-cols-2 gap-5">
+<div class="flex flex-col gap-2">
+<label class="text-sm font-semibold text-on-background">Max File Size (MB)</label>
+<input class="bg-surface-container-low text-on-surface font-body text-sm rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-primary/30 outline-none w-full transition-shadow border-none" type="number" value="500"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-sm font-semibold text-on-background">Max Bitrate (Mbps)</label>
+<input class="bg-surface-container-low text-on-surface font-body text-sm rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-primary/30 outline-none w-full transition-shadow border-none" type="number" value="25"/>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-sm font-semibold text-on-background">Max Resolution</label>
+<select class="bg-surface-container-low text-on-surface font-body text-sm rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-primary/30 outline-none w-full transition-shadow border-none appearance-none cursor-pointer">
+<option value="1080p">1920x1080 (FHD)</option>
+<option selected="" value="4k">3840x2160 (4K UHD)</option>
+<option value="8k">7680x4320 (8K UHD)</option>
+</select>
+</div>
+<div class="flex flex-col gap-3 mt-1">
+<div class="flex justify-between items-end">
+<label class="text-sm font-semibold text-on-background">Duration Limits (Sec)</label>
+<span class="text-xs font-semibold text-primary">5 - 60</span>
+</div>
+<input class="w-full accent-primary mt-1" max="120" min="1" type="range" value="60"/>
+</div>
+</section>
+<!-- Card 3: Media VFS Engine -->
+<section class="bg-surface-container-lowest rounded-xl p-6 flex flex-col gap-6">
+<header class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-primary" data-icon="cloud_upload">cloud_upload</span>
+<h3 class="font-display font-semibold text-lg text-on-background">Media VFS Engine</h3>
+</header>
+<div class="flex flex-col gap-5">
+<div class="flex flex-col gap-2">
+<label class="text-sm font-semibold text-on-background">Upload Session TTL (hrs)</label>
+<input class="bg-surface-container-low text-on-surface font-body text-sm rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-primary/30 outline-none w-full transition-shadow border-none" type="number" value="24"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-sm font-semibold text-on-background">Allowed MIME Types</label>
+<div class="bg-surface-container-low min-h-[44px] rounded-lg p-2 flex flex-wrap gap-2 focus-within:ring-2 focus-within:ring-primary/30 transition-shadow cursor-text">
+<div class="bg-surface-container-lowest text-on-background text-xs font-semibold px-2.5 py-1 rounded-md shadow-sm flex items-center gap-1">
+                                        video/mp4 <span class="material-symbols-outlined text-[14px] cursor-pointer text-on-surface-variant hover:text-error" data-icon="close">close</span>
+</div>
+<div class="bg-surface-container-lowest text-on-background text-xs font-semibold px-2.5 py-1 rounded-md shadow-sm flex items-center gap-1">
+                                        image/jpeg <span class="material-symbols-outlined text-[14px] cursor-pointer text-on-surface-variant hover:text-error" data-icon="close">close</span>
+</div>
+<div class="bg-surface-container-lowest text-on-background text-xs font-semibold px-2.5 py-1 rounded-md shadow-sm flex items-center gap-1">
+                                        image/png <span class="material-symbols-outlined text-[14px] cursor-pointer text-on-surface-variant hover:text-error" data-icon="close">close</span>
+</div>
+<input class="bg-transparent border-none outline-none text-sm text-on-surface w-24 p-0 ml-1" placeholder="Add type..." type="text"/>
+</div>
+</div>
+<div class="flex items-center justify-between bg-surface pt-2 pb-2 rounded-lg mt-1">
+<div class="flex flex-col">
+<label class="text-sm font-semibold text-on-background">Enable Deduplication</label>
+<p class="text-xs text-on-surface-variant">Prevent storing identical payload blocks.</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary border-none shadow-sm"></div>
+</label>
+</div>
+</div>
+</section>
+<!-- Card 4: Fleet Health Thresholds -->
+<section class="bg-surface-container-lowest rounded-xl p-6 flex flex-col gap-6">
+<header class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-primary" data-icon="monitor_heart">monitor_heart</span>
+<h3 class="font-display font-semibold text-lg text-on-background">Fleet Health Thresholds</h3>
+</header>
+<div class="grid grid-cols-2 gap-6">
+<div class="flex flex-col gap-2">
+<label class="text-sm font-semibold text-on-background">Offline Threshold (min)</label>
+<input class="bg-surface-container-low text-on-surface font-body text-sm rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-primary/30 outline-none w-full transition-shadow border-none" type="number" value="15"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-sm font-semibold text-on-background">Max GPS HDOP</label>
+<input class="bg-surface-container-low text-on-surface font-body text-sm rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-primary/30 outline-none w-full transition-shadow border-none" step="0.1" type="number" value="2.5"/>
+</div>
+</div>
+<div class="flex flex-col gap-5 mt-2">
+<div class="flex flex-col gap-3">
+<div class="flex justify-between items-end">
+<label class="text-sm font-semibold text-on-background">Min Battery Level</label>
+<span class="text-xs font-semibold text-primary">20%</span>
+</div>
+<input class="w-full accent-primary" max="100" min="0" type="range" value="20"/>
+</div>
+<div class="flex flex-col gap-3">
+<div class="flex justify-between items-end">
+<label class="text-sm font-semibold text-on-background">Max Storage Usage</label>
+<span class="text-xs font-semibold text-primary">85%</span>
+</div>
+<input class="w-full accent-primary" max="100" min="0" type="range" value="85"/>
+</div>
+</div>
+</section>
+<!-- Card 5: Analytics & Fraud (Spans full width on large screens) -->
+<section class="bg-surface-container-lowest rounded-xl p-6 flex flex-col gap-6 lg:col-span-2">
+<header class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-primary" data-icon="policy">policy</span>
+<h3 class="font-display font-semibold text-lg text-on-background">Analytics &amp; Fraud Protection</h3>
+</header>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<div class="flex flex-col gap-2">
+<label class="text-sm font-semibold text-on-background">Max Velocity (km/h)</label>
+<p class="text-xs text-on-surface-variant mb-1 line-clamp-1">Reject plays above speed.</p>
+<input class="bg-surface-container-low text-on-surface font-body text-sm rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-primary/30 outline-none w-full transition-shadow border-none" type="number" value="120"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-sm font-semibold text-on-background">Min Play Ratio</label>
+<p class="text-xs text-on-surface-variant mb-1 line-clamp-1">Required completion %.</p>
+<input class="bg-surface-container-low text-on-surface font-body text-sm rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-primary/30 outline-none w-full transition-shadow border-none" step="0.05" type="number" value="0.95"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-sm font-semibold text-on-background">Min Duration (sec)</label>
+<p class="text-xs text-on-surface-variant mb-1 line-clamp-1">Shortest billable play.</p>
+<input class="bg-surface-container-low text-on-surface font-body text-sm rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-primary/30 outline-none w-full transition-shadow border-none" type="number" value="5"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-sm font-semibold text-on-background">Heartbeat Interval (s)</label>
+<p class="text-xs text-on-surface-variant mb-1 line-clamp-1">Ping frequency required.</p>
+<input class="bg-surface-container-low text-on-surface font-body text-sm rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-primary/30 outline-none w-full transition-shadow border-none" type="number" value="60"/>
+</div>
+</div>
+</section>
+</div>
+</div>
+<!-- Floating Footer Actions -->
+<div class="absolute bottom-0 left-0 w-full bg-surface-bright/80 backdrop-blur-[20px] px-8 py-5 flex justify-end items-center gap-4 shadow-[0px_-8px_24px_rgba(44,51,57,0.04)] z-10">
+<button class="text-on-surface-variant font-semibold hover:text-primary hover:bg-surface-container-low px-5 py-2.5 rounded-md transition-colors text-sm font-body">
+                    Restore Defaults
+                </button>
+<button class="bg-gradient-to-br from-primary to-primary-container text-on-primary rounded-md px-8 py-2.5 text-sm font-body font-semibold shadow-[0px_8px_24px_rgba(44,51,57,0.06)] hover:scale-102 active:scale-95 transition-transform">
+                    Save Configuration
+                </button>
+</div>
+</main>
+</div>
+</body></html>

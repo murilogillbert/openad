@@ -1,0 +1,109 @@
+{
+  "name": "openad-ad-client",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "prefix": "app",
+  "sourceRoot": "app/openad-ad-client/src",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@angular/build:application",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/app/openad-ad-client",
+        "browser": "app/openad-ad-client/src/main.ts",
+        "tsConfig": "app/openad-ad-client/tsconfig.app.json",
+        "assets": [
+          {
+            "glob": "**/*",
+            "input": "app/openad-ad-client/public"
+          },
+          {
+            "glob": "**/*",
+            "input": "app/openad-ad-client/capacitor/assets/factory-default-ads",
+            "output": "factory-default-ads"
+          }
+        ],
+        "styles": ["app/openad-ad-client/src/styles.css"],
+        "server": "app/openad-ad-client/src/main.server.ts",
+        "ssr": {
+          "entry": "app/openad-ad-client/src/server.ts"
+        },
+        "outputMode": "server"
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "500kb",
+              "maximumError": "1mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "4kb",
+              "maximumError": "8kb"
+            }
+          ],
+          "outputHashing": "all"
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "@angular/build:dev-server",
+      "configurations": {
+        "production": {
+          "buildTarget": "openad-ad-client:build:production"
+        },
+        "development": {
+          "buildTarget": "openad-ad-client:build:development"
+        }
+      },
+      "defaultConfiguration": "development"
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "@angular/build:unit-test",
+      "options": {}
+    },
+    "serve-static": {
+      "continuous": true,
+      "executor": "@nx/web:file-server",
+      "options": {
+        "buildTarget": "openad-ad-client:build",
+        "port": 4200,
+        "staticFilePath": "dist/app/openad-ad-client/browser",
+        "spa": true
+      }
+    },
+    "cap-sync": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{workspaceRoot}",
+        "parallel": false,
+        "commands": [
+          "ln -sfn ../../node_modules app/openad-ad-client/node_modules",
+          "pnpm exec nx run openad-ad-client:build --configuration=$(node -p \"process.env.NODE_ENV === 'production' ? 'production' : 'development'\")",
+          "node tools/copy-capacitor-web-index.cjs",
+          "cd app/openad-ad-client && ../../node_modules/.bin/cap sync android"
+        ]
+      }
+    },
+    "cap-build-android": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{workspaceRoot}/app/openad-ad-client/android",
+        "command": "./gradlew assembleDebug"
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+@if (isSuperAdmin()) {
+  <app-releases-admin-page />
+} @else {
+  <div class="p-4 text-slate-100">
+    <h1 class="mb-2 text-lg font-semibold">Device updates</h1>
+    <p class="mb-4 text-sm text-slate-400">
+      Superadmin tools are restricted. You can still trigger an on-device update check.
+    </p>
+    <app-releases-operator-tools />
+  </div>
+}
+

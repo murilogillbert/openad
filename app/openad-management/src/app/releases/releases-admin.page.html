@@ -1,0 +1,437 @@
+<p-toast />
+
+<div class="relative flex min-w-0 flex-col">
+  <div class="mx-auto w-full min-w-0 max-w-6xl px-4 py-8 sm:px-6">
+    <header class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div>
+        <h1 class="text-3xl font-extrabold tracking-tight text-color">Device App Releases</h1>
+        <p class="mt-2 max-w-2xl text-sm text-muted-color">
+          The command center for updating fleet software and onboarding new screens. Master QR always
+          points at the latest stable build.
+        </p>
+      </div>
+      <p-button
+        label="Upload new release"
+        icon="pi pi-plus"
+        (onClick)="openUploadDrawer()"
+      />
+    </header>
+
+    <!-- Zone A: Hero provisioning -->
+    <div class="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <section
+        class="min-w-0 overflow-hidden rounded-xl border border-surface-200 bg-gradient-to-br from-primary/5 to-surface-0 p-6 shadow-sm dark:border-surface-300 dark:from-primary/10 lg:col-span-2"
+      >
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-stretch lg:justify-between">
+          <div class="min-w-0 flex-1">
+            <div class="mb-2 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+              <span class="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true"></span>
+              Active provisioning
+            </div>
+            <h2 class="text-lg font-bold text-color">Device owner provisioning QR</h2>
+            <p class="mt-2 text-sm text-muted-color">
+              Technicians scan this on a new tablet during Android Enterprise setup. It enrolls the
+              device and installs
+              <span class="font-semibold text-color">
+                @if (latestStableVersion) {
+                  Latest stable: {{ latestStableVersion }}
+                } @else {
+                  the current stable app
+                }
+              </span>
+            </p>
+            <div class="mt-4 flex flex-wrap gap-2">
+              <p-button
+                type="button"
+                label="Print QR"
+                icon="pi pi-print"
+                [outlined]="true"
+                [disabled]="!qrDataUrl"
+                (onClick)="printQr()"
+              />
+              <p-button
+                type="button"
+                label="Download PDF"
+                icon="pi pi-download"
+                [loading]="pdfLoading"
+                [disabled]="!qrDataUrl && !stableEmptyMessage"
+                (onClick)="downloadPdf()"
+              />
+            </div>
+            @if (stableEmptyMessage) {
+              <p class="mt-3 text-sm text-amber-600 dark:text-amber-400">
+                {{ stableEmptyMessage }}
+              </p>
+            }
+          </div>
+          <div
+            class="flex shrink-0 items-center justify-center rounded-xl border border-surface-200 bg-surface-0 p-4 dark:border-surface-300"
+          >
+            @if (qrDataUrl) {
+              <img
+                [src]="qrDataUrl"
+                width="200"
+                height="200"
+                class="h-48 w-48 object-contain"
+                alt="Master provisioning QR (latest stable)"
+              />
+            } @else {
+              <div
+                class="flex h-48 w-48 items-center justify-center text-center text-sm text-muted-color"
+              >
+                No stable build yet — publish a release to generate the master QR.
+              </div>
+            }
+          </div>
+        </div>
+      </section>
+
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-1">
+        <p-card styleClass="shadow-sm border border-surface-200 dark:border-surface-300">
+          <ng-template pTemplate="content">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <p class="text-xs font-medium text-muted-color">Total on latest</p>
+                <p class="mt-1 text-2xl font-bold text-color">
+                  @if (metricTotalOnLatest != null) {
+                    {{ metricTotalOnLatest | number }}
+                  } @else {
+                    —
+                  }
+                </p>
+              </div>
+              <i class="pi pi-tablet text-xl text-primary" aria-hidden="true"></i>
+            </div>
+          </ng-template>
+        </p-card>
+        <p-card styleClass="shadow-sm border border-surface-200 dark:border-surface-300">
+          <ng-template pTemplate="content">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <p class="text-xs font-medium text-muted-color">Pending update</p>
+                <p class="mt-1 text-2xl font-bold text-color">{{ metricPending }}</p>
+              </div>
+              <span class="mt-1 h-2 w-2 shrink-0 rounded-full bg-rose-500" aria-hidden="true"></span>
+            </div>
+            <p class="mt-1 text-xs text-muted-color">Devices not yet on the latest stable build (or not reporting a version)</p>
+          </ng-template>
+        </p-card>
+        <p-card styleClass="shadow-sm border border-surface-200 dark:border-surface-300">
+          <ng-template pTemplate="content">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <p class="text-xs font-medium text-muted-color">Staged / rollout</p>
+                <p class="mt-1 text-2xl font-bold text-color">
+                  @if (metricStagedWaves != null) {
+                    {{ metricStagedWaves | number }}
+                  } @else {
+                    —
+                  }
+                </p>
+              </div>
+              <span class="mt-1 h-2 w-2 shrink-0 rounded-full bg-sky-500" aria-hidden="true"></span>
+            </div>
+            <p class="mt-1 text-xs text-muted-color">Open rollout waves (list)</p>
+          </ng-template>
+        </p-card>
+      </div>
+    </div>
+
+    <!-- Zone B: Ledger -->
+    <section
+      [id]="ledgerAnchorId"
+      class="mb-6 overflow-hidden rounded-xl border border-surface-200 bg-surface-0 p-0 shadow-sm dark:border-surface-300"
+    >
+      <div
+        class="flex flex-col gap-2 border-b border-surface-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between dark:border-surface-300"
+      >
+        <h2 class="text-lg font-bold text-color">Release management</h2>
+        <a
+          class="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
+          [href]="'#' + ledgerAnchorId"
+        >
+          View full history
+          <i class="pi pi-arrow-right text-xs" aria-hidden="true"></i>
+        </a>
+      </div>
+      @if (loading) {
+        <p class="px-5 py-6 text-sm text-muted-color">Loading…</p>
+      } @else {
+        <div class="w-full min-w-0 overflow-x-auto">
+        <p-table
+          [value]="releases"
+          dataKey="_id"
+          [rowHover]="true"
+          [paginator]="true"
+          [rows]="8"
+          [rowsPerPageOptions]="[8, 16, 32]"
+          [tableStyle]="{ 'min-width': '52rem' }"
+        >
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Version</th>
+              <th>Status</th>
+              <th>Rollout</th>
+              <th>Uploaded by</th>
+              <th>Date</th>
+              <th>Reach</th>
+              <th class="w-24">Actions</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-r>
+            <tr>
+              <td>
+                <span [class]="versionCellClass(r)">{{ displayVersion(r.versionIdentifier) }}</span>
+              </td>
+              <td>
+                <p-tag
+                  [value]="statusLabel(r)"
+                  [severity]="statusSeverity(r)"
+                  [rounded]="true"
+                />
+              </td>
+              <td class="min-w-[8rem]">
+                @if (showRolloutColumn(r)) {
+                  <div class="flex flex-col gap-1.5 text-xs">
+                    <span class="text-color">{{ rolloutLabel(r, rolloutForRelease(r._id)) }}</span>
+                    @if (shouldShowProgress(r, rolloutForRelease(r._id))) {
+                      <p-progressbar
+                        [value]="progressValue(r, rolloutForRelease(r._id))"
+                        [showValue]="false"
+                        styleClass="!h-1.5"
+                      />
+                    }
+                  </div>
+                } @else {
+                  <span class="text-sm text-muted-color">—</span>
+                }
+              </td>
+              <td>
+                @if (r.uploadedBy?.displayName) {
+                  <span class="text-sm text-color">{{ r.uploadedBy.displayName }}</span>
+                } @else {
+                  <span class="text-sm text-muted-color">—</span>
+                }
+              </td>
+              <td class="whitespace-nowrap text-sm text-color">
+                {{ displayDateForRow(r.createdAt) }}
+              </td>
+              <td class="text-sm text-color">
+                {{ formatReach(r) }}
+              </td>
+              <td>
+                @if (canRevoke(r)) {
+                  <p-button
+                    type="button"
+                    label="Retire"
+                    icon="pi pi-ban"
+                    [outlined]="true"
+                    [rounded]="true"
+                    size="small"
+                    [loading]="revokingId === r._id"
+                    (onClick)="revoke(r)"
+                    styleClass="!px-2"
+                  />
+                } @else {
+                  <span class="text-xs text-muted-color">—</span>
+                }
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="7" class="px-5 py-8 text-center text-sm text-muted-color">
+                No releases yet. Use “Upload new release” to add an APK.
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+        </div>
+      }
+    </section>
+
+    <p-panel
+      [toggleable]="true"
+      [collapsed]="true"
+      class="mb-6 block overflow-hidden rounded-xl border border-surface-200 shadow-sm dark:border-surface-300"
+      header="Active rollouts (advanced)"
+    >
+      <p class="mb-4 text-xs text-muted-color">
+        Create or pause rollouts for any build id, not only a fresh upload from the side panel.
+      </p>
+      <app-rollout-config (changed)="refreshList()" />
+    </p-panel>
+
+    <app-releases-operator-tools />
+  </div>
+</div>
+
+<!-- Zone C: Upload + rollout (drawer) -->
+<p-drawer
+  [style]="{ width: 'min(32rem, 100vw)' }"
+  position="right"
+  [modal]="true"
+  [(visible)]="uploadDrawerVisible"
+  header="Upload new release"
+  (onHide)="onUploadDrawerHide()"
+>
+  <div class="flex flex-col gap-6 p-0">
+    @if (!lastUploadedRelease) {
+      <section>
+        <h3 class="mb-2 text-sm font-semibold text-color">1. App package</h3>
+        <p-fileupload
+          #apkFileUpload
+          mode="advanced"
+          [customUpload]="true"
+          [auto]="false"
+          [showUploadButton]="false"
+          [fileLimit]="1"
+          [multiple]="false"
+          [maxFileSize]="maxApkFileBytes"
+          accept=".apk,application/vnd.android.package-archive"
+          chooseLabel="Drop APK or browse"
+          (onSelect)="onApkSelect($event)"
+          (onRemove)="onApkRemove()"
+          (onClear)="onApkRemove()"
+          class="w-full"
+        />
+        <p class="mt-1 text-xs text-muted-color">Signed Android package (.apk).</p>
+      </section>
+
+      <section class="flex flex-col gap-3 text-sm">
+        <label for="verId" class="text-sm font-semibold text-color">Version</label>
+        <input
+          pInputText
+          inputId="verId"
+          class="w-full"
+          [(ngModel)]="versionIdentifier"
+          placeholder="1.2.3"
+        />
+        <div class="flex flex-col gap-1">
+          <span class="text-sm font-semibold text-color">Build (optional)</span>
+          <p-inputNumber
+            class="w-full"
+            [showButtons]="true"
+            [useGrouping]="false"
+            [min]="0"
+            placeholder="e.g. 42"
+            [(ngModel)]="buildNumber"
+          />
+        </div>
+        <div class="flex flex-col gap-1">
+          <span class="text-sm font-semibold text-color">Release notes</span>
+          <p class="text-xs text-muted-color">What changed in this build — shared with your internal operators.</p>
+          <textarea
+            pTextarea
+            rows="4"
+            class="w-full"
+            [autoResize]="true"
+            [(ngModel)]="releaseNotes"
+            placeholder="e.g. Fixes display sync on vehicle restart…"
+          ></textarea>
+        </div>
+        <p-button
+          class="w-full"
+          type="button"
+          label="Upload to platform"
+          icon="pi pi-cloud-upload"
+          [disabled]="!file || !versionIdentifier.trim() || uploading"
+          [loading]="uploading"
+          (onClick)="upload()"
+        />
+      </section>
+    }
+
+    @if (lastUploadedRelease) {
+      <div class="rounded-lg border border-surface-200 bg-surface-50 p-3 text-sm dark:border-surface-500 dark:bg-surface-200">
+        <p class="font-mono text-xs text-color">Uploaded: {{ displayVersion(lastUploadedRelease.versionIdentifier) }}</p>
+        <p class="text-xs text-muted-color">id {{ lastUploadedRelease._id }}</p>
+      </div>
+      <section>
+        <h3 class="mb-2 text-sm font-semibold text-color">2. What happens next</h3>
+        <div class="flex flex-col gap-3">
+          <div class="flex items-start gap-2">
+            <p-radioButton
+              inputId="d-draft"
+              name="postU"
+              [value]="'draft'"
+              [(ngModel)]="postUploadChoice"
+            />
+            <label for="d-draft" class="cursor-pointer text-sm text-color">
+              <span class="font-medium">Save as draft</span>
+              <span class="block text-xs text-muted-color">Store the APK without rolling it out.</span>
+            </label>
+          </div>
+          <div class="flex items-start gap-2">
+            <p-radioButton
+              inputId="d-staged"
+              name="postU"
+              [value]="'staged'"
+              [(ngModel)]="postUploadChoice"
+            />
+            <label for="d-staged" class="cursor-pointer text-sm text-color">
+              <span class="font-medium">Staged rollout</span>
+              <span class="block text-xs text-muted-color">Limit exposure while you watch crash metrics.</span>
+            </label>
+          </div>
+          @if (postUploadChoice === 'staged') {
+            <div
+              class="ms-0 flex flex-col gap-4 border-l-2 border-primary/30 pl-3 sm:ms-6"
+            >
+              <div>
+                <label for="st-pct" class="text-sm font-semibold text-color"
+                  >Deploy to {{ stagedFleetPercent }}% of the fleet (cap)</label
+                >
+                <p class="text-xs text-muted-color">Applies to eligible devices in the chosen scope.</p>
+                <p-slider
+                  id="st-pct"
+                  class="mt-2 block w-full"
+                  [min]="1"
+                  [max]="100"
+                  [step]="1"
+                  [(ngModel)]="stagedFleetPercent"
+                />
+              </div>
+              <div>
+                <label for="st-grp" class="text-sm font-semibold text-color">Target</label>
+                <p class="text-xs text-muted-color">Narrow to a group (optional).</p>
+                <p-select
+                  inputId="st-grp"
+                  class="mt-2 w-full"
+                  [options]="deviceGroupOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  [(ngModel)]="stagedGroupId"
+                  placeholder="Optional group"
+                  [showClear]="true"
+                />
+              </div>
+            </div>
+          }
+          <div class="flex items-start gap-2">
+            <p-radioButton
+              inputId="d-stable"
+              name="postU"
+              [value]="'stable'"
+              [(ngModel)]="postUploadChoice"
+            />
+            <label for="d-stable" class="cursor-pointer text-sm text-color">
+              <span class="font-medium">Make latest stable</span>
+              <span class="block text-xs text-muted-color"
+                >Fleet pull + master QR immediately point to this build.</span
+              >
+            </label>
+          </div>
+        </div>
+        <p-button
+          class="mt-4 w-full"
+          type="button"
+          [label]="postUploadChoice === 'staged' ? 'Start staged rollout' : (postUploadChoice === 'stable' ? 'Promote to latest stable' : 'Done (draft only)')"
+          icon="pi pi-check"
+          (onClick)="applyPostUploadAction()"
+          [loading]="postUploadBusy"
+        />
+      </section>
+    }
+  </div>
+</p-drawer>

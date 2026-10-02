@@ -1,0 +1,25 @@
+@reference "../../styles.css";
+
+:host ::ng-deep .fleet-search-iconfield .fleet-search-input.p-inputtext {
+  @apply border-none bg-transparent shadow-none;
+}
+
+:host ::ng-deep .fleet-search-iconfield .fleet-search-input.p-inputtext:enabled:focus {
+  @apply ring-0;
+}
+
+:host ::ng-deep .fleet-table .p-datatable-thead > tr > th {
+  @apply text-muted-color border-surface-200 bg-surface-100 text-xs font-extrabold uppercase tracking-wider dark:border-surface-300 dark:bg-surface-200;
+}
+
+:host ::ng-deep .fleet-table .p-datatable-tbody > tr > td {
+  @apply border-surface-200 py-4 align-middle dark:border-surface-300;
+}
+
+.signature-gradient {
+  background: linear-gradient(
+    135deg,
+    var(--p-primary-color) 0%,
+    color-mix(in srgb, var(--p-primary-color) 65%, white) 100%
+  );
+}

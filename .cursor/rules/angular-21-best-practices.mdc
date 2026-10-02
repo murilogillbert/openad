@@ -1,0 +1,74 @@
+---
+description: Angular 21+ patterns — zoneless defaults, signals, Signal Forms, Vitest, Aria; PrimeNG via MCP for UI
+globs: "**/*.{ts,html}"
+alwaysApply: false
+---
+
+# Angular 21 best practices
+
+Use [angular.dev](https://angular.dev/) and the Angular MCP server (`search_documentation`, `find_examples`) as the source of truth; APIs evolve between minors.
+
+## PrimeNG UI components and pages
+
+- For **frontend components, pages, and templates** that use or integrate **PrimeNG**, **always use the PrimeNG MCP server** (`user-primeng`): discover tools, **read each tool’s schema** before calling, then use it for component APIs, props, events, theming, and patterns. Do not rely on memory or generic web snippets for PrimeNG-specific behavior.
+- Pair **Angular** docs/MCP for framework behavior with **PrimeNG** MCP for library-specific details.
+
+## Change detection and zone.js
+
+- **New apps are zoneless by default** — `zone.js` is not included. Prefer **signals** (`signal`, `computed`, `linkedSignal`, `resource`), `input()` / `output()`, and explicit updates over assuming Zone will patch async work.
+- If you must keep Zone temporarily, follow [Zoneless migration](https://angular.dev/guide/zoneless#removing-zonejs) and use `provideZoneChangeDetection()` only where needed.
+- Use **`ChangeDetectionStrategy.OnPush`** with zoneless-friendly patterns for predictable updates.
+
+## State and components
+
+- Prefer **standalone components** and **signal-based** APIs: `input()`, `model()`, `output()`, `viewChild()` / `contentChild()` as signals where applicable.
+- Avoid introducing new **`@Input()` / `@Output()`** decorators for greenfield code when signal inputs/outputs fit.
+- Use **`@if` / `@for` / `@switch`** and **`@defer`** with modern triggers (e.g. viewport options) instead of legacy structural patterns where docs recommend it.
+
+## Forms
+
+- **Signal Forms** (`@angular/forms/signals`, **`form()`**, **`Field`**, **`[field]`**) are the direction for reactive, type-safe forms; API is **experimental** — expect changes. See [Signal Forms essentials](https://angular.dev/essentials/signal-forms).
+- Signal Forms reduce need for **`ControlValueAccessor`** for many custom controls; validate against current docs before adding CVA boilerplate.
+
+```typescript
+// Prefer (experimental — check docs for current imports/API)
+import { form, Field } from '@angular/forms/signals';
+
+@Component({
+  imports: [Field],
+  template: `<input [field]="loginForm.email" />`,
+})
+export class Login {
+  login = signal({ email: '', password: '' });
+  loginForm = form(this.login);
+}
+```
+
+- Classic **ReactiveFormsModule** / **FormsModule** remain supported; migrate incrementally.
+
+## Accessibility and UI
+
+- For **accessible, headless** primitives (accordion, combobox, grid, listbox, menu, tabs, toolbar, tree), consider **Angular Aria** (`@angular/aria`, developer preview) — [guide](https://angular.dev/guide/aria/).
+- Continue using **Angular CDK** for behaviors (overlay, drag-drop, etc.) and **Angular Material** when you want styled Material components.
+
+## Testing
+
+- **Vitest** is the **default, stable** test runner for new CLI projects — use `ng test` and [testing guide](https://angular.dev/guide/testing).
+- **Karma/Jasmine** remain supported; migrate with the official flow when ready ([migrating to Vitest](https://angular.dev/guide/testing/migrating-to-vitest), schematic `ng g @schematics/angular:refactor-jasmine-vitest`).
+- **Jest / Web Test Runner** support in CLI is **deprecated** (removal planned for v22); prefer Vitest or community Jest presets if you need Jest.
+
+## Templates and DX
+
+- **`@let`** for local template variables; **`@if` / `@for`** for control flow.
+- **Regex in templates** is supported — e.g. `@let ok = /\d+/.test(value)` for simple checks.
+- Prefer **class/style bindings** over `NgClass`/`NgStyle` when migrating ([migrations](https://angular.dev/reference/migrations/)).
+- **`SimpleChanges`** is generic — type `ngOnChanges` arguments for stronger checks.
+
+## AI and tooling
+
+- Enable the **Angular MCP** in the CLI for agents: docs search, examples, and migration helpers (`onpush_zoneless_migration`, etc.). See [AI / MCP](https://angular.dev/ai/mcp).
+- For UI work with PrimeNG, the **PrimeNG MCP** is mandatory in addition to Angular MCP (see [PrimeNG UI components and pages](#primeng-ui-components-and-pages)).
+
+## Experimental vs stable
+
+- Treat **Signal Forms** and **Angular Aria** (preview) as **subject to change**; pin versions and read release notes before wide adoption.

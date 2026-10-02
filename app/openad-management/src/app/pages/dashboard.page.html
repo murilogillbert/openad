@@ -1,0 +1,497 @@
+<div
+  class="text-color -mx-4 flex min-h-[calc(100dvh-5rem)] min-w-0 flex-1 overflow-hidden md:-mx-6"
+>
+  <!-- Operations sidebar — desktop_dashboard code.html -->
+  <aside
+    class="hidden w-64 shrink-0 flex-col gap-2 border-r border-slate-200/80 bg-[#f0f4f8] p-4 md:flex dark:border-slate-700 dark:bg-slate-900"
+  >
+    <div class="mb-6 px-2">
+      <div class="mb-1 flex items-center gap-3">
+        <span class="material-symbols-outlined filled text-primary text-[22px]">analytics</span>
+        <span class="app-font-display text-surface-900 text-lg font-bold tracking-tight dark:text-surface-0">
+          Operations
+        </span>
+      </div>
+      <span
+        class="text-muted-color text-xs font-medium tracking-widest uppercase opacity-70"
+        >Ad Suite Control</span
+      >
+    </div>
+    <nav class="flex flex-col gap-1">
+      <button
+        type="button"
+        class="border-surface-200 bg-surface-0 text-primary active:scale-98 flex items-center gap-3 rounded-lg border px-3 py-2.5 text-sm font-medium shadow-sm transition-all dark:border-surface-600 dark:bg-surface-800 dark:text-primary-200"
+        (click)="go('/inventory')"
+      >
+        <span class="material-symbols-outlined text-[20px]">report_problem</span>
+        <span>Emergency Override</span>
+      </button>
+      <button
+        type="button"
+        class="text-muted-color active:scale-98 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 hover:translate-x-1 hover:text-primary"
+        (click)="go('/devices/pairing')"
+      >
+        <span class="material-symbols-outlined text-[20px]">add_circle</span>
+        <span>Add New Player</span>
+      </button>
+      <button
+        type="button"
+        class="text-muted-color active:scale-98 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 hover:translate-x-1 hover:text-primary"
+        (click)="go('/media')"
+      >
+        <span class="material-symbols-outlined text-[20px]">cloud_upload</span>
+        <span>Quick Upload</span>
+      </button>
+      <button
+        type="button"
+        class="text-muted-color active:scale-98 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 hover:translate-x-1 hover:text-primary"
+        (click)="go('/campaigns')"
+      >
+        <span class="material-symbols-outlined text-[20px]">auto_schedule</span>
+        <span>Schedule Wizard</span>
+      </button>
+    </nav>
+    <div
+      class="mt-auto rounded-xl border border-sky-200/80 bg-sky-100/50 p-4 dark:border-sky-900/40 dark:bg-sky-950/30"
+    >
+      <div class="mb-2 flex items-center gap-2">
+        <span class="h-2 w-2 shrink-0 rounded-full" [ngClass]="operationalDotClass()"></span>
+        <span class="text-xs font-bold text-slate-800 dark:text-slate-100">{{
+          operational()?.headline ?? 'Status'
+        }}</span>
+      </div>
+      <p class="text-muted-color text-[10px] leading-relaxed">
+        {{ operational()?.detail ?? 'Loading operational status…' }}
+      </p>
+    </div>
+  </aside>
+
+  <main
+    class="custom-scrollbar flex-1 overflow-y-auto p-6 md:p-8"
+  >
+    @if (loading() && summary() === null) {
+      <p class="text-muted-color text-sm">Loading dashboard…</p>
+    }
+
+    <!-- KPI row -->
+    <div class="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div
+        class="border-surface-200 bg-surface-0 dark:border-surface-300 dark:bg-surface-0 flex flex-col gap-1 rounded-xl border p-5 shadow-none transition-transform duration-300 hover:scale-[1.02]"
+      >
+        <span class="text-muted-color text-xs font-semibold tracking-wide uppercase"
+          >Network Status</span
+        >
+        <div class="flex items-baseline gap-2">
+          <span class="app-font-display text-surface-900 text-3xl font-extrabold dark:text-surface-950">
+            {{ networkOnline() }}/{{ networkTotal() || '—' }}
+          </span>
+          <span
+            class="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs font-medium"
+            >Screens Online</span
+          >
+        </div>
+        <div
+          class="bg-surface-200 dark:bg-surface-300 mt-3 h-1.5 w-full overflow-hidden rounded-full"
+        >
+          <div
+            class="bg-primary h-full rounded-full transition-all"
+            [style.width.%]="networkPct()"
+          ></div>
+        </div>
+      </div>
+
+      <div
+        class="border-surface-200 bg-surface-0 dark:border-surface-300 dark:bg-surface-0 flex flex-col gap-1 rounded-xl border p-5 shadow-none transition-transform duration-300 hover:scale-[1.02]"
+      >
+        <span class="text-muted-color text-xs font-semibold tracking-wide uppercase"
+          >Active Campaigns</span
+        >
+        <div class="flex items-baseline gap-2">
+          <span class="app-font-display text-surface-900 text-3xl font-extrabold dark:text-surface-950">
+            {{ activeCampaignCount() }}
+          </span>
+          <span
+            class="rounded-full bg-violet-500/10 px-2 py-0.5 text-xs font-medium text-violet-700 dark:text-violet-300"
+            >Live Now</span
+          >
+        </div>
+        <div class="mt-3 flex gap-1">
+          @for (i of [1, 2, 3, 4]; track i) {
+            <div
+              class="h-1.5 flex-1 rounded-full"
+              [class.bg-primary-200]="i <= campaignSegmentFill()"
+              [class.dark:bg-primary-400]="i <= campaignSegmentFill()"
+              [class.bg-surface-200]="i > campaignSegmentFill()"
+              [class.dark:bg-surface-400]="i > campaignSegmentFill()"
+            ></div>
+          }
+        </div>
+      </div>
+
+      <div
+        class="border-surface-200 bg-surface-0 dark:border-surface-300 dark:bg-surface-0 flex flex-col gap-1 rounded-xl border p-5 shadow-none transition-transform duration-300 hover:scale-[1.02]"
+      >
+        <span class="text-muted-color text-xs font-semibold tracking-wide uppercase"
+          >Total Impressions (24h)</span
+        >
+        <div class="flex items-baseline gap-2">
+          <span class="app-font-display text-surface-900 text-3xl font-extrabold dark:text-surface-950">{{
+            formatImpressions(impressions24h())
+          }}</span>
+          @if (impressionsDelta() !== null) {
+            <span
+              class="rounded-full px-2 py-0.5 text-xs font-medium"
+              [class.bg-emerald-50]="(impressionsDelta() ?? 0) >= 0"
+              [class.text-emerald-600]="(impressionsDelta() ?? 0) >= 0"
+              [class.dark:bg-emerald-950/40]="(impressionsDelta() ?? 0) >= 0"
+              [class.dark:text-emerald-400]="(impressionsDelta() ?? 0) >= 0"
+              [class.bg-red-50]="(impressionsDelta() ?? 0) < 0"
+              [class.text-red-600]="(impressionsDelta() ?? 0) < 0"
+              [class.dark:bg-red-950/30]="(impressionsDelta() ?? 0) < 0"
+              [class.dark:text-red-400]="(impressionsDelta() ?? 0) < 0"
+            >
+              {{ (impressionsDelta() ?? 0) >= 0 ? '↑' : '↓' }} {{ impressionsDelta()! | number: '1.0-1' }}%
+            </span>
+          } @else {
+            <span
+              class="text-muted-color rounded-full bg-surface-100 px-2 py-0.5 text-xs font-medium dark:bg-surface-200"
+              >vs prior 24h —</span
+            >
+          }
+        </div>
+        <div class="mt-3 flex items-center gap-1 overflow-hidden">
+          <div
+            class="from-primary/20 relative h-8 w-full overflow-hidden rounded-sm bg-gradient-to-t to-transparent"
+          >
+            @if (sparklineCounts().length > 0) {
+              <svg
+                class="absolute inset-0 h-full w-full"
+                viewBox="0 0 100 40"
+                preserveAspectRatio="none"
+              >
+                <path
+                  [attr.d]="sparklinePathD()"
+                  fill="color-mix(in srgb, var(--p-primary-color) 15%, transparent)"
+                />
+                <path
+                  [attr.d]="sparklineStrokeD()"
+                  fill="none"
+                  stroke="var(--p-primary-color)"
+                  stroke-width="2"
+                  vector-effect="non-scaling-stroke"
+                />
+              </svg>
+            } @else {
+              <div class="text-muted-color flex h-full items-center text-[10px]">No impression history yet</div>
+            }
+          </div>
+        </div>
+        <p class="text-muted-color text-[10px]">Last 7 days (UTC), from impression events.</p>
+      </div>
+
+      <div
+        class="border-surface-200 bg-surface-0 dark:border-surface-300 dark:bg-surface-0 flex flex-col gap-1 rounded-xl border p-5 shadow-none transition-transform duration-300 hover:scale-[1.02]"
+      >
+        <span class="text-muted-color text-xs font-semibold tracking-wide uppercase"
+          >Media Storage</span
+        >
+        <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          @if (mediaUsedPercent() !== null) {
+            <span class="app-font-display text-surface-900 text-3xl font-extrabold dark:text-surface-950">{{
+              mediaUsedPercent() | number: '1.0-0'
+            }}</span>
+            <span class="text-muted-color text-xs font-medium opacity-60">% of quota</span>
+          } @else {
+            <span class="app-font-display text-surface-900 text-3xl font-extrabold dark:text-surface-950">{{
+              mediaUsedLabel()
+            }}</span>
+            <span class="text-muted-color text-xs font-medium opacity-60">ingested (no quota set)</span>
+          }
+        </div>
+        <div
+          class="bg-surface-200 dark:bg-surface-300 mt-3 h-1.5 w-full rounded-full"
+        >
+          @if (mediaUsedPercent() !== null) {
+            <div
+              class="h-full rounded-full bg-violet-600 dark:bg-violet-400 transition-all"
+              [style.width.%]="mediaUsedPercent()!"
+            ></div>
+          } @else {
+            <div class="h-full w-full rounded-full bg-violet-400/25 dark:bg-violet-400/20"></div>
+          }
+        </div>
+        <p class="text-muted-color text-[10px]">
+          Sum of active ingested media assets. Configure the quota in Platform Configuration to show a % bar.
+        </p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-12 gap-6">
+      <!-- Display inventory -->
+      <div
+        class="border-surface-200 bg-surface-0 dark:border-surface-300 dark:bg-surface-0 col-span-12 rounded-xl border p-6 shadow-sm lg:col-span-8"
+      >
+        <div class="mb-6 flex items-center justify-between">
+          <h2 class="app-font-display text-surface-900 text-xl font-bold tracking-tight dark:text-surface-950">
+            Display Inventory
+          </h2>
+          <a
+            routerLink="/devices"
+            class="text-primary flex items-center gap-1 text-xs font-bold hover:underline"
+          >
+            <span class="material-symbols-outlined text-sm">filter_list</span>
+            Filter Screens
+          </a>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse text-left">
+            <thead>
+              <tr
+                class="border-surface-200 text-muted-color border-b text-xs font-bold tracking-wider uppercase dark:border-surface-300"
+              >
+                <th class="pb-3 pl-2">Name / Location</th>
+                <th class="pb-3">Status</th>
+                <th class="pb-3">Current Layout</th>
+                <th class="pb-3">Preview</th>
+                <th class="pb-3 pr-2 text-right">Last report</th>
+              </tr>
+            </thead>
+            <tbody class="text-sm">
+              @for (item of displayRows(); track item.deviceId) {
+                <tr
+                  class="hover:bg-surface-100 dark:hover:bg-surface-200 group transition-colors"
+                >
+                  <td class="py-4 pl-2">
+                    <div class="flex flex-col">
+                      <span class="text-surface-900 font-bold dark:text-surface-950">{{
+                        rowTitle(item)
+                      }}</span>
+                      <span class="text-muted-color text-xs">{{ rowSubtitle(item) }}</span>
+                    </div>
+                  </td>
+                  <td class="py-4">
+                    <div class="flex items-center gap-2">
+                      <span
+                        class="h-2 w-2 shrink-0 rounded-full"
+                        [ngClass]="statusDotClass(item)"
+                      ></span>
+                      <span class="text-xs font-medium">{{ statusLabel(item) }}</span>
+                    </div>
+                  </td>
+                  <td class="py-4">
+                    <span
+                      class="bg-surface-200 text-muted-color rounded px-2 py-1 text-[11px] font-semibold dark:bg-surface-300"
+                      >{{ layoutLabel(item) }}</span
+                    >
+                  </td>
+                  <td class="py-4">
+                    <div
+                      class="border-surface-300 group/thumb relative h-12 w-20 overflow-hidden rounded border dark:border-surface-500"
+                    >
+                      @if (item.connectivity.status === 'offline') {
+                        <div
+                          class="bg-surface-200 flex h-full w-full items-center justify-center dark:bg-surface-400"
+                        >
+                          <span class="material-symbols-outlined text-surface-500 text-sm"
+                            >signal_disconnected</span
+                          >
+                        </div>
+                      } @else {
+                        <div
+                          class="from-primary/30 h-full w-full bg-gradient-to-br to-violet-400/40"
+                        ></div>
+                        <div
+                          class="bg-surface-950/40 absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/thumb:opacity-100"
+                        >
+                          <span class="material-symbols-outlined text-sm text-white">refresh</span>
+                        </div>
+                      }
+                    </div>
+                  </td>
+                  <td
+                    class="font-mono py-4 pr-2 text-right text-xs font-medium"
+                    [ngClass]="lastReportTone(item)"
+                  >
+                    {{ lastReportLabel(item) }}
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" class="text-muted-color py-8 text-center text-sm">
+                    No screens reporting yet. Pair devices or check the API.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="mt-6 flex justify-center">
+          <a
+            routerLink="/devices"
+            class="text-muted-color hover:text-primary flex items-center gap-2 text-xs font-bold transition-colors"
+          >
+            View all screens
+            <span class="material-symbols-outlined text-xs">arrow_forward</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Campaign pacing -->
+      <div class="col-span-12 flex flex-col gap-6 lg:col-span-4">
+        <div
+          class="border-surface-200 bg-surface-0 dark:border-surface-300 dark:bg-surface-0 flex flex-1 flex-col rounded-xl border p-6 shadow-sm"
+        >
+          <div class="mb-6 flex items-center justify-between">
+            <h2
+              class="app-font-display text-surface-900 text-lg font-bold tracking-tight dark:text-surface-950"
+            >
+              Campaign Pacing
+            </h2>
+            <span class="material-symbols-outlined text-muted-color cursor-pointer text-xl"
+              >more_vert</span
+            >
+          </div>
+          <div class="space-y-6">
+            @for (c of campaignPacing(); track c.campaignId) {
+              <div class="space-y-2">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-surface-900 font-bold dark:text-surface-950">{{ c.name }}</span>
+                  @if (c.tone === 'emerald') {
+                    <span class="font-bold text-emerald-600">{{ c.pctOfTarget }}% of target</span>
+                  } @else if (c.tone === 'error') {
+                    <span class="text-red-600 font-bold">{{ c.pctOfTarget }}% of target</span>
+                  } @else {
+                    <span class="text-muted-color">{{ c.pctOfTarget }}% of target</span>
+                  }
+                </div>
+                <div
+                  class="bg-surface-200 dark:bg-surface-300 relative h-4 overflow-hidden rounded-full"
+                >
+                  @if (c.tone === 'primary') {
+                    <div
+                      class="from-primary to-primary-200 absolute inset-y-0 left-0 rounded-full bg-gradient-to-r"
+                      [style.width.%]="pacingBarWidth(c)"
+                    ></div>
+                  } @else if (c.tone === 'emerald') {
+                    <div
+                      class="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-300"
+                      [style.width.%]="pacingBarWidth(c)"
+                    ></div>
+                  } @else {
+                    <div
+                      class="from-red-700 absolute inset-y-0 left-0 rounded-full bg-gradient-to-r to-red-400"
+                      [style.width.%]="pacingBarWidth(c)"
+                    ></div>
+                  }
+                  <div
+                    class="border-surface-600/40 pointer-events-none absolute inset-y-0 left-0 border-r-2 border-dashed"
+                    [style.width.%]="c.expectedProgressPercent"
+                    title="Time-elapsed expectation"
+                  ></div>
+                </div>
+              </div>
+            } @empty {
+              <p class="text-muted-color text-sm">No active campaigns in the current schedule window.</p>
+            }
+          </div>
+          <div
+            class="border-surface-200 bg-surface-100 dark:border-surface-300 dark:bg-surface-200 mt-8 rounded-lg border p-4"
+          >
+            <div class="flex items-center gap-3">
+              <div class="bg-surface-0 rounded-md p-2 shadow-sm dark:bg-surface-0">
+                <span class="material-symbols-outlined text-primary">description</span>
+              </div>
+              <div class="min-w-0 flex-1">
+                <p
+                  class="text-surface-900 text-[11px] font-bold tracking-wider uppercase dark:text-surface-950"
+                >
+                  Proof-of-Play Quick-Link
+                </p>
+                <p class="text-muted-color text-xs">{{ formatProofOfPlayRelative(proofOfPlayLastAt()) }}</p>
+              </div>
+              <a
+                routerLink="/reports"
+                class="bg-primary text-primary-contrast shrink-0 rounded-md px-3 py-1.5 text-xs font-bold shadow-lg transition-transform hover:scale-105 active:scale-95"
+              >
+                Export
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom: alerts + activity -->
+      <div class="col-span-12 grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div
+          class="border-surface-200 bg-surface-0 dark:border-surface-300 dark:bg-surface-0 rounded-xl border border-l-4 border-l-red-600 p-6 shadow-sm"
+        >
+          <div class="mb-4 flex items-center gap-2">
+            <span class="material-symbols-outlined filled text-red-600 text-xl">warning</span>
+            <h2 class="app-font-display text-surface-900 text-lg font-bold dark:text-surface-950">
+              Critical Alerts
+            </h2>
+          </div>
+          <div class="space-y-3">
+            @for (a of criticalAlerts(); track a.id) {
+              <div
+                class="flex items-start gap-4 rounded-lg p-3 transition-colors"
+                [ngClass]="
+                  a.urgent
+                    ? 'bg-red-500/5 hover:bg-red-500/10'
+                    : 'bg-violet-500/5 hover:bg-violet-500/10'
+                "
+              >
+                <span
+                  class="material-symbols-outlined mt-1 text-sm"
+                  [class.text-red-600]="a.urgent"
+                  [class.text-violet-600]="!a.urgent"
+                  >{{ a.urgent ? 'device_thermostat' : 'storage' }}</span
+                >
+                <div class="min-w-0 flex-1">
+                  <p class="text-surface-900 text-sm font-bold dark:text-surface-950">{{ a.title }}</p>
+                  <p class="text-muted-color text-xs">{{ a.detail }}</p>
+                  @if (a.urgent) {
+                    <span
+                      class="text-red-600 mt-1 inline-block text-[10px] font-bold uppercase"
+                      >Urgent attention required</span
+                    >
+                  }
+                </div>
+                <span class="text-muted-color shrink-0 font-mono text-[10px]">{{
+                  formatAlertTime(a.occurredAt)
+                }}</span>
+              </div>
+            }
+            @if (criticalAlerts().length === 0) {
+              <p class="text-muted-color text-sm">No fleet alert flags right now.</p>
+            }
+          </div>
+        </div>
+
+        <div
+          class="border-surface-200 bg-surface-0 dark:border-surface-300 dark:bg-surface-0 rounded-xl border p-6 shadow-sm"
+        >
+          <div class="mb-4 flex items-center gap-2">
+            <span class="material-symbols-outlined filled text-primary text-xl">history</span>
+            <h2 class="app-font-display text-surface-900 text-lg font-bold dark:text-surface-950">
+              Recent Activity Log
+            </h2>
+          </div>
+          <div class="space-y-4">
+            @for (e of activityLog(); track e.id) {
+              <div
+                class="border-surface-200 flex items-center gap-4 border-t pt-3 text-xs first:border-t-0 first:pt-0 dark:border-surface-300"
+              >
+                <div class="bg-surface-300 h-2 w-2 shrink-0 rounded-full dark:bg-surface-500"></div>
+                <span class="text-muted-color font-mono">{{ formatActivityClock(e.at) }}</span>
+                <span class="text-surface-900 min-w-0 flex-1 dark:text-surface-950">{{ e.label }}</span>
+              </div>
+            } @empty {
+              <p class="text-muted-color text-sm">No recent media or report activity.</p>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>

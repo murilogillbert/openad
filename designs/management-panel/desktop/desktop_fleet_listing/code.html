@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>OpenAd | Devices Fleet Manager</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "inverse-surface": "#0b0f11",
+              "surface-tint": "#006788",
+              "on-primary-fixed-variant": "#004f69",
+              "on-tertiary-fixed": "#283257",
+              "on-error-container": "#6e0a12",
+              "on-primary-fixed": "#003042",
+              "surface-container-high": "#e3e9ef",
+              "surface-container": "#e9eef4",
+              "outline": "#747c82",
+              "on-primary": "#f3faff",
+              "on-tertiary": "#faf8ff",
+              "primary-container": "#74d1fe",
+              "surface-container-low": "#f0f4f8",
+              "surface-container-lowest": "#ffffff",
+              "surface-bright": "#f7f9fd",
+              "on-background": "#2c3339",
+              "tertiary-container": "#c6d0fe",
+              "surface-container-highest": "#dce3ea",
+              "on-secondary-fixed-variant": "#4b5e6a",
+              "primary-fixed": "#74d1fe",
+              "on-error": "#fff7f6",
+              "secondary-dim": "#435661",
+              "primary-dim": "#005a77",
+              "error": "#a83836",
+              "tertiary": "#535d85",
+              "error-container": "#fa746f",
+              "surface": "#f7f9fd",
+              "on-secondary": "#f4faff",
+              "on-primary-container": "#00465d",
+              "on-secondary-fixed": "#2f424d",
+              "on-secondary-container": "#415460",
+              "on-surface": "#2c3339",
+              "on-surface-variant": "#586066",
+              "tertiary-fixed-dim": "#b8c2ef",
+              "background": "#f7f9fd",
+              "tertiary-dim": "#475178",
+              "on-tertiary-fixed-variant": "#454f76",
+              "surface-variant": "#dce3ea",
+              "inverse-on-surface": "#9a9da0",
+              "primary": "#006788",
+              "tertiary-fixed": "#c6d0fe",
+              "error-dim": "#67040d",
+              "outline-variant": "#abb3b9",
+              "inverse-primary": "#74d1fe",
+              "secondary-fixed-dim": "#c3d7e5",
+              "on-tertiary-container": "#3b466c",
+              "secondary-container": "#d1e5f4",
+              "primary-fixed-dim": "#65c4ef",
+              "secondary-fixed": "#d1e5f4",
+              "secondary": "#4f626e",
+              "surface-dim": "#d3dbe2"
+            },
+            fontFamily: {
+              "headline": ["Manrope", "sans-serif"],
+              "body": ["Inter", "sans-serif"],
+              "label": ["Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .nav-active {
+            position: relative;
+        }
+        .nav-active::after {
+            content: '';
+            position: absolute;
+            bottom: -18px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #006788;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Manrope', sans-serif; }
+        .glass-effect {
+          background: rgba(255, 255, 255, 0.7);
+          backdrop-filter: blur(20px);
+        }
+        .signature-gradient {
+          background: linear-gradient(135deg, #006788 0%, #74d1fe 100%);
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen">
+<!-- TopNavBar -->
+<!-- TopNavBar Component Execution -->
+<nav class="flex items-center justify-between w-full px-8 py-4 sticky top-0 z-50 bg-[#f7f9fd] dark:bg-slate-900 no-border">
+<!-- Brand Section -->
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-3 group cursor-pointer">
+<img alt="OpenAd Logo" class="h-8 w-auto" data-alt="Modern abstract geometric logo for a digital advertising platform, professional blue tones, clean sharp lines, high tech aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1mRAXFuRv9LWMoF7ZP67R6l-y1vO6EZAJIxkFY59oxKN0gj4i2jpaq6C5l8stV5QoBgEtCpcj_texk45SR7lRs4xJ0hDLaNscm_lMTIBYE4ryiVx0RuZ05AaMR4n6Kdt4n2HpQ_PdU0QjmzgzfEsTUu7IncrXtAMyeguhuVKs989dWKijBigLkIcFnpRxUyefdemh2GdWKZjps4J6SV8ealHzB9r_fsYtxhSMGE7zwjsQfPFc2d4ejxjF05K14IhMUFIFB2-X6ifI"/>
+<span class="text-2xl font-extrabold tracking-tighter text-[#006788] dark:text-[#74d1fe] font-headline">OpenAd</span>
+</div>
+<!-- Navigation Links cluster -->
+<div class="hidden md:flex items-center gap-6">
+<!-- Dashboard -->
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] dark:hover:text-[#74d1fe] transition-colors text-sm font-inter" href="#">Dashboard</a>
+<!-- Inactive Links -->
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] dark:hover:text-[#74d1fe] transition-colors text-sm font-inter" href="#">Live Fleet</a>
+<a class="text-[#006788] dark:text-[#74d1fe] font-bold border-b-2 border-[#006788] dark:border-[#74d1fe] pb-1 text-sm font-medium font-inter transition-all" href="#">Devices</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] dark:hover:text-[#74d1fe] transition-colors text-sm font-inter" href="#">Campaigns</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] dark:hover:text-[#74d1fe] transition-colors text-sm font-inter" href="#">Media</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] dark:hover:text-[#74d1fe] transition-colors text-sm font-inter" href="#">Reports</a>
+</div>
+</div>
+<!-- Flexible Spacer -->
+<div class="flex-grow"></div>
+<!-- Actions Cluster -->
+<div class="flex items-center gap-2">
+<!-- Search Action -->
+<button class="p-2 hover:bg-white/50 dark:hover:bg-slate-700/50 rounded-lg transition-all duration-200 active:scale-95 opacity-80 flex items-center justify-center text-[#586066] dark:text-slate-400">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+</button>
+<!-- Notifications Action -->
+<div class="relative">
+<button class="p-2 hover:bg-white/50 dark:hover:bg-slate-700/50 rounded-lg transition-all duration-200 active:scale-95 opacity-80 flex items-center justify-center text-[#586066] dark:text-slate-400">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<!-- Subtle unread indicator -->
+<span class="absolute top-2 right-2.5 w-2 h-2 bg-error rounded-full border-2 border-[#f7f9fd] dark:border-slate-900"></span>
+</div>
+<!-- Profile / Account Action -->
+<button class="ml-2 flex items-center gap-3 pl-3 pr-1 py-1 bg-surface-container-low dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-700 rounded-full transition-all duration-200 group border border-transparent hover:border-outline-variant/20">
+<div class="hidden sm:block text-right">
+<p class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider leading-none">Administrator</p>
+<p class="text-xs font-semibold text-primary dark:text-primary-container">Alex Chen</p>
+</div>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-primary/20 bg-primary-container/30 flex items-center justify-center text-[#006788]">
+<span class="material-symbols-outlined text-xl" data-icon="account_circle" style="font-variation-settings: 'FILL' 1;">account_circle</span>
+</div>
+</button>
+</div>
+</nav>
+<main class="max-w-[1920px] mx-auto px-8 pt-8 pb-12">
+<!-- Dashboard Header & Summary -->
+<div class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div class="max-w-2xl">
+<h1 class="text-4xl font-extrabold tracking-tight text-on-surface mb-2">Fleet Manager</h1>
+<p class="text-on-surface-variant font-body">Real-time oversight of distributed DOOH advertising hardware across the network.</p>
+</div>
+<!-- Summary Row: Bento Style -->
+<div class="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+<div class="bg-surface-container-lowest p-4 rounded-xl min-w-[140px] shadow-sm flex flex-col border border-outline-variant/10">
+<span class="text-xs font-bold text-on-surface-variant tracking-wider uppercase mb-1">Total Devices</span>
+<span class="text-2xl font-black text-primary">1,240</span>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-xl min-w-[140px] shadow-sm flex flex-col border border-outline-variant/10">
+<span class="text-xs font-bold text-on-surface-variant tracking-wider uppercase mb-1">Active</span>
+<div class="flex items-center gap-2">
+<span class="text-2xl font-black text-on-surface">1,102</span>
+<div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-xl min-w-[140px] shadow-sm flex flex-col border border-outline-variant/10">
+<span class="text-xs font-bold text-on-surface-variant tracking-wider uppercase mb-1">Offline</span>
+<div class="flex items-center gap-2">
+<span class="text-2xl font-black text-error">12</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-xl min-w-[140px] shadow-sm flex flex-col border border-outline-variant/10">
+<span class="text-xs font-bold text-on-surface-variant tracking-wider uppercase mb-1">Syncing</span>
+<div class="flex items-center gap-2">
+<span class="text-2xl font-black text-tertiary">126</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Table Filters & Search -->
+<div class="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
+<div class="flex items-center gap-2 w-full md:w-auto">
+<div class="bg-surface-container-low px-4 py-2.5 rounded-lg flex items-center w-full md:w-96 group transition-all focus-within:bg-surface-container-lowest focus-within:ring-2 focus-within:ring-primary/20">
+<span class="material-symbols-outlined text-on-surface-variant text-xl" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm ml-3 w-full font-body placeholder:text-outline" placeholder="Filter by Plate (ABC-123) or Device ID (TAB-042)" type="text"/>
+</div>
+<button class="bg-surface-container-low p-2.5 rounded-lg text-on-surface hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined" data-icon="tune">tune</span>
+</button>
+</div>
+<div class="flex items-center gap-3">
+<button class="px-5 py-2.5 font-semibold text-sm text-on-surface-variant hover:text-primary transition-colors">Export Fleet Data</button>
+<button class="signature-gradient text-on-primary px-6 py-2.5 rounded-lg font-bold text-sm shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-lg" data-icon="add">add</span>
+                    Provision Device
+                </button>
+</div>
+</div>
+<!-- High-Density Fleet Manager Table -->
+<div class="bg-surface-container-low rounded-xl overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-high/50">
+<th class="px-6 py-4 text-xs font-extrabold uppercase tracking-widest text-on-surface-variant">ID / Plate</th>
+<th class="px-6 py-4 text-xs font-extrabold uppercase tracking-widest text-on-surface-variant">Status</th>
+<th class="px-6 py-4 text-xs font-extrabold uppercase tracking-widest text-on-surface-variant">Connectivity</th>
+<th class="px-6 py-4 text-xs font-extrabold uppercase tracking-widest text-on-surface-variant">Power</th>
+<th class="px-6 py-4 text-xs font-extrabold uppercase tracking-widest text-on-surface-variant">Tier</th>
+<th class="px-6 py-4 text-xs font-extrabold uppercase tracking-widest text-on-surface-variant">Last Seen</th>
+<th class="px-6 py-4 text-xs font-extrabold uppercase tracking-widest text-on-surface-variant text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="px-6 py-5">
+<div class="flex flex-col">
+<span class="text-sm font-bold text-on-surface">TAB-042</span>
+<span class="text-[11px] font-medium text-on-surface-variant">ABC-123</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="text-sm font-semibold text-on-surface">Active</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="flex items-end gap-[2px] h-3">
+<div class="w-[3px] h-1 bg-primary rounded-full"></div>
+<div class="w-[3px] h-2 bg-primary rounded-full"></div>
+<div class="w-[3px] h-3 bg-primary rounded-full"></div>
+<div class="w-[3px] h-2.5 bg-outline-variant/30 rounded-full"></div>
+</div>
+<span class="text-sm font-medium text-on-surface">4G <span class="text-on-surface-variant text-xs ml-1">85%</span></span>
+</div>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined text-lg" data-icon="bolt" style="font-variation-settings: 'FILL' 1;">bolt</span>
+<span class="text-sm font-bold">82%</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="px-2 py-1 bg-primary/10 text-primary text-[10px] font-black rounded uppercase tracking-wider">Premium</span>
+</td>
+<td class="px-6 py-5">
+<span class="text-sm text-on-surface-variant font-medium">2m ago</span>
+</td>
+<td class="px-6 py-5 text-right"><div class="flex items-center justify-end gap-2">
+<button class="p-2 text-primary hover:bg-primary/10 border border-outline-variant/20 rounded-lg transition-all flex items-center justify-center" title="View Details">
+<span class="material-symbols-outlined text-[20px]" data-icon="visibility">visibility</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high border border-outline-variant/20 rounded-lg transition-all flex items-center justify-center" title="Edit">
+<span class="material-symbols-outlined text-[20px]" data-icon="edit">edit</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high border border-outline-variant/20 rounded-lg transition-all flex items-center justify-center" title="Restart App">
+<span class="material-symbols-outlined text-[20px]" data-icon="restart_alt">restart_alt</span>
+</button>
+</div></td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="px-6 py-5">
+<div class="flex flex-col">
+<span class="text-sm font-bold text-on-surface">TAB-089</span>
+<span class="text-[11px] font-medium text-on-surface-variant">XYZ-789</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary-container"></span>
+<span class="text-sm font-semibold text-on-surface">Idle</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="flex items-end gap-[2px] h-3">
+<div class="w-[3px] h-1 bg-primary rounded-full"></div>
+<div class="w-[3px] h-2 bg-primary rounded-full"></div>
+<div class="w-[3px] h-2 bg-outline-variant/30 rounded-full"></div>
+<div class="w-[3px] h-2 bg-outline-variant/30 rounded-full"></div>
+</div>
+<span class="text-sm font-medium text-on-surface">3G <span class="text-on-surface-variant text-xs ml-1">42%</span></span>
+</div>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-lg" data-icon="battery_horiz_050">battery_horiz_050</span>
+<span class="text-sm font-bold">54%</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="px-2 py-1 bg-surface-variant text-on-surface-variant text-[10px] font-black rounded uppercase tracking-wider">Standard</span>
+</td>
+<td class="px-6 py-5">
+<span class="text-sm text-on-surface-variant font-medium">14m ago</span>
+</td>
+<td class="px-6 py-5 text-right"><div class="flex items-center justify-end gap-2">
+<button class="p-2 text-primary hover:bg-primary/10 border border-outline-variant/20 rounded-lg transition-all flex items-center justify-center" title="View Details">
+<span class="material-symbols-outlined text-[20px]" data-icon="visibility">visibility</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high border border-outline-variant/20 rounded-lg transition-all flex items-center justify-center" title="Edit">
+<span class="material-symbols-outlined text-[20px]" data-icon="edit">edit</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high border border-outline-variant/20 rounded-lg transition-all flex items-center justify-center" title="Restart App">
+<span class="material-symbols-outlined text-[20px]" data-icon="restart_alt">restart_alt</span>
+</button>
+</div></td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="px-6 py-5">
+<div class="flex flex-col">
+<span class="text-sm font-bold text-on-surface">TAB-112</span>
+<span class="text-[11px] font-medium text-on-surface-variant">LHR-AP1</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+<span class="text-sm font-semibold text-on-surface">Offline</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="flex items-end gap-[2px] h-3">
+<div class="w-[3px] h-1 bg-error rounded-full opacity-50"></div>
+<div class="w-[3px] h-1 bg-outline-variant/30 rounded-full"></div>
+<div class="w-[3px] h-1 bg-outline-variant/30 rounded-full"></div>
+<div class="w-[3px] h-1 bg-outline-variant/30 rounded-full"></div>
+</div>
+<span class="text-sm font-medium text-error">N/A <span class="text-error/60 text-xs ml-1">0%</span></span>
+</div>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2 text-error">
+<span class="material-symbols-outlined text-lg" data-icon="battery_alert">battery_alert</span>
+<span class="text-sm font-bold">0%</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="px-2 py-1 bg-tertiary-container text-on-tertiary-container text-[10px] font-black rounded uppercase tracking-wider">Airport</span>
+</td>
+<td class="px-6 py-5">
+<span class="text-sm text-error font-bold">2h 45m ago</span>
+</td>
+<td class="px-6 py-5 text-right"><div class="flex items-center justify-end gap-2">
+<button class="p-2 text-primary hover:bg-primary/10 border border-outline-variant/20 rounded-lg transition-all flex items-center justify-center" title="View Details">
+<span class="material-symbols-outlined text-[20px]" data-icon="visibility">visibility</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high border border-outline-variant/20 rounded-lg transition-all flex items-center justify-center" title="Edit">
+<span class="material-symbols-outlined text-[20px]" data-icon="edit">edit</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high border border-outline-variant/20 rounded-lg transition-all flex items-center justify-center" title="Restart App">
+<span class="material-symbols-outlined text-[20px]" data-icon="restart_alt">restart_alt</span>
+</button>
+</div></td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="px-6 py-5">
+<div class="flex flex-col">
+<span class="text-sm font-bold text-on-surface">TAB-304</span>
+<span class="text-[11px] font-medium text-on-surface-variant">FLT-004</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="text-sm font-semibold text-on-surface">Syncing</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="flex items-end gap-[2px] h-3">
+<div class="w-[3px] h-3 bg-primary rounded-full"></div>
+<div class="w-[3px] h-3 bg-primary rounded-full"></div>
+<div class="w-[3px] h-3 bg-primary rounded-full"></div>
+<div class="w-[3px] h-3 bg-primary rounded-full"></div>
+</div>
+<span class="text-sm font-medium text-on-surface">WiFi <span class="text-on-surface-variant text-xs ml-1">99%</span></span>
+</div>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined text-lg" data-icon="bolt" style="font-variation-settings: 'FILL' 1;">bolt</span>
+<span class="text-sm font-bold">100%</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="px-2 py-1 bg-primary/10 text-primary text-[10px] font-black rounded uppercase tracking-wider">Premium</span>
+</td>
+<td class="px-6 py-5">
+<span class="text-sm text-on-surface-variant font-medium">Just now</span>
+</td>
+<td class="px-6 py-5 text-right"><div class="flex items-center justify-end gap-2">
+<button class="p-2 text-primary hover:bg-primary/10 border border-outline-variant/20 rounded-lg transition-all flex items-center justify-center" title="View Details">
+<span class="material-symbols-outlined text-[20px]" data-icon="visibility">visibility</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high border border-outline-variant/20 rounded-lg transition-all flex items-center justify-center" title="Edit">
+<span class="material-symbols-outlined text-[20px]" data-icon="edit">edit</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high border border-outline-variant/20 rounded-lg transition-all flex items-center justify-center" title="Restart App">
+<span class="material-symbols-outlined text-[20px]" data-icon="restart_alt">restart_alt</span>
+</button>
+</div></td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination Footer -->
+<div class="px-6 py-4 bg-surface-container-high/30 flex items-center justify-between">
+<span class="text-xs font-medium text-on-surface-variant">Showing 1 to 50 of 1,240 devices</span>
+<div class="flex items-center gap-2">
+<button class="p-1 rounded hover:bg-surface-container-high transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined text-lg" data-icon="chevron_left">chevron_left</span>
+</button>
+<div class="flex gap-1">
+<button class="w-8 h-8 rounded bg-primary text-on-primary text-xs font-bold">1</button>
+<button class="w-8 h-8 rounded hover:bg-surface-container-high text-on-surface-variant text-xs font-bold transition-colors">2</button>
+<button class="w-8 h-8 rounded hover:bg-surface-container-high text-on-surface-variant text-xs font-bold transition-colors">3</button>
+<span class="px-2 self-end text-on-surface-variant">...</span>
+<button class="w-8 h-8 rounded hover:bg-surface-container-high text-on-surface-variant text-xs font-bold transition-colors">25</button>
+</div>
+<button class="p-1 rounded hover:bg-surface-container-high transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined text-lg" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Asymmetric Sidebar Element: Health Overview Overlay -->
+<div class="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="lg:col-span-2 bg-surface-container-low p-6 rounded-xl relative overflow-hidden">
+<div class="relative z-10">
+<h3 class="text-lg font-extrabold text-on-surface mb-4">Network Connectivity Map</h3>
+<div class="h-48 w-full bg-surface-container-high rounded-lg overflow-hidden flex items-center justify-center relative">
+<img class="w-full h-full object-cover mix-blend-multiply opacity-50" data-alt="Stylized dark blue global map with glowing network nodes and connecting lines representing high-tech distribution" data-location="global" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFX9lKbD4naEm5pCopBI0vnRgj6LeNYZuclloHEkRm67t8s8c7Z-jFuclk4d2bMKLEp4-g8kp9HlLw6QykphLEG2MPSDmgAYwiv6J_fUrU_Ndb_CGX3y0U7oRm3Lj44uVdZWOchllPUujdmHpsvyRhc-qau9TzyyFNNKxCkGUKiDr3qs59L1o1ZcZe34yBo1TCd7woTbyPK5zvjvp0FnHhXRo1URiNF4o_ZfRZebijrEuPh3aZ4H41cxiQaNrQdDvCOJEoSvekGB7N"/>
+<div class="absolute inset-0 flex items-center justify-center">
+<span class="text-xs font-bold text-primary bg-primary-container px-3 py-1 rounded-full shadow-lg">Live Map Disabled in List View</span>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/10 shadow-sm">
+<h3 class="text-lg font-extrabold text-on-surface mb-4">Battery Health Insights</h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<span class="text-xs font-semibold text-on-surface-variant uppercase tracking-tighter">Critical Power</span>
+<span class="text-xs font-bold text-error">1.2%</span>
+</div>
+<div class="w-full h-2 bg-surface-container-low rounded-full overflow-hidden">
+<div class="h-full bg-error w-[1.2%]"></div>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-xs font-semibold text-on-surface-variant uppercase tracking-tighter">On AC Power</span>
+<span class="text-xs font-bold text-primary">94.8%</span>
+</div>
+<div class="w-full h-2 bg-surface-container-low rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[94.8%]"></div>
+</div>
+<div class="pt-4 border-t border-outline-variant/10">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-tertiary" data-icon="info">info</span>
+<p class="text-[11px] text-on-surface-variant leading-relaxed">Fleet average battery health is <span class="font-bold text-on-surface">Optimal</span>. 4 units scheduled for proactive replacement this quarter.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- SideNavBar (Suppressed as per rules: Transactional/Task Focus - but here we use it if navigation shell is required. Per instructions, only TopNavBar for large, but SideNavBar JSON exists. I'll stick to TopNavBar layout as primarily requested.) -->
+</body></html>

@@ -1,0 +1,5 @@
+[variables]
+NODE_VERSION = "22.17.0"
+
+[phases.setup]
+nixpkgsArchive = '8fc98986d49a879db8e3fe8318557caccb43f759'

@@ -1,0 +1,106 @@
+<p-dialog
+  header="Add vehicle"
+  styleClass="add-vehicle-dialog"
+  [modal]="true"
+  [draggable]="false"
+  [dismissableMask]="true"
+  [visible]="visible()"
+  (visibleChange)="onVisibleChange($event)"
+>
+  <form class="flex flex-col gap-4" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-medium" for="av-plate">Registration plate</label>
+      <input
+        id="av-plate"
+        pInputText
+        fluid
+        formControlName="registrationPlate"
+        autocomplete="off"
+        class="w-full"
+      />
+      @if (form.controls.registrationPlate.invalid && form.controls.registrationPlate.touched) {
+        <span class="text-red-500 text-xs">Required</span>
+      }
+    </div>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium" for="av-make">Make</label>
+        <input id="av-make" pInputText fluid formControlName="make" class="w-full" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium" for="av-model">Model</label>
+        <input id="av-model" pInputText fluid formControlName="model" class="w-full" />
+      </div>
+    </div>
+    <div
+      class="grid grid-cols-1 gap-x-5 gap-y-3 sm:grid-cols-2 sm:items-start"
+    >
+      <div class="year-tier-cell flex min-w-0 flex-col gap-1">
+        <label class="text-sm font-medium" for="av-year">Year</label>
+        <p-inputNumber
+          inputId="av-year"
+          formControlName="year"
+          [useGrouping]="false"
+          [min]="1900"
+          [max]="2100"
+          styleClass="w-full"
+          class="w-full min-w-0"
+        />
+      </div>
+      <div class="year-tier-cell flex min-w-0 flex-col gap-1">
+        <label class="text-sm font-medium" for="av-tier">Commercial tier</label>
+        <p-select
+          inputId="av-tier"
+          formControlName="commercialTier"
+          [options]="tierOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Tier"
+          styleClass="w-full"
+          class="w-full min-w-0"
+        />
+      </div>
+    </div>
+    <div class="flex flex-col gap-1">
+      <span class="text-sm font-medium">Tablets (optional)</span>
+      <p class="text-muted-color mb-1 text-xs">
+        Search by serial or device ID.
+      </p>
+      <p-multiSelect
+        formControlName="pairedDeviceIds"
+        [options]="deviceOptions"
+        optionLabel="label"
+        optionValue="deviceId"
+        placeholder="Search tablets to pair"
+        [filter]="true"
+        [showToggleAll]="false"
+        [loading]="deviceLoading"
+        [resetFilterOnHide]="true"
+        display="chip"
+        [appendTo]="'body'"
+        styleClass="w-full"
+        emptyFilterMessage="No matches — try another serial or UUID fragment"
+        (onFilter)="onDeviceFilter($event)"
+        (onPanelShow)="onDevicePanelShow()"
+      />
+    </div>
+    <div class="mt-2 flex justify-end gap-2">
+      <button
+        pButton
+        type="button"
+        class="p-button-text"
+        label="Cancel"
+        [disabled]="submitting"
+        (click)="onVisibleChange(false)"
+      ></button>
+      <button
+        pButton
+        type="submit"
+        icon="pi pi-check"
+        label="Create"
+        [loading]="submitting"
+        [disabled]="submitting"
+      ></button>
+    </div>
+  </form>
+</p-dialog>

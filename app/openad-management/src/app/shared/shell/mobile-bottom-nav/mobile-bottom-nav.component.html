@@ -1,0 +1,27 @@
+<nav
+  class="border-surface-200/80 fixed right-0 bottom-0 left-0 z-50 flex justify-around rounded-t-xl border-t bg-surface-0/75 px-3 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(44,51,57,0.06)] backdrop-blur-md dark:border-surface-400/50 dark:bg-surface-200/80 dark:shadow-[0_-8px_24px_rgba(0,0,0,0.35)]"
+  aria-label="Primary"
+>
+  @for (item of navItems(); track item.routerLink.join()) {
+    <a
+      [routerLink]="item.routerLink"
+      routerLinkActive
+      #rla="routerLinkActive"
+      [routerLinkActiveOptions]="linkActiveOptions(item)"
+      class="flex min-w-0 flex-1 items-center justify-center rounded-xl p-3 text-center no-underline transition-all duration-150 ease-out active:scale-110"
+      [ngClass]="
+        rla.isActive
+          ? 'active-glow bg-primary/15 text-primary dark:bg-primary/20'
+          : 'text-muted-color hover:text-primary'
+      "
+      [title]="item.label"
+      [attr.aria-label]="item.label"
+    >
+      <span
+        class="material-symbols-outlined text-[26px]"
+        [class.filled]="rla.isActive"
+        >{{ item.icon }}</span
+      >
+    </a>
+  }
+</nav>

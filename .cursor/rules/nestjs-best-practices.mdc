@@ -1,0 +1,60 @@
+---
+description: NestJS (v11+) architecture, validation, security, and platform migrations
+globs: "**/src/**/*.ts"
+alwaysApply: false
+---
+
+# NestJS development best practices
+
+Prefer [docs.nestjs.com](https://docs.nestjs.com/) and the [migration guide](https://docs.nestjs.com/migration-guide) over blog summaries. **Nest 11** requires **Node.js 20+** (v16/v18 dropped).
+
+## Architecture and modules
+
+- Organize by **feature modules**; keep **single responsibility** for providers. Avoid **circular dependencies** (forward refs only when necessary).
+- Use **constructor injection** only; prefer **interfaces + injection tokens** when swapping implementations.
+- Understand provider **scopes** (`DEFAULT`, `REQUEST`, `TRANSIENT`) before making services request-scoped.
+- **Nest 11:** Dynamic modules with identical deep-equal configs may no longer merge—reuse **one** `DynamicModule` instance (e.g. assign `const m = X.forRoot({})` and import `m` everywhere) if you relied on deduplication.
+
+## HTTP layer
+
+- **Validate all external input:** global `ValidationPipe` with sensible defaults is the documented baseline.
+
+```typescript
+app.useGlobalPipes(
+  new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+  }),
+);
+```
+
+- Use **concrete DTO classes** with **class-validator** (not interfaces/types-only imports for DTOs—metadata is lost). Use **`ParseIntPipe`**, **`ParseUUIDPipe`**, **`ParseDatePipe`** (v11+), **`ParseArrayPipe`** where appropriate.
+- Put auth in **Guards**, cross-cutting behavior in **Interceptors**, errors in **Exception Filters**—not scattered `try/catch` in every controller.
+
+## Security and config
+
+- Do not trust `req.body` without validation. Use **`ConfigModule`** / `ConfigService` for secrets; **Nest 11** changes how **`get()`** merges env vs factories—see migration guide (`skipProcessEnv` for tests).
+- Rate limiting, CORS, Helmet (or Fastify equivalents), and JWT/session patterns belong in **documented** Nest patterns, not ad hoc middleware only.
+
+## Lifecycle and shutdown
+
+- Implement **`OnModuleDestroy` / `OnApplicationShutdown`** for DB pools, timers, and streams. Call **`app.enableShutdownHooks()`** so **SIGTERM** (e.g. Kubernetes) runs teardown—see [lifecycle](https://docs.nestjs.com/fundamentals/lifecycle-events).
+- **Nest 11:** Order of **termination** lifecycle hooks **reversed**—re-verify ordering when upgrading.
+- **Request-scoped** providers do **not** receive app **init/shutdown** hooks in the same way as singletons.
+
+## Nest 11 platform notes
+
+- **Express 5 / Fastify 5:** Wildcards need **names** (e.g. `users/*splat`, not bare `/*`). Review route strings—see [migration guide](https://docs.nestjs.com/migration-guide).
+- **`CacheModule`:** **cache-manager v6** + **Keyv**—follow the cache section in the migration guide when upgrading.
+- **`IntrinsicException`:** Use when an exception must **not** be auto-logged by the framework (sensitive paths).
+- **Logging:** `ConsoleLogger` supports **JSON** output for containers (`json: true`).
+- **Microservices:** **`unwrap()`**, **`on()`**, **`status`** on client/service refs for observability and native client access—see [microservices basics](https://docs.nestjs.com/microservices/basics).
+
+## Testing and quality
+
+- Keep controllers **thin**; unit-test services and use e2e tests for HTTP contracts. Align with your workspace’s chosen runner (Jest is common; verify **Nest CLI** and **@nestjs/cli** version for defaults).
+
+## Errors and observability
+
+- Throw **HTTP exceptions** from `@nestjs/common` for expected failures; use **exception filters** for consistent response shape in production (avoid leaking stack traces).

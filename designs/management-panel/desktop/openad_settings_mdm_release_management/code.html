@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>OpenAd - Device App Releases</title>
+<!-- Google Fonts: Manrope (Display) & Inter (Body) -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Manrope:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary-fixed": "#2f424d",
+                    "surface": "#f7f9fd",
+                    "on-error": "#fff7f6",
+                    "surface-tint": "#006788",
+                    "on-primary-container": "#00465d",
+                    "on-surface-variant": "#586066",
+                    "secondary": "#4f626e",
+                    "on-primary-fixed": "#003042",
+                    "error-dim": "#67040d",
+                    "inverse-on-surface": "#9a9da0",
+                    "on-tertiary-fixed-variant": "#454f76",
+                    "surface-container-low": "#f0f4f8",
+                    "on-secondary-fixed-variant": "#4b5e6a",
+                    "on-primary-fixed-variant": "#004f69",
+                    "surface-dim": "#d3dbe2",
+                    "outline": "#747c82",
+                    "primary-fixed-dim": "#65c4ef",
+                    "on-tertiary": "#faf8ff",
+                    "on-secondary": "#f4faff",
+                    "tertiary-fixed-dim": "#b8c2ef",
+                    "surface-container-high": "#e3e9ef",
+                    "surface-variant": "#dce3ea",
+                    "surface-container": "#e9eef4",
+                    "error": "#a83836",
+                    "tertiary-container": "#c6d0fe",
+                    "tertiary": "#535d85",
+                    "primary-dim": "#005a77",
+                    "secondary-fixed-dim": "#c3d7e5",
+                    "background": "#f7f9fd",
+                    "primary-container": "#74d1fe",
+                    "on-tertiary-fixed": "#283257",
+                    "primary": "#006788",
+                    "on-tertiary-container": "#3b466c",
+                    "inverse-surface": "#0b0f11",
+                    "surface-container-highest": "#dce3ea",
+                    "inverse-primary": "#74d1fe",
+                    "on-background": "#2c3339",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary": "#f3faff",
+                    "on-secondary-container": "#415460",
+                    "surface-bright": "#f7f9fd",
+                    "secondary-fixed": "#d1e5f4",
+                    "primary-fixed": "#74d1fe",
+                    "tertiary-fixed": "#c6d0fe",
+                    "secondary-dim": "#435661",
+                    "on-error-container": "#6e0a12",
+                    "tertiary-dim": "#475178",
+                    "outline-variant": "#abb3b9",
+                    "on-surface": "#2c3339",
+                    "secondary-container": "#d1e5f4",
+                    "error-container": "#fa746f"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "display": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        /* Precision Atmosphere specific utilities */
+        .ambient-shadow {
+            box-shadow: 0px 8px 24px rgba(44, 51, 57, 0.06);
+        }
+        .ghost-border {
+            border: 1px solid rgba(171, 179, 185, 0.15); /* outline-variant at 15% */
+        }
+        .glass-panel {
+            background: rgba(247, 249, 253, 0.85); /* surface-bright semi-transparent */
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body h-screen flex overflow-hidden antialiased selection:bg-primary-container selection:text-on-primary-container">
+<!-- SideNavBar -->
+<aside class="w-72 shrink-0 bg-surface-container-low h-screen sticky top-0 flex flex-col gap-2 p-6 z-40 hidden md:flex">
+<div class="mb-8 px-2">
+<h2 class="text-lg font-bold font-headline text-primary">Settings</h2>
+<p class="text-sm text-on-surface-variant font-label mt-1">Management &amp; MDM</p>
+</div>
+<nav class="flex flex-col gap-1 w-full">
+<!-- Inactive Tab: My Profile -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold font-label text-on-surface-variant hover:text-primary hover:bg-surface-container-lowest/50 transition-all translate-x-1 duration-200 ease-in-out group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-105 transition-transform" data-icon="person">person</span>
+                My Profile
+            </a>
+<!-- Inactive Tab: Platform Configuration -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold font-label text-on-surface-variant hover:text-primary hover:bg-surface-container-lowest/50 transition-all translate-x-1 duration-200 ease-in-out group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-105 transition-transform" data-icon="settings">settings</span>
+                Platform Configuration
+            </a>
+<!-- Active Tab: Device App Releases -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold font-label bg-surface-container-lowest text-primary ambient-shadow font-bold translate-x-1 duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="system_update" data-weight="fill" style="font-variation-settings: 'FILL' 1;">system_update</span>
+                Device App Releases
+            </a>
+<!-- Inactive Tab: Audit Logs -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold font-label text-on-surface-variant hover:text-primary hover:bg-surface-container-lowest/50 transition-all translate-x-1 duration-200 ease-in-out group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-105 transition-transform" data-icon="receipt_long">receipt_long</span>
+                Audit Logs
+            </a>
+</nav>
+</aside>
+<!-- Main Content Wrapper -->
+<div class="flex-1 flex flex-col h-screen overflow-hidden bg-background">
+<!-- TopNavBar -->
+<header class="flex justify-between items-center w-full px-8 py-4 bg-background docked full-width top-0 z-50">
+<div class="flex items-center gap-8">
+<div class="text-2xl font-black font-headline text-primary tracking-tighter">OpenAd</div>
+<nav class="hidden lg:flex items-center gap-1">
+<a class="px-3 py-2 text-sm font-medium font-label text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-md transition-colors scale-102 active:scale-95 transition-transform duration-200" href="#">Dashboard</a>
+<a class="px-3 py-2 text-sm font-medium font-label text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-md transition-colors scale-102 active:scale-95 transition-transform duration-200" href="#">Live Fleet</a>
+<a class="px-3 py-2 text-sm font-medium font-label text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-md transition-colors scale-102 active:scale-95 transition-transform duration-200" href="#">Devices</a>
+<a class="px-3 py-2 text-sm font-medium font-label text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-md transition-colors scale-102 active:scale-95 transition-transform duration-200" href="#">Campaigns</a>
+<a class="px-3 py-2 text-sm font-medium font-label text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-md transition-colors scale-102 active:scale-95 transition-transform duration-200" href="#">Media</a>
+<a class="px-3 py-2 text-sm font-medium font-label text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-md transition-colors scale-102 active:scale-95 transition-transform duration-200" href="#">Reports</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-low hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<div class="w-9 h-9 rounded-full bg-surface-container-high overflow-hidden ghost-border">
+<img alt="User profile avatar" class="w-full h-full object-cover" data-alt="minimalist professional user profile avatar placeholder with soft blue background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBaQm6sz_VlTppvBK8x3jeEdnJdkwx6aVNbwrf8epTQ8zrc1qTBd-LZTdHDYreFFd9E-YRrGp63soP3d82zMe1ZHCUkzaDV5WWd1Iw-XCzEe9iJ73QlfjrzcJTH_35P_UcGhS2qsWr_qOZD1tS8ZrYBePZKnV0NJVENNCsZn9iyeOUm7l5BpWmH4FbFP3OAS8WXoHWAvi8VHEdMjB-QM722AYOiIjHrKfD2AEo9W2eUcFd3Sd_MGffAm9tMhjcJZcKRah7-9qPfwKWb"/>
+</div>
+</div>
+</header>
+<!-- Main Scrollable Canvas -->
+<main class="flex-1 overflow-y-auto px-8 pb-12 lg:px-12 xl:px-16 2xl:px-24">
+<!-- Page Header -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-8 mt-2">
+<div>
+<h1 class="text-3xl font-extrabold font-headline text-on-background tracking-tight" style="letter-spacing: -0.02em;">Device App Releases</h1>
+<p class="text-on-surface-variant mt-1 text-sm">Manage fleet firmware and staggered rollout configurations.</p>
+</div>
+<button class="bg-gradient-to-br from-primary to-primary-container text-on-primary hover:scale-[1.02] active:scale-95 transition-transform duration-200 px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 ambient-shadow">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                    + Upload New Release
+                </button>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-8">
+<!-- Hero Provisioning Card (Span 8) -->
+<div class="col-span-1 lg:col-span-7 xl:col-span-8 bg-surface-container-lowest rounded-xl p-8 ambient-shadow flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
+<!-- Background Accent -->
+<div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
+<div class="flex-1 space-y-5 z-10">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-low text-xs font-semibold text-primary">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                            Active Provisioning
+                        </div>
+<div>
+<h2 class="text-2xl font-bold font-headline text-on-background mb-2">Device Owner Provisioning QR</h2>
+<p class="text-on-surface-variant text-sm max-w-md">Scan this configuration token during initial device setup. Currently resolving to Latest Stable: <span class="font-bold text-on-background">v1.2.4</span></p>
+</div>
+<div class="flex items-center gap-3 pt-2">
+<button class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-primary ghost-border hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[18px]">print</span>
+                                Print QR
+                            </button>
+<button class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-primary ghost-border hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                                Download SVG
+                            </button>
+</div>
+</div>
+<div class="shrink-0 z-10 p-4 bg-white rounded-xl ghost-border ambient-shadow">
+<div class="w-32 h-32 bg-surface-container-low flex items-center justify-center rounded-lg border border-dashed border-outline-variant/30">
+<span class="material-symbols-outlined text-outline-variant text-4xl">qr_code_2</span>
+</div>
+</div>
+</div>
+<!-- Metrics Stack (Span 4) -->
+<div class="col-span-1 lg:col-span-5 xl:col-span-4 flex flex-col gap-5">
+<!-- Metric 1 -->
+<div class="flex-1 bg-surface-container-lowest rounded-xl p-5 ambient-shadow flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined">devices</span>
+</div>
+<div>
+<p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1">Total on Latest</p>
+<div class="flex items-baseline gap-2">
+<span class="text-2xl font-bold font-headline text-on-background">450</span>
+<span class="text-xs text-primary font-medium">91%</span>
+</div>
+</div>
+</div>
+<!-- Metric 2 & 3 Row -->
+<div class="flex-1 flex gap-5">
+<div class="flex-1 bg-surface-container-lowest rounded-xl p-5 ambient-shadow">
+<p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2">Pending Update</p>
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-error"></span>
+<span class="text-xl font-bold font-headline text-on-background">12</span>
+</div>
+</div>
+<div class="flex-1 bg-surface-container-lowest rounded-xl p-5 ambient-shadow">
+<p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2">Staged Rollout</p>
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-tertiary"></span>
+<span class="text-xl font-bold font-headline text-on-background">50</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Release Management Table -->
+<div class="bg-surface-container-lowest rounded-xl ambient-shadow overflow-hidden mt-8">
+<div class="px-6 py-5 flex items-center justify-between">
+<h3 class="text-lg font-bold font-headline text-on-background">Release Management</h3>
+<button class="text-sm font-medium text-primary hover:text-primary-dim flex items-center gap-1 transition-colors">
+                        View All History <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
+<th class="px-6 py-4 font-label">Version</th>
+<th class="px-6 py-4 font-label">Status</th>
+<th class="px-6 py-4 font-label">Rollout %</th>
+<th class="px-6 py-4 font-label">Uploaded By</th>
+<th class="px-6 py-4 font-label">Date</th>
+<th class="px-6 py-4 font-label text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="text-sm font-medium text-on-background divide-y divide-outline-variant/10">
+<!-- Row 1: Active Rollout -->
+<tr class="hover:bg-surface-container-low/50 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="font-bold text-base">v1.2.5-rc1</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-tertiary/10 text-tertiary">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                                        Staged
+                                    </span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<span class="w-8">10%</span>
+<div class="w-24 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-tertiary w-[10%] rounded-full"></div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-on-surface-variant">System Admin</td>
+<td class="px-6 py-4 text-on-surface-variant">Oct 24, 2023</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="px-3 py-1.5 text-xs font-semibold rounded-md bg-surface-container-high text-on-background hover:bg-surface-variant transition-colors">Manage Rollout</button>
+<button class="px-3 py-1.5 text-xs font-semibold rounded-md text-error hover:bg-error/10 transition-colors">Revoke</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: Stable -->
+<tr class="hover:bg-surface-container-low/50 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="font-bold text-base text-primary">v1.2.4</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-primary/10 text-primary">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                                        Stable
+                                    </span>
+</td>
+<td class="px-6 py-4">
+<span class="text-on-surface-variant">Global (100%)</span>
+</td>
+<td class="px-6 py-4 text-on-surface-variant">System Admin</td>
+<td class="px-6 py-4 text-on-surface-variant">Sep 12, 2023</td>
+<td class="px-6 py-4 text-right">
+<!-- No actions for current stable usually, or just view details -->
+<span class="text-on-surface-variant text-xs opacity-0 group-hover:opacity-100 transition-opacity">Current Default</span>
+</td>
+</tr>
+<!-- Row 3: Draft/Ready -->
+<tr class="hover:bg-surface-container-low/50 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="font-bold text-base text-on-surface-variant">v1.2.6-beta</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-surface-container-high text-on-surface-variant">
+                                        Ready
+                                    </span>
+</td>
+<td class="px-6 py-4">
+<span class="text-on-surface-variant">0%</span>
+</td>
+<td class="px-6 py-4 text-on-surface-variant">Dev Ops</td>
+<td class="px-6 py-4 text-on-surface-variant">Today, 09:41 AM</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="px-3 py-1.5 text-xs font-semibold rounded-md bg-surface-container-high text-on-background hover:bg-surface-variant transition-colors">Make Stable</button>
+<button class="px-3 py-1.5 text-xs font-semibold rounded-md text-error hover:bg-error/10 transition-colors">Delete</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: Revoked -->
+<tr class="hover:bg-surface-container-low/50 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="font-bold text-base text-on-surface-variant line-through decoration-outline-variant">v1.2.3</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-error/10 text-error">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+                                        Revoked
+                                    </span>
+</td>
+<td class="px-6 py-4">
+<span class="text-on-surface-variant">-</span>
+</td>
+<td class="px-6 py-4 text-on-surface-variant">Auto-System</td>
+<td class="px-6 py-4 text-on-surface-variant">Aug 05, 2023</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="px-3 py-1.5 text-xs font-semibold rounded-md text-error hover:bg-error/10 transition-colors">Delete</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</main>
+</div>
+</body></html>

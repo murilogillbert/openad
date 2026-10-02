@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "inverse-surface": "#0b0f11",
+              "surface-tint": "#006788",
+              "on-primary-fixed-variant": "#004f69",
+              "on-tertiary-fixed": "#283257",
+              "on-error-container": "#6e0a12",
+              "on-primary-fixed": "#003042",
+              "surface-container-high": "#e3e9ef",
+              "surface-container": "#e9eef4",
+              "outline": "#747c82",
+              "on-primary": "#f3faff",
+              "on-tertiary": "#faf8ff",
+              "primary-container": "#74d1fe",
+              "surface-container-low": "#f0f4f8",
+              "surface-container-lowest": "#ffffff",
+              "surface-bright": "#f7f9fd",
+              "on-background": "#2c3339",
+              "tertiary-container": "#c6d0fe",
+              "surface-container-highest": "#dce3ea",
+              "on-secondary-fixed-variant": "#4b5e6a",
+              "primary-fixed": "#74d1fe",
+              "on-error": "#fff7f6",
+              "secondary-dim": "#435661",
+              "primary-dim": "#005a77",
+              "error": "#a83836",
+              "tertiary": "#535d85",
+              "error-container": "#fa746f",
+              "surface": "#f7f9fd",
+              "on-secondary": "#f4faff",
+              "on-primary-container": "#00465d",
+              "on-secondary-fixed": "#2f424d",
+              "on-secondary-container": "#415460",
+              "on-surface": "#2c3339",
+              "on-surface-variant": "#586066",
+              "tertiary-fixed-dim": "#b8c2ef",
+              "background": "#f7f9fd",
+              "tertiary-dim": "#475178",
+              "on-tertiary-fixed-variant": "#454f76",
+              "surface-variant": "#dce3ea",
+              "inverse-on-surface": "#9a9da0",
+              "primary": "#006788",
+              "tertiary-fixed": "#c6d0fe",
+              "error-dim": "#67040d",
+              "outline-variant": "#abb3b9",
+              "inverse-primary": "#74d1fe",
+              "secondary-fixed-dim": "#c3d7e5",
+              "on-tertiary-container": "#3b466c",
+              "secondary-container": "#d1e5f4",
+              "primary-fixed-dim": "#65c4ef",
+              "secondary-fixed": "#d1e5f4",
+              "secondary": "#4f626e",
+              "surface-dim": "#d3dbe2"
+            },
+            fontFamily: {
+              "headline": ["Manrope", "sans-serif"],
+              "body": ["Inter", "sans-serif"],
+              "label": ["Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .nav-active {
+            position: relative;
+        }
+        .nav-active::after {
+            content: '';
+            position: absolute;
+            bottom: -18px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #006788;
+        }
+    </style>
+</head>
+<body class="bg-background font-body text-on-surface">
+<!-- TopNavBar Component Execution -->
+<nav class="flex items-center justify-between w-full px-8 py-4 sticky top-0 z-50 bg-[#f7f9fd] dark:bg-slate-900 no-border">
+<!-- Brand Section -->
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-3 group cursor-pointer">
+<img alt="OpenAd Logo" class="h-8 w-auto" data-alt="Modern abstract geometric logo for a digital advertising platform, professional blue tones, clean sharp lines, high tech aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1mRAXFuRv9LWMoF7ZP67R6l-y1vO6EZAJIxkFY59oxKN0gj4i2jpaq6C5l8stV5QoBgEtCpcj_texk45SR7lRs4xJ0hDLaNscm_lMTIBYE4ryiVx0RuZ05AaMR4n6Kdt4n2HpQ_PdU0QjmzgzfEsTUu7IncrXtAMyeguhuVKs989dWKijBigLkIcFnpRxUyefdemh2GdWKZjps4J6SV8ealHzB9r_fsYtxhSMGE7zwjsQfPFc2d4ejxjF05K14IhMUFIFB2-X6ifI"/>
+<span class="text-2xl font-extrabold tracking-tighter text-[#006788] dark:text-[#74d1fe] font-headline">OpenAd</span>
+</div>
+<!-- Navigation Links cluster -->
+<div class="hidden md:flex items-center gap-6">
+<!-- Dashboard (Active State) -->
+<a class="text-[#006788] dark:text-[#74d1fe] font-bold border-b-2 border-[#006788] dark:border-[#74d1fe] pb-1 text-sm font-medium font-inter transition-all" href="#">Dashboard</a>
+<!-- Inactive Links -->
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] dark:hover:text-[#74d1fe] transition-colors text-sm font-inter" href="#">Live Fleet</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] dark:hover:text-[#74d1fe] transition-colors text-sm font-inter" href="#">Devices</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] dark:hover:text-[#74d1fe] transition-colors text-sm font-inter" href="#">Campaigns</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] dark:hover:text-[#74d1fe] transition-colors text-sm font-inter" href="#">Media</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] dark:hover:text-[#74d1fe] transition-colors text-sm font-inter" href="#">Reports</a>
+</div>
+</div>
+<!-- Flexible Spacer -->
+<div class="flex-grow"></div>
+<!-- Actions Cluster -->
+<div class="flex items-center gap-2">
+<!-- Search Action -->
+<button class="p-2 hover:bg-white/50 dark:hover:bg-slate-700/50 rounded-lg transition-all duration-200 active:scale-95 opacity-80 flex items-center justify-center text-[#586066] dark:text-slate-400">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+</button>
+<!-- Notifications Action -->
+<div class="relative">
+<button class="p-2 hover:bg-white/50 dark:hover:bg-slate-700/50 rounded-lg transition-all duration-200 active:scale-95 opacity-80 flex items-center justify-center text-[#586066] dark:text-slate-400">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<!-- Subtle unread indicator -->
+<span class="absolute top-2 right-2.5 w-2 h-2 bg-error rounded-full border-2 border-[#f7f9fd] dark:border-slate-900"></span>
+</div>
+<!-- Profile / Account Action -->
+<button class="ml-2 flex items-center gap-3 pl-3 pr-1 py-1 bg-surface-container-low dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-700 rounded-full transition-all duration-200 group border border-transparent hover:border-outline-variant/20">
+<div class="hidden sm:block text-right">
+<p class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider leading-none">Administrator</p>
+<p class="text-xs font-semibold text-primary dark:text-primary-container">Alex Chen</p>
+</div>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-primary/20 bg-primary-container/30 flex items-center justify-center text-[#006788]">
+<span class="material-symbols-outlined text-xl" data-icon="account_circle" style="font-variation-settings: 'FILL' 1;">account_circle</span>
+</div>
+</button>
+</div>
+</nav>
+<!-- Mobile Navigation Shell (Bottom Rail) - Visible only on small screens -->
+<div class="md:hidden fixed bottom-0 left-0 right-0 bg-surface-container-lowest dark:bg-slate-900 border-t border-outline-variant/10 px-4 py-2 flex justify-around items-center z-50">
+<button class="flex flex-col items-center gap-1 p-2 text-[#006788]">
+<span class="material-symbols-outlined" data-icon="dashboard" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="text-[10px] font-bold">Dashboard</span>
+</button>
+<button class="flex flex-col items-center gap-1 p-2 text-[#586066]">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="text-[10px] font-medium">Fleet</span>
+</button>
+<button class="flex flex-col items-center gap-1 p-2 text-[#586066]">
+<span class="material-symbols-outlined" data-icon="campaign">campaign</span>
+<span class="text-[10px] font-medium">Ads</span>
+</button>
+<button class="flex flex-col items-center gap-1 p-2 text-[#586066]">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="text-[10px] font-medium">Profile</span>
+</button>
+</div>
+</body></html>

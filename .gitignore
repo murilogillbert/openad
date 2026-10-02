@@ -1,0 +1,30 @@
+.env.keys
+!.env.example
+
+# Docker stack local overrides (see docker/.env.example; encrypted dev file may be tracked)
+docker/.env
+!docker/.env.example
+dist/
+coverage/
+# Local data dir at repo root only (do not use bare `storage/` — ignores API `infrastructure/storage/`)
+/storage/
+
+# Nx local workspace data (not source)
+.nx/
+.claude/worktrees
+.claude/settings.local.json
+
+/node_modules
+app/openad-ad-client/node_modules
+.angular
+
+__screenshots__/
+.playwright-mcp
+
+.cache
+
+# Signing certificates / keystores (never commit)
+*.jks
+*.keystore
+*.p12
+*.pfx

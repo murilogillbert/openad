@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Precision DOOH - Media Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#006788",
+                        "on-primary": "#f3faff",
+                        "error-dim": "#67040d",
+                        "on-secondary-container": "#415460",
+                        "on-primary-fixed": "#003042",
+                        "on-primary-container": "#00465d",
+                        "on-error": "#fff7f6",
+                        "tertiary-dim": "#475178",
+                        "on-secondary-fixed-variant": "#4b5e6a",
+                        "on-secondary": "#f4faff",
+                        "outline-variant": "#abb3b9",
+                        "on-tertiary-fixed-variant": "#454f76",
+                        "primary-dim": "#005a77",
+                        "on-surface": "#2c3339",
+                        "primary-fixed-dim": "#65c4ef",
+                        "on-tertiary-container": "#3b466c",
+                        "surface-variant": "#dce3ea",
+                        "error-container": "#fa746f",
+                        "surface-container-highest": "#dce3ea",
+                        "on-surface-variant": "#586066",
+                        "tertiary-fixed-dim": "#b8c2ef",
+                        "tertiary-container": "#c6d0fe",
+                        "on-error-container": "#6e0a12",
+                        "on-tertiary": "#faf8ff",
+                        "secondary-fixed-dim": "#c3d7e5",
+                        "tertiary-fixed": "#c6d0fe",
+                        "surface": "#f7f9fd",
+                        "secondary-dim": "#435661",
+                        "surface-bright": "#f7f9fd",
+                        "inverse-surface": "#0b0f11",
+                        "error": "#a83836",
+                        "tertiary": "#535d85",
+                        "inverse-primary": "#74d1fe",
+                        "on-tertiary-fixed": "#283257",
+                        "surface-container": "#e9eef4",
+                        "surface-container-low": "#f0f4f8",
+                        "secondary-container": "#d1e5f4",
+                        "outline": "#747c82",
+                        "secondary": "#4f626e",
+                        "surface-dim": "#d3dbe2",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed": "#d1e5f4",
+                        "inverse-on-surface": "#9a9da0",
+                        "primary-container": "#74d1fe",
+                        "surface-tint": "#006788",
+                        "primary-fixed": "#74d1fe",
+                        "surface-container-high": "#e3e9ef",
+                        "on-secondary-fixed": "#2f424d",
+                        "on-background": "#2c3339",
+                        "background": "#f7f9fd",
+                        "on-primary-fixed-variant": "#004f69"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.25rem;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background font-body text-on-surface antialiased">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-sm dark:shadow-none flex items-center justify-between px-6 py-3">
+<div class="flex items-center gap-4">
+<button class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-200/50 transition-colors">
+<span class="material-symbols-outlined text-sky-700 dark:text-sky-400">arrow_back</span>
+</button>
+<div class="flex flex-col">
+<span class="text-xl font-extrabold tracking-tighter text-sky-800 dark:text-sky-200 font-headline">Precision DOOH</span>
+<span class="text-xs font-semibold text-slate-500 font-label tracking-wide">Nike</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 flex items-center justify-center hover:bg-slate-200/50 transition-colors rounded-full">
+<span class="material-symbols-outlined text-sky-700 dark:text-sky-400">search</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center hover:bg-slate-200/50 transition-colors rounded-full">
+<span class="material-symbols-outlined text-sky-700 dark:text-sky-400">menu</span>
+</button>
+</div>
+</header>
+<main class="pt-20 pb-32 px-6">
+<div class="flex items-baseline justify-between mb-8">
+<h1 class="text-3xl font-extrabold font-headline tracking-tight text-on-surface">Media Library</h1>
+<span class="text-sm font-medium text-on-surface-variant font-label">3 items</span>
+</div>
+<!-- 2-Column Grid -->
+<div class="bento-grid">
+<!-- File 1 -->
+<div class="group bg-surface-container-lowest rounded-xl shadow-[0_4px_12px_rgba(44,51,57,0.04)] overflow-hidden transition-all hover:scale-[1.02]">
+<div class="aspect-video relative overflow-hidden bg-slate-200">
+<img class="w-full h-full object-cover" data-alt="Close-up of a vibrant red performance running shoe with dramatic lighting against a dark atmospheric background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxdnHXo7LzCK1ibn8co3rMpcXyS501NR0Y6mSG73rR-rgAHp46cqmvoG7lp9Ixm5MXakZfNR87Us-n_JdUFug9RzfAEqcVgniNLHLuhyxshr8vA1pJGP4fXGn09g4ABW2oslkwlxoiaELb-TnVYtjUIQdZh0WB1pDANB3DVZInk_v6Wl01jSzXO-4CkaJlrGxPFRQgAP9bL9LxTIAd6EvGtMwvJcWqFGXU-vRkKz7bDYYRp4bm-g2mCCIa2krBwFpMKHSZAKPXDvso"/>
+<div class="absolute top-2 right-2 px-2 py-1 bg-primary/90 text-on-primary text-[10px] font-bold rounded uppercase tracking-wider">Success</div>
+<div class="absolute inset-0 bg-black/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-white text-4xl">play_circle</span>
+</div>
+</div>
+<div class="p-3">
+<p class="text-xs font-bold font-headline truncate text-on-surface">Nike_Summer_Hero.mp4</p>
+<p class="text-[10px] text-on-surface-variant mt-1">15s • 45MB</p>
+</div>
+</div>
+<!-- File 2 -->
+<div class="group bg-surface-container-lowest rounded-xl shadow-[0_4px_12px_rgba(44,51,57,0.04)] overflow-hidden transition-all hover:scale-[1.02]">
+<div class="aspect-video relative overflow-hidden bg-slate-200">
+<img class="w-full h-full object-cover opacity-60 grayscale-[0.5]" data-alt="Athletic person sprinting on an urban track at twilight with blurred city lights in the background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAl8AlSv9-xeXoTW8YskJnEJpoxBT8_J1uCrFjo-MVCG3VH8Wda2CoiO6xNp1OI_TH9fiM5cJZL5D43mkxIuzAJNmvpJPceDv5kfUFDbCt9YBXNE1IIJ8q8Iw5UkYr8lwuxliA47ZF7VP1gn7NHiTciAIGIl3uXU6DEwPABKyAM11X_gG3lwMWzL9wkzEa4gF2O6fg0D0qlsi9TElZmxzO37kSfNj6kT3ERzy5lQf6lrYoLI9HsCS6Ph4p0UnuD7byL63ip1zlA4IxH"/>
+<div class="absolute inset-0 flex flex-col items-center justify-center bg-sky-900/40 backdrop-blur-sm">
+<span class="text-white font-bold text-xs">Syncing 82%</span>
+<div class="w-16 h-1 bg-white/20 rounded-full mt-2 overflow-hidden">
+<div class="h-full bg-primary-container w-[82%]"></div>
+</div>
+</div>
+</div>
+<div class="p-3">
+<p class="text-xs font-bold font-headline truncate text-on-surface">Urban_Athletes.mp4</p>
+<p class="text-[10px] text-on-surface-variant mt-1">Ready shortly...</p>
+</div>
+</div>
+<!-- File 3 -->
+<div class="group bg-surface-container-lowest rounded-xl shadow-[0_4px_12px_rgba(44,51,57,0.04)] overflow-hidden transition-all hover:scale-[1.02]">
+<div class="aspect-video relative overflow-hidden bg-slate-200">
+<img class="w-full h-full object-cover" data-alt="Macro detail of high-tech fabric texture with a subtle blue gradient lighting and cinematic atmosphere" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdWoGg1ige33VNEcf7A8vu7cjzFrqcdeJSUreixQkoutOazItBzNWZncBfq0a7ThlkeyiTR16uiOUoj_Ob6dni5iKhaca-G3i4gHFAUxJDEjD10hHNJMbUQSqIcmKPB8aLrCsFvOzgMHQydX9N0MGhF7ZI5BIhFKHKnkN59wW90T1CAARRLWvMn24hWDZEFrqMSsBmkJiLKeclaCZvocRxso2m1ZVLbzroBVLPRm6AE_O3MFtqn36XIfM7vXRewFhrmgXQyoyJwGqw"/>
+<div class="absolute top-2 right-2 px-2 py-1 bg-primary/90 text-on-primary text-[10px] font-bold rounded uppercase tracking-wider">Success</div>
+<div class="absolute inset-0 bg-black/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-white text-4xl">play_circle</span>
+</div>
+</div>
+<div class="p-3">
+<p class="text-xs font-bold font-headline truncate text-on-surface">Endurance_Loop.mp4</p>
+<p class="text-[10px] text-on-surface-variant mt-1">10s • 22MB</p>
+</div>
+</div>
+</div>
+</main>
+<!-- FAB -->
+<div class="fixed bottom-24 right-6 z-40">
+<button class="w-14 h-14 bg-gradient-to-br from-primary to-primary-container text-on-primary rounded-xl shadow-lg flex items-center justify-center transform transition-transform active:scale-95">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+</div>
+<!-- Bottom Sheet Overlay -->
+<div class="fixed inset-0 bg-on-surface/20 backdrop-blur-sm z-[60] flex items-end">
+<div class="w-full bg-surface-container-lowest rounded-t-[2rem] shadow-2xl p-6 transform translate-y-0 transition-transform duration-300 border-t border-white/10">
+<!-- Drag Handle -->
+<div class="w-12 h-1.5 bg-surface-variant rounded-full mx-auto mb-6"></div>
+<div class="flex items-start justify-between mb-6">
+<div>
+<h2 class="text-lg font-extrabold font-headline text-on-surface leading-tight">Neon_Impact_Reveal.mp4</h2>
+<p class="text-sm text-on-surface-variant">Selected Media Details</p>
+</div>
+<button class="p-2 hover:bg-surface-container-low rounded-full transition-colors">
+<span class="material-symbols-outlined text-outline">close</span>
+</button>
+</div>
+<!-- Preview Player Area -->
+<div class="aspect-video w-full bg-slate-950 rounded-2xl mb-6 relative group overflow-hidden">
+<img class="w-full h-full object-cover opacity-50" data-alt="Futuristic neon lit workspace with glowing blue and purple hardware components in a cinematic dark room" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDat3Lt_YJnycVm2mwUsI_o2vJd-C6Sl7Q9GUUBDzN_WCJzAEc40LzIzHxEnLuFZAuWr0DjhrnJvAHwaHD9AVmazQj1jj51iNKY0U-M_zJ44UTnLw48-_nWE16o75papQC6yoat4qNAZ7mDTXXkIzsFEYsqMQUf_sds2nI57MvNb98JQ5ZFWTfJrNrN8liK3Py4ZHjw9ggiAwg6xzPEKgxnsBi5ptVfAcVROM8f5FIcaJDyXjFivVrPa8_q8pe0RN-TEWPYNUteO8BS"/>
+<div class="absolute inset-0 flex items-center justify-center">
+<div class="w-14 h-14 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-white text-3xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<div class="absolute bottom-4 left-4 right-4 h-1 bg-white/20 rounded-full overflow-hidden">
+<div class="w-1/3 h-full bg-primary-container"></div>
+</div>
+</div>
+<!-- Metadata Grid -->
+<div class="grid grid-cols-2 gap-4 mb-8">
+<div class="bg-surface-container-low p-3 rounded-xl">
+<p class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant mb-1">Duration</p>
+<p class="text-sm font-semibold text-on-surface">15 Seconds</p>
+</div>
+<div class="bg-surface-container-low p-3 rounded-xl">
+<p class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant mb-1">Resolution</p>
+<p class="text-sm font-semibold text-on-surface">1920 x 1080</p>
+</div>
+<div class="bg-surface-container-low p-3 rounded-xl">
+<p class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant mb-1">File Size</p>
+<p class="text-sm font-semibold text-on-surface">45 MB</p>
+</div>
+<div class="bg-surface-container-low p-3 rounded-xl">
+<p class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant mb-1">Format</p>
+<p class="text-sm font-semibold text-on-surface">MP4/H.264</p>
+</div>
+</div>
+<!-- Dependencies -->
+<div class="flex items-center gap-3 px-4 py-3 bg-secondary-container/30 border border-secondary-container/50 rounded-xl mb-8">
+<span class="material-symbols-outlined text-primary">campaign</span>
+<p class="text-sm font-medium text-on-secondary-container">Currently used in 3 campaigns</p>
+</div>
+<!-- Action Buttons -->
+<div class="grid grid-cols-3 gap-3">
+<button class="flex flex-col items-center justify-center gap-1 p-3 rounded-xl hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">edit</span>
+<span class="text-[10px] font-bold text-on-surface-variant">Rename</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 p-3 rounded-xl hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">drive_file_move</span>
+<span class="text-[10px] font-bold text-on-surface-variant">Move</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 p-3 rounded-xl hover:bg-error-container/10 transition-colors">
+<span class="material-symbols-outlined text-error">delete</span>
+<span class="text-[10px] font-bold text-error">Delete</span>
+</button>
+</div>
+<!-- Spacer for Bottom Nav -->
+<div class="h-20"></div>
+</div>
+</div>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-xl bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl border-t border-slate-200/20 dark:border-slate-800/20 shadow-[0_-8px_24px_rgba(44,51,57,0.06)] flex justify-around items-center px-4 py-3">
+<div class="flex items-center justify-center text-slate-400 dark:text-slate-500 p-3 hover:text-sky-500 transition-all active:scale-95">
+<span class="material-symbols-outlined">dashboard</span>
+</div>
+<div class="flex items-center justify-center text-slate-400 dark:text-slate-500 p-3 hover:text-sky-500 transition-all active:scale-95">
+<span class="material-symbols-outlined">dataset</span>
+</div>
+<div class="flex items-center justify-center text-slate-400 dark:text-slate-500 p-3 hover:text-sky-500 transition-all active:scale-95">
+<span class="material-symbols-outlined">router</span>
+</div>
+<div class="flex items-center justify-center text-slate-400 dark:text-slate-500 p-3 hover:text-sky-500 transition-all active:scale-95">
+<span class="material-symbols-outlined">ads_click</span>
+</div>
+<div class="flex items-center justify-center bg-sky-100 dark:bg-sky-900/40 text-sky-800 dark:text-sky-200 rounded-xl p-3 shadow-sm">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">perm_media</span>
+</div>
+<div class="flex items-center justify-center text-slate-400 dark:text-slate-500 p-3 hover:text-sky-500 transition-all active:scale-95">
+<span class="material-symbols-outlined">analytics</span>
+</div>
+</nav>
+</body></html>

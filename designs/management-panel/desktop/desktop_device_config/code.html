@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Device Configuration | OpenAd</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "secondary-dim": "#435661",
+            "on-tertiary-fixed-variant": "#454f76",
+            "on-tertiary": "#faf8ff",
+            "secondary-container": "#d1e5f4",
+            "primary": "#006788",
+            "on-surface-variant": "#586066",
+            "tertiary-dim": "#475178",
+            "surface-container-high": "#e3e9ef",
+            "surface-variant": "#dce3ea",
+            "on-secondary-fixed-variant": "#4b5e6a",
+            "surface-bright": "#f7f9fd",
+            "inverse-primary": "#74d1fe",
+            "on-tertiary-container": "#3b466c",
+            "error-container": "#fa746f",
+            "secondary": "#4f626e",
+            "primary-fixed": "#74d1fe",
+            "on-primary-fixed-variant": "#004f69",
+            "surface-dim": "#d3dbe2",
+            "on-secondary-container": "#415460",
+            "primary-fixed-dim": "#65c4ef",
+            "on-surface": "#2c3339",
+            "inverse-surface": "#0b0f11",
+            "tertiary": "#535d85",
+            "tertiary-fixed-dim": "#b8c2ef",
+            "on-background": "#2c3339",
+            "surface-container-low": "#f0f4f8",
+            "error": "#a83836",
+            "inverse-on-surface": "#9a9da0",
+            "on-error": "#fff7f6",
+            "on-secondary": "#f4faff",
+            "background": "#f7f9fd",
+            "surface-container": "#e9eef4",
+            "on-primary-fixed": "#003042",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-highest": "#dce3ea",
+            "secondary-fixed-dim": "#c3d7e5",
+            "tertiary-container": "#c6d0fe",
+            "error-dim": "#67040d",
+            "outline-variant": "#abb3b9",
+            "on-primary": "#f3faff",
+            "secondary-fixed": "#d1e5f4",
+            "on-error-container": "#6e0a12",
+            "on-tertiary-fixed": "#283257",
+            "primary-dim": "#005a77",
+            "primary-container": "#74d1fe",
+            "on-primary-container": "#00465d",
+            "surface": "#f7f9fd",
+            "surface-tint": "#006788",
+            "on-secondary-fixed": "#2f424d",
+            "outline": "#747c82",
+            "tertiary-fixed": "#c6d0fe"
+          },
+          fontFamily: {
+            "headline": ["Manrope"],
+            "body": ["Inter"],
+            "label": ["Inter"]
+          },
+          borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+        },
+      },
+    }
+  </script>
+<style>
+    body { font-family: 'Inter', sans-serif; }
+    h1, h2, h3, .brand-logo { font-family: 'Manrope', sans-serif; }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .glass-effect {
+      background: rgba(247, 249, 253, 0.8);
+      backdrop-filter: blur(20px);
+    }
+    .custom-shadow {
+      box-shadow: 0px 8px 24px rgba(44, 51, 57, 0.06);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface">
+<!-- Top Navigation Bar -->
+<header class="bg-[#f7f9fd] dark:bg-slate-900 sticky top-0 z-50">
+<div class="flex justify-between items-center w-full px-8 py-4 max-w-[1440px] mx-auto">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold tracking-tighter text-[#006788] dark:text-[#74d1fe]">OpenAd</span>
+<nav class="hidden md:flex gap-6">
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] transition-colors" href="#">Dashboard</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] transition-colors" href="#">Live Fleet</a>
+<a class="text-[#006788] dark:text-[#74d1fe] font-bold border-b-2 border-[#006788] pb-1" href="#">Devices</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] transition-colors" href="#">Campaigns</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] transition-colors" href="#">Media</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] transition-colors" href="#">Reports</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">settings</span>
+<div class="w-8 h-8 rounded-full bg-surface-container overflow-hidden">
+<img alt="User Profile" data-alt="professional headshot of a smiling male executive in a blue shirt with soft studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDe65eWcZpJnydMSa4kZo08CNsEPqTQjzyg4sY6pfsV_7Ug0krXP3roF8k4jZdtj0RppIdYJyeInfejY54sXRiRNQCIj7fFjBV91RhpoqjMtDOsnoL-C4rhAIq5BwbCK2-A1DwCHJR1fCOuP8BVozYnBDUKE2m3YLUO1aMsKJ4J7zbTzZEjAJizMJz5WPXPJb6_qBU-6331yV6F2KzUnDK3pqZ_edfLJ4H48UOxoqsTZExQ_Yoy-bxYs7oJfmBlAt-dGT59YjBY7PHr"/>
+</div>
+</div>
+</div>
+</header>
+<main class="max-w-[1440px] mx-auto px-8 py-10">
+<!-- Header Section -->
+<div class="mb-10 flex justify-between items-end">
+<div class="max-w-2xl">
+<h1 class="text-4xl font-extrabold tracking-tight text-on-surface mb-2">Device Configuration</h1>
+<p class="text-on-surface-variant text-lg">Hardware registration and synchronization protocols for high-performance DOOH units.</p>
+</div>
+<div class="flex gap-4">
+<button class="px-6 py-2.5 rounded-lg font-semibold text-primary bg-white outline outline-1 outline-outline-variant/20 hover:bg-surface-container-low transition-all">Cancel Changes</button>
+<button class="px-6 py-2.5 rounded-lg font-semibold text-on-primary bg-gradient-to-br from-primary to-primary-container custom-shadow hover:scale-[1.02] active:scale-100 transition-all">Save Configuration</button>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Left Column: Primary Config -->
+<div class="lg:col-span-8 space-y-8">
+<!-- Section A: Hardware & Identity -->
+<section class="bg-surface-container-lowest rounded-xl p-8 custom-shadow">
+<div class="flex items-center gap-3 mb-8">
+<div class="p-2 bg-primary/10 rounded-lg">
+<span class="material-symbols-outlined text-primary">router</span>
+</div>
+<h2 class="text-xl font-bold tracking-tight">Hardware &amp; Identity</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="space-y-2">
+<label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant">Device Name/Alias</label>
+<input class="w-full bg-surface-container-low border-0 rounded-lg p-3 text-on-surface focus:ring-2 focus:ring-primary/30 transition-all" type="text" value="Taxi-402"/>
+</div>
+<div class="space-y-2">
+<label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant">Unique ID (UUID/IMEI)</label>
+<input class="w-full bg-surface-container border-0 rounded-lg p-3 text-on-surface-variant cursor-not-allowed italic" readonly="" type="text" value="8821-XP90-LO02-4412"/>
+</div>
+<div class="space-y-2">
+<label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant">Associated Vehicle</label>
+<input class="w-full bg-surface-container-low border-0 rounded-lg p-3 text-on-surface focus:ring-2 focus:ring-primary/30 transition-all" placeholder="e.g. ABC-1234" type="text" value="NY-TAX-9981"/>
+</div>
+<div class="space-y-2">
+<label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant">Tags / Groups</label>
+<div class="flex flex-wrap gap-2 pt-1">
+<span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">Night-shift <span class="material-symbols-outlined text-[14px] cursor-pointer">close</span></span>
+<span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">Downtown-Only <span class="material-symbols-outlined text-[14px] cursor-pointer">close</span></span>
+<button class="bg-surface-container-high text-on-surface-variant px-3 py-1 rounded-full text-xs font-semibold hover:bg-surface-variant transition-colors">+ Add Tag</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Section B: Commercial & Exhibition Costs -->
+<section class="bg-surface-container-lowest rounded-xl p-8 custom-shadow">
+<div class="flex items-center gap-3 mb-8">
+<div class="p-2 bg-tertiary/10 rounded-lg">
+<span class="material-symbols-outlined text-tertiary">monetization_on</span>
+</div>
+<h2 class="text-xl font-bold tracking-tight">Commercial &amp; Exhibition Costs</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<div class="space-y-2">
+<label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant">Base CPM ($)</label>
+<div class="relative">
+<span class="absolute left-3 top-3 text-on-surface-variant">$</span>
+<input class="w-full bg-surface-container-low border-0 rounded-lg p-3 pl-8 text-on-surface focus:ring-2 focus:ring-primary/30" type="number" value="12.50"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant">Max Ads per Loop</label>
+<input class="w-full bg-surface-container-low border-0 rounded-lg p-3 text-on-surface focus:ring-2 focus:ring-primary/30" type="number" value="10"/>
+</div>
+<div class="space-y-2">
+<label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant">Min Playback Speed (km/h)</label>
+<div class="flex items-center gap-3">
+<input class="flex-grow accent-primary" max="20" min="0" step="5" type="range" value="5"/>
+<span class="text-sm font-bold text-primary">5 km/h</span>
+</div>
+<p class="text-[10px] text-on-surface-variant leading-tight mt-1 italic">Prevents playback during prolonged idle stops (e.g. 10min).</p>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: System & Networking -->
+<div class="lg:col-span-4 space-y-8">
+<!-- Section C: Connectivity & Sync Rules -->
+<section class="bg-surface-container-lowest rounded-xl p-8 custom-shadow h-full">
+<div class="flex items-center gap-3 mb-8">
+<div class="p-2 bg-secondary/10 rounded-lg">
+<span class="material-symbols-outlined text-secondary">sync_alt</span>
+</div>
+<h2 class="text-xl font-bold tracking-tight">Sync &amp; Data</h2>
+</div>
+<div class="space-y-8">
+<div class="space-y-2">
+<label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant">Monthly Data Limit</label>
+<div class="flex items-center gap-4">
+<input class="w-24 bg-surface-container-low border-0 rounded-lg p-3 text-on-surface focus:ring-2 focus:ring-primary/30" type="number" value="50"/>
+<select class="bg-surface-container-low border-0 rounded-lg p-3 text-on-surface focus:ring-2 focus:ring-primary/30 flex-grow">
+<option>GB (GigaBytes)</option>
+<option>MB (MegaBytes)</option>
+</select>
+</div>
+<div class="w-full bg-surface-container rounded-full h-1.5 mt-4 overflow-hidden">
+<div class="bg-primary h-full w-[65%]"></div>
+</div>
+<div class="flex justify-between text-[10px] text-on-surface-variant font-medium">
+<span>Used: 32.4 GB</span>
+<span>Limit: 50.0 GB</span>
+</div>
+</div>
+<div class="space-y-3">
+<label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant">Download Strategy</label>
+<div class="space-y-2">
+<label class="flex items-center gap-3 p-3 rounded-lg bg-surface-container-low cursor-pointer hover:bg-surface-variant transition-colors">
+<input checked="" class="text-primary focus:ring-primary" name="sync" type="radio"/>
+<span class="text-sm font-medium">Always Sync</span>
+</label>
+<label class="flex items-center gap-3 p-3 rounded-lg border border-outline-variant/20 cursor-pointer hover:bg-surface-container-low transition-colors">
+<input class="text-primary focus:ring-primary" name="sync" type="radio"/>
+<span class="text-sm font-medium">Wi-Fi Only</span>
+</label>
+<label class="flex items-center gap-3 p-3 rounded-lg border border-outline-variant/20 cursor-pointer hover:bg-surface-container-low transition-colors">
+<input class="text-primary focus:ring-primary" name="sync" type="radio"/>
+<span class="text-sm font-medium">Off-Peak Hours (00:00 - 05:00)</span>
+</label>
+</div>
+</div>
+<div class="pt-4 border-t border-outline-variant/10">
+<button class="w-full py-3 rounded-lg text-error bg-error/5 hover:bg-error/10 font-bold text-xs uppercase tracking-widest transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">delete_sweep</span>
+                Force Wipe Media Cache
+              </button>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+<footer class="mt-20 py-10 border-t border-outline-variant/10 text-center">
+<p class="text-xs text-on-surface-variant font-medium">OpenAd Precision Atmosphere Design System • v4.2.1-stable</p>
+</footer>
+</body></html>

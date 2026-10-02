@@ -1,0 +1,23 @@
+<div
+  class="bg-surface-50 text-color flex min-h-0 w-full flex-1 flex-col transition-colors dark:bg-surface-100"
+>
+  <app-desktop-shell-navbar
+    class="sticky top-0 z-40 hidden md:block"
+    [navItems]="shellNavItems"
+  />
+  <!-- Fixed bar + hide-on-scroll (see MobileTopBarComponent); spacer via main padding on small screens -->
+  <app-mobile-top-bar class="md:hidden" />
+
+  <main
+    class="flex min-h-0 min-w-0 w-full flex-1 flex-col md:py-6 md:pb-6 max-md:transition-[padding-top] max-md:duration-300"
+    [ngClass]="[
+      isMediaRoute() ? 'px-0 md:px-0' : 'px-4 md:px-6',
+      mobileTopLayout.headerVisible() ? 'max-md:pt-[4.75rem]' : 'max-md:pt-4',
+      isFleetMapRoute() ? 'max-md:pb-0' : 'max-md:pb-[5.5rem]',
+    ]"
+  >
+    <router-outlet />
+  </main>
+
+  <app-mobile-bottom-nav class="md:hidden" [navItems]="shellNavItems" />
+</div>

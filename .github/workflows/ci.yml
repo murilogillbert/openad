@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main, '001-transit-ad-platform-foundation']
+  pull_request:
+    branches: [master, main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint (affected)
+        run: pnpm exec nx affected -t lint --parallel=3
+
+      - name: Test (affected)
+        run: pnpm exec nx affected -t test --parallel=3
+
+      - name: Build (affected)
+        run: pnpm exec nx affected -t build --parallel=3

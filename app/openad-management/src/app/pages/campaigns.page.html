@@ -1,0 +1,170 @@
+<div class="mx-auto max-w-[1600px]">
+  <!-- Mobile: title row (matches mobile_campaign_listing) -->
+  <section class="mb-6 md:hidden">
+    <div class="flex items-end justify-between">
+      <div>
+        <h2
+          class="font-headline text-2xl font-extrabold tracking-tight text-color"
+        >
+          Campaign ROI
+        </h2>
+        <span class="text-muted-color text-label text-sm">Updated just now</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Desktop: header (matches desktop_campaign_listing) -->
+  <header class="mb-6 hidden items-end justify-between md:mb-10 md:flex">
+    <div class="space-y-1">
+      <h1
+        class="app-font-display text-4xl font-extrabold tracking-tight text-color"
+      >
+        Campaign Performance
+      </h1>
+      <p class="text-muted-color font-medium">
+        Monitoring ROI and delivery across the active fleet
+      </p>
+    </div>
+    <button
+      type="button"
+      class="flex items-center gap-2 rounded-xl bg-gradient-to-br from-[#006788] to-[#74d1fe] px-6 py-3 font-bold text-white shadow-lg shadow-[#006788]/20 transition-transform hover:scale-[1.02]"
+      (click)="wizRef()?.open()"
+    >
+      <span class="material-symbols-outlined text-xl">add_circle</span>
+      Create New Campaign
+    </button>
+  </header>
+
+  <!-- KPI: desktop grid -->
+  <section
+    class="mb-8 hidden grid-cols-1 gap-6 md:mb-12 md:grid md:grid-cols-4"
+  >
+    <div
+      class="rounded-xl border-l-4 border-primary bg-surface-0 p-6 shadow-[0px_8px_24px_rgba(44,51,57,0.06)] dark:bg-surface-50"
+    >
+      <p
+        class="mb-2 text-sm font-semibold uppercase tracking-wider text-muted-color"
+      >
+        Active Campaigns
+      </p>
+      <div class="flex items-baseline gap-2">
+        <span class="text-3xl font-extrabold text-color">{{ kpiActive() }}</span>
+      </div>
+    </div>
+    <div
+      class="rounded-xl bg-surface-0 p-6 shadow-[0px_8px_24px_rgba(44,51,57,0.06)] dark:bg-surface-50"
+    >
+      <p
+        class="mb-2 text-sm font-semibold uppercase tracking-wider text-muted-color"
+      >
+        Average Pacing
+      </p>
+      <div class="flex items-baseline gap-2">
+        <span class="text-3xl font-extrabold text-color">—</span>
+        <span class="text-sm font-bold text-muted-color">N/A</span>
+      </div>
+    </div>
+    <div
+      class="rounded-xl bg-surface-0 p-6 shadow-[0px_8px_24px_rgba(44,51,57,0.06)] dark:bg-surface-50"
+    >
+      <p
+        class="mb-2 text-sm font-semibold uppercase tracking-wider text-muted-color"
+      >
+        Total Impressions
+      </p>
+      <div class="flex items-baseline gap-2">
+        <span class="text-3xl font-extrabold text-color">—</span>
+        <span class="ml-1 text-xs font-medium text-muted-color">reporting</span>
+      </div>
+    </div>
+    <div
+      class="rounded-xl bg-surface-0 p-6 shadow-[0px_8px_24px_rgba(44,51,57,0.06)] dark:bg-surface-50"
+    >
+      <p
+        class="mb-2 text-sm font-semibold uppercase tracking-wider text-muted-color"
+      >
+        Total Reach
+      </p>
+      <div class="flex items-baseline gap-2">
+        <span class="text-3xl font-extrabold text-color">—</span>
+        <span class="ml-1 text-xs font-medium text-muted-color"
+          >unique vehicles</span
+        >
+      </div>
+    </div>
+  </section>
+
+  <!-- KPI: mobile horizontal scroll -->
+  <section class="mb-8 md:hidden">
+    <div
+      class="-mx-4 flex gap-4 overflow-x-auto pb-4 px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    >
+      <div
+        class="w-40 flex-shrink-0 rounded-xl border border-surface-200 bg-surface-0 p-4 shadow-[0px_8px_24px_rgba(44,51,57,0.06)] dark:border-surface-300 dark:bg-surface-50"
+      >
+        <p class="mb-1 text-xs font-medium uppercase tracking-wider text-muted-color">
+          Active
+        </p>
+        <div class="flex items-baseline gap-1">
+          <span class="text-2xl font-bold text-primary">{{ kpiActive() }}</span>
+        </div>
+      </div>
+      <div
+        class="w-40 flex-shrink-0 rounded-xl border border-surface-200 bg-surface-0 p-4 shadow-[0px_8px_24px_rgba(44,51,57,0.06)] dark:border-surface-300 dark:bg-surface-50"
+      >
+        <p class="mb-1 text-xs font-medium uppercase tracking-wider text-muted-color">
+          Avg Pacing
+        </p>
+        <div class="flex items-baseline gap-1">
+          <span class="text-2xl font-bold text-color">—</span>
+          <span
+            class="material-symbols-outlined text-sm text-primary"
+            style="font-variation-settings: 'FILL' 1"
+            >trending_up</span
+          >
+        </div>
+      </div>
+      <div
+        class="w-40 flex-shrink-0 rounded-xl border border-surface-200 bg-surface-0 p-4 shadow-[0px_8px_24px_rgba(44,51,57,0.06)] dark:border-surface-300 dark:bg-surface-50"
+      >
+        <p class="mb-1 text-xs font-medium uppercase tracking-wider text-muted-color">
+          Impressions
+        </p>
+        <span class="text-2xl font-bold text-color">—</span>
+      </div>
+      <div
+        class="w-40 flex-shrink-0 rounded-xl border border-surface-200 bg-surface-0 p-4 shadow-[0px_8px_24px_rgba(44,51,57,0.06)] dark:border-surface-300 dark:bg-surface-50"
+      >
+        <p class="mb-1 text-xs font-medium uppercase tracking-wider text-muted-color">
+          Total Reach
+        </p>
+        <span class="text-2xl font-bold text-color">—</span>
+      </div>
+    </div>
+  </section>
+
+  <app-campaign-wizard #wiz (completed)="refresh()" />
+
+  <app-campaign-list
+    [campaigns]="filtered()"
+    [loading]="loading()"
+    [totalCount]="rows().length"
+    (activate)="onActivate($event)"
+    (pauseRequested)="onPause($event)"
+    (resumeRequested)="onResume($event)"
+    (duplicateRequested)="onDuplicate()"
+    (reportRequested)="onReport()"
+    [searchQuery]="searchQuery()"
+    (searchQueryChange)="updateSearch($event)"
+  />
+
+  <!-- Mobile FAB (matches mobile_campaign_listing) -->
+  <button
+    type="button"
+    class="fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#006788] to-[#74d1fe] text-white shadow-lg transition-transform active:scale-95 md:hidden"
+    aria-label="Create new campaign"
+    (click)="wizRef()?.open()"
+  >
+    <span class="material-symbols-outlined text-2xl">add</span>
+  </button>
+</div>

@@ -1,0 +1,224 @@
+<p-toast />
+
+<div class="flex flex-col gap-8">
+  <header>
+    <h1 class="text-3xl font-extrabold tracking-tight text-color">My Profile</h1>
+    <p class="mt-1 text-sm text-muted-color">
+      Manage your personal information and security preferences.
+    </p>
+  </header>
+
+  @if (loading() || !me()) {
+    <div class="rounded-2xl border border-surface-200 bg-surface-0 p-6 shadow-sm dark:border-surface-300 dark:bg-surface-100">
+      <p class="text-sm text-muted-color">Loading…</p>
+    </div>
+  } @else {
+    <div class="grid gap-10 lg:grid-cols-[320px_1fr] lg:items-start">
+      <!-- Left column: photo + note -->
+      <div class="flex flex-col gap-6">
+        <div class="flex flex-col items-center gap-4">
+          <input
+            #photoInput
+            type="file"
+            accept="image/*"
+            class="hidden"
+            (change)="onPhotoFileSelected($event)"
+          />
+
+          <div
+            class="relative h-44 w-44 overflow-hidden rounded-2xl bg-surface-100 shadow-sm dark:bg-surface-200"
+          >
+            @if (me()!.photoUrl) {
+              <p-image [src]="me()!.photoUrl!" alt="Profile photo" [preview]="true" />
+            } @else {
+              <div class="flex h-full w-full items-center justify-center">
+                <span class="text-xs font-semibold text-muted-color">No Photo</span>
+              </div>
+            }
+            <button
+              type="button"
+              class="absolute bottom-2 right-2 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-contrast shadow-md"
+              aria-label="Upload new profile photo"
+              (click)="photoInput.click(); $event.stopPropagation()"
+            >
+              <i class="pi pi-pencil"></i>
+            </button>
+          </div>
+
+          <span class="text-sm font-semibold text-muted-color">Upload New Image</span>
+
+          @if (me()!.photoUrl) {
+            <button
+              type="button"
+              class="text-sm font-semibold text-red-600 hover:underline"
+              (click)="removePhoto()"
+            >
+              Remove
+            </button>
+          }
+        </div>
+
+        <div class="rounded-2xl bg-surface-50 p-4 text-xs text-muted-color dark:bg-surface-200">
+          <p class="font-semibold text-color">Note:</p>
+          <p class="mt-2 leading-relaxed">
+            Keep it professional—your drivers might see this on their sync logs!
+          </p>
+        </div>
+      </div>
+
+      <!-- Right column: info + security + sessions -->
+      <div class="flex flex-col gap-10 lg:mx-auto lg:w-full lg:max-w-xl">
+        <section>
+          <h2 class="text-lg font-bold text-color">Personal Information</h2>
+
+          <div class="mt-5 grid gap-5">
+            <div class="flex flex-col gap-2">
+              <label for="profileDisplayName" class="text-sm font-semibold text-color"
+                >Full Name</label
+              >
+              <input
+                id="profileDisplayName"
+                pInputText
+                [(ngModel)]="displayName"
+                placeholder="Jane Doe"
+              />
+            </div>
+
+            <div class="flex flex-col gap-2">
+              <label for="profileEmail" class="text-sm font-semibold text-color"
+                >Email Address</label
+              >
+              <div class="relative">
+                <input
+                  id="profileEmail"
+                  pInputText
+                  [value]="me()!.email"
+                  disabled
+                  class="w-full pr-10"
+                />
+                <i class="pi pi-lock absolute right-3 top-1/2 -translate-y-1/2 text-muted-color"></i>
+              </div>
+              <p class="text-xs text-muted-color">
+                Contact your administrator to change your email.
+              </p>
+            </div>
+
+            <div class="flex flex-col gap-2">
+              <label for="profilePhone" class="text-sm font-semibold text-color"
+                >Phone Number</label
+              >
+              <input
+                id="profilePhone"
+                pInputText
+                [(ngModel)]="contactPhone"
+                placeholder="+1 (555) 123-4567"
+              />
+            </div>
+
+            <div class="flex flex-wrap gap-2 pt-2">
+              <p-button label="Save Changes" (onClick)="saveProfile()" />
+              <p-button label="Reload" [text]="true" severity="secondary" (onClick)="reload()" />
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 class="text-lg font-bold text-color">Security</h2>
+          <h3 class="mt-5 text-sm font-semibold text-color">Change Password</h3>
+
+          <div class="mt-4 grid gap-4">
+            <p-password
+              [(ngModel)]="currentPassword"
+              placeholder="Current Password"
+              [feedback]="false"
+              [toggleMask]="true"
+              styleClass="w-full"
+              inputStyleClass="w-full"
+            />
+            <p-password
+              [(ngModel)]="newPassword"
+              placeholder="New Password"
+              [toggleMask]="true"
+              styleClass="w-full"
+              inputStyleClass="w-full"
+            />
+            <p-password
+              [(ngModel)]="confirmNewPassword"
+              placeholder="Confirm New Password"
+              [feedback]="false"
+              [toggleMask]="true"
+              styleClass="w-full"
+              inputStyleClass="w-full"
+            />
+
+            <div class="flex items-center justify-between gap-3 border-t border-surface-200 pt-4 dark:border-surface-300">
+              <p class="text-xs text-muted-color">Minimum 8 characters.</p>
+              <p-button
+                label="Save Changes"
+                [disabled]="!currentPassword || !newPassword || !confirmNewPassword || newPassword !== confirmNewPassword"
+                (onClick)="changePassword()"
+              />
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="flex items-center justify-between gap-4">
+            <h2 class="text-lg font-bold text-color">Active Sessions</h2>
+            <button
+              type="button"
+              class="text-sm font-semibold text-red-600 hover:underline"
+              [class.opacity-40]="revokeAllDisabled()"
+              [disabled]="revokeAllDisabled()"
+              (click)="revokeOthers()"
+            >
+              Revoke All
+            </button>
+          </div>
+
+          <div class="mt-4">
+            @if (sessionsLoading()) {
+              <p class="text-sm text-muted-color">Loading…</p>
+            } @else if (!sessions().length) {
+              <p class="text-sm text-muted-color">No sessions found.</p>
+            } @else {
+              <div class="flex flex-col gap-3">
+                @for (s of sessions(); track s.sessionId) {
+                  <div class="flex items-center gap-4 rounded-2xl bg-surface-50 p-4 dark:bg-surface-200">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-0 shadow-sm dark:bg-surface-100">
+                      <i class="pi pi-desktop text-muted-color"></i>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                      <p class="truncate text-sm font-semibold text-color">{{ s.label }}</p>
+                      <p class="mt-0.5 text-xs text-muted-color">
+                        @if (s.isCurrent) { Current Session } @else { Last seen {{ s.lastActiveAt }} }
+                      </p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      @if (s.isCurrent) {
+                        <p-tag value="Current" severity="info" />
+                      } @else if (isActiveNow(s.lastActiveAt)) {
+                        <p-tag value="Active" severity="success" />
+                      }
+                      @if (!s.isCurrent) {
+                        <button
+                          type="button"
+                          class="flex h-9 w-9 items-center justify-center rounded-full text-muted-color hover:bg-surface-100 dark:hover:bg-surface-300"
+                          aria-label="Revoke session"
+                          (click)="messages.add({ severity: 'info', summary: 'Per-session revoke not wired yet' })"
+                        >
+                          <i class="pi pi-times"></i>
+                        </button>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </section>
+      </div>
+    </div>
+  }
+</div>
+

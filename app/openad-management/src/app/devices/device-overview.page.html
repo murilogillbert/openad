@@ -1,0 +1,182 @@
+<p-toast />
+<p-confirmDialog />
+
+@if (store.loading()) {
+  <div class="flex justify-center py-16">
+    <p-progressSpinner strokeWidth="3" />
+  </div>
+} @else if (store.detail(); as v) {
+  <div
+    class="border-surface-200 bg-surface-50 mb-4 flex flex-wrap items-center gap-2 rounded-xl border p-3 dark:border-surface-300 dark:bg-surface-100"
+    role="status"
+  >
+    <p-tag
+      [value]="bindingLabel(v.bindingStatus)"
+      [severity]="bindingSeverity(v.bindingStatus)"
+      styleClass="text-xs uppercase"
+    />
+    @if (v.inShop) {
+      <p-tag value="In shop / maintenance" severity="warn" styleClass="text-xs uppercase" />
+    }
+    <span class="text-muted-color text-xs">
+      Roster uses worst-case device health; missing heartbeats count as offline for scheduling.
+    </span>
+  </div>
+  <div class="grid gap-4 md:grid-cols-2">
+    <p-card styleClass="border-surface-200 shadow-sm dark:border-surface-300">
+      <ng-template pTemplate="header">
+        <div class="px-4 pt-4">
+          <h2 class="text-color text-lg font-bold">Vehicle</h2>
+          <p class="text-muted-color text-sm">Identity & classification</p>
+        </div>
+      </ng-template>
+      <dl class="text-sm">
+        <div class="mb-3 flex justify-between gap-4">
+          <dt class="text-muted-color">Plate</dt>
+          <dd class="text-color font-semibold">{{ v.registrationPlate }}</dd>
+        </div>
+        <div class="mb-3 flex justify-between gap-4">
+          <dt class="text-muted-color">Commercial tier</dt>
+          <dd class="text-color font-semibold capitalize">{{ v.commercialTier }}</dd>
+        </div>
+        <div class="flex justify-between gap-4">
+          <dt class="text-muted-color">Status</dt>
+          <dd>
+            <p-tag
+              [value]="v.status"
+              [severity]="severityForStatus(v.status)"
+              styleClass="text-xs uppercase"
+            />
+          </dd>
+        </div>
+      </dl>
+    </p-card>
+
+    <p-card styleClass="border-surface-200 shadow-sm dark:border-surface-300">
+      <ng-template pTemplate="header">
+        <div class="px-4 pt-4">
+          <h2 class="text-color text-lg font-bold">Paired tablets</h2>
+          <p class="text-muted-color text-sm">
+            All tablets linked to this vehicle ({{ v.pairedDeviceIds.length }})
+          </p>
+        </div>
+      </ng-template>
+      <section data-testid="paired-tablets-section">
+        @if (v.pairedDeviceIds.length === 0) {
+          <p class="text-muted-color text-sm">No tablets are paired to this vehicle.</p>
+        } @else {
+          <ul class="space-y-4">
+            @for (deviceId of v.pairedDeviceIds; track deviceId) {
+              <li
+                class="border-surface-200 rounded-lg border border-dashed p-4 dark:border-surface-400"
+              >
+                <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <span class="text-muted-color text-xs font-bold uppercase"
+                    >Device</span
+                  >
+                  <code class="text-color max-w-full truncate text-xs">{{
+                    deviceId
+                  }}</code>
+                </div>
+                @if (v.boundDevice && v.boundDevice.deviceId === deviceId) {
+                  <dl class="text-sm">
+                    <div class="mb-2 flex justify-between gap-4">
+                      <dt class="text-muted-color">Serial</dt>
+                      <dd class="text-color font-semibold">
+                        {{ v.boundDevice.serialNumber }}
+                      </dd>
+                    </div>
+                    <div class="mb-2 flex justify-between gap-4">
+                      <dt class="text-muted-color">Lifecycle</dt>
+                      <dd class="text-color font-semibold">
+                        {{ v.boundDevice.lifecycleState }}
+                      </dd>
+                    </div>
+                    <div class="mb-2 flex justify-between gap-4">
+                      <dt class="text-muted-color">Last seen</dt>
+                      <dd class="text-muted-color">
+                        {{ relative(v.boundDevice.lastSeenAt) }}
+                      </dd>
+                    </div>
+                    @if (v.boundDevice.currentRelease) {
+                      <div class="mb-2 flex justify-between gap-4">
+                        <dt class="text-muted-color">App version</dt>
+                        <dd class="text-color font-mono text-xs">
+                          {{ v.boundDevice.currentRelease.versionIdentifier }}
+                        </dd>
+                      </div>
+                    }
+                    @if (v.boundDevice.updateState; as us) {
+                      @if (us.lastCheckAt) {
+                        <div class="flex justify-between gap-4">
+                          <dt class="text-muted-color">Last update check</dt>
+                          <dd class="text-muted-color text-xs">
+                            {{ relative(us.lastCheckAt) }} · {{ us.lastCheckResult }}
+                          </dd>
+                        </div>
+                      }
+                    }
+                  </dl>
+                } @else {
+                  <p class="text-muted-color text-xs">
+                    Details load for the primary paired tablet; additional tablets
+                    show by ID until full multi-device summaries are available.
+                  </p>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    </p-card>
+
+    <p-card
+      styleClass="border-surface-200 shadow-sm dark:border-surface-300 md:col-span-2"
+    >
+      <ng-template pTemplate="header">
+        <div class="px-4 pt-4">
+          <h2 class="text-color text-lg font-bold">Characteristics</h2>
+          <p class="text-muted-color text-sm">Passenger & screen layout</p>
+        </div>
+      </ng-template>
+      <div class="flex flex-wrap gap-8 text-sm">
+        <div>
+          <p class="text-muted-color mb-1 text-xs font-bold uppercase">Screens</p>
+          <p class="text-color text-xl font-black">{{ v.characteristics.screenCount }}</p>
+        </div>
+        <div>
+          <p class="text-muted-color mb-1 text-xs font-bold uppercase">Capacity</p>
+          <p class="text-color text-xl font-black">
+            {{ v.characteristics.passengerCapacity }}
+          </p>
+        </div>
+      </div>
+    </p-card>
+  </div>
+
+  @if (canForceUpdate && v.boundDevice) {
+    <div class="mt-6 flex justify-end">
+      <button
+        pButton
+        type="button"
+        class="p-button-danger p-button-outlined"
+        label="Force Update Check"
+        [disabled]="forceBusy"
+        (click)="confirmForceUpdate()"
+      ></button>
+    </div>
+  }
+
+  @if (canDecommission && v.status !== 'decommissioned') {
+    <div class="mt-8 flex justify-end">
+      <button
+        pButton
+        type="button"
+        class="p-button-danger p-button-outlined"
+        label="Decommission vehicle"
+        [disabled]="busy"
+        (click)="confirmDecommission()"
+      ></button>
+    </div>
+  }
+}

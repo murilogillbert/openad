@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<device-admin xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-policies>
+        <!-- Minimal set; Device Owner primarily needs this receiver to exist. -->
+        <force-lock />
+        <disable-keyguard-features />
+        <watch-login />
+        <reset-password />
+        <limit-password />
+    </uses-policies>
+</device-admin>
+

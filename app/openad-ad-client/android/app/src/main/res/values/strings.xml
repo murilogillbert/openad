@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">OpenAD Ad Client</string>
+    <string name="title_activity_main">OpenAD Ad Client</string>
+    <string name="package_name">com.openad</string>
+    <string name="custom_url_scheme">com.openad</string>
+    <string name="restriction_openad_api_base_url">OpenAD API base URL</string>
+    <string name="restriction_openad_mqtt_host">MQTT broker host</string>
+    <string name="restriction_openad_mqtt_port">MQTT broker port</string>
+    <string name="restriction_openad_force_kiosk_ui">Force kiosk-style UI</string>
+</resources>

@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline-variant": "#abb3b9",
+                    "secondary-container": "#d1e5f4",
+                    "on-tertiary-fixed": "#283257",
+                    "background": "#f7f9fd",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary": "#faf8ff",
+                    "on-primary-fixed": "#003042",
+                    "primary-fixed": "#74d1fe",
+                    "on-background": "#2c3339",
+                    "tertiary-dim": "#475178",
+                    "primary": "#006788",
+                    "secondary-fixed-dim": "#c3d7e5",
+                    "tertiary": "#535d85",
+                    "surface-container-high": "#e3e9ef",
+                    "surface-tint": "#006788",
+                    "surface": "#f7f9fd",
+                    "primary-fixed-dim": "#65c4ef",
+                    "error-container": "#fa746f",
+                    "on-primary-fixed-variant": "#004f69",
+                    "on-surface": "#2c3339",
+                    "outline": "#747c82",
+                    "on-tertiary-container": "#3b466c",
+                    "surface-dim": "#d3dbe2",
+                    "on-error-container": "#6e0a12",
+                    "error-dim": "#67040d",
+                    "on-secondary-container": "#415460",
+                    "secondary-fixed": "#d1e5f4",
+                    "on-error": "#fff7f6",
+                    "inverse-on-surface": "#9a9da0",
+                    "on-surface-variant": "#586066",
+                    "inverse-surface": "#0b0f11",
+                    "primary-container": "#74d1fe",
+                    "secondary-dim": "#435661",
+                    "surface-bright": "#f7f9fd",
+                    "on-primary-container": "#00465d",
+                    "surface-container": "#e9eef4",
+                    "on-tertiary-fixed-variant": "#454f76",
+                    "inverse-primary": "#74d1fe",
+                    "tertiary-fixed-dim": "#b8c2ef",
+                    "surface-variant": "#dce3ea",
+                    "on-secondary-fixed": "#2f424d",
+                    "surface-container-low": "#f0f4f8",
+                    "tertiary-container": "#c6d0fe",
+                    "tertiary-fixed": "#c6d0fe",
+                    "on-secondary": "#f4faff",
+                    "secondary": "#4f626e",
+                    "on-secondary-fixed-variant": "#4b5e6a",
+                    "on-primary": "#f3faff",
+                    "error": "#a83836",
+                    "surface-container-highest": "#dce3ea",
+                    "primary-dim": "#005a77"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, .brand-font { font-family: 'Manrope', sans-serif; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen">
+<!-- TopNavBar -->
+<nav class="flex justify-between items-center w-full px-8 py-4 sticky top-0 z-50 bg-white/80 backdrop-blur-xl shadow-[0px_8px_24px_rgba(44,51,57,0.06)] font-['Manrope'] antialiased tracking-tight">
+<div class="flex items-center gap-12">
+<span class="text-xl font-bold tracking-tighter text-[#006788] dark:text-[#74d1fe]">OpenAd</span>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-[#586066] dark:text-[#abb3b9] hover:text-[#2c3339] dark:hover:text-[#f7f9fd] transition-all duration-200" href="#">Dashboard</a>
+<a class="text-[#586066] dark:text-[#abb3b9] hover:text-[#2c3339] dark:hover:text-[#f7f9fd] transition-all duration-200" href="#">Live Fleet</a>
+<a class="text-[#586066] dark:text-[#abb3b9] hover:text-[#2c3339] dark:hover:text-[#f7f9fd] transition-all duration-200" href="#">Devices</a>
+<a class="text-[#006788] dark:text-[#74d1fe] font-semibold border-b-2 border-[#006788] dark:border-[#74d1fe] pb-1" href="#">Campaigns</a>
+<a class="text-[#586066] dark:text-[#abb3b9] hover:text-[#2c3339] dark:hover:text-[#f7f9fd] transition-all duration-200" href="#">Media</a>
+<a class="text-[#586066] dark:text-[#abb3b9] hover:text-[#2c3339] dark:hover:text-[#f7f9fd] transition-all duration-200" href="#">Reports</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 hover:bg-[#f0f4f8] dark:hover:bg-[#2c3339] rounded-md transition-all duration-200">
+<span class="material-symbols-outlined text-[#586066]">notifications</span>
+</button>
+<button class="p-2 hover:bg-[#f0f4f8] dark:hover:bg-[#2c3339] rounded-md transition-all duration-200">
+<span class="material-symbols-outlined text-[#586066]">settings</span>
+</button>
+<div class="h-8 w-8 rounded-full bg-surface-container-high overflow-hidden border border-outline-variant/20">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" data-alt="Professional headshot of a creative director in a neutral setting with soft natural lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_OIP5QIkE0Yj4YQSj4rViCiu7aaDC5rrLRJdgLB7Tzxf9IVMtI0w9mjfCi9RvLocZB1q04w1Q1Y16D1wXsJONmlfTCHmmm_MQt0rZHyGHFdEGtkKq1bxs7oV8gw4k5Cj8EJBwzHY1EdHQ4qOl2p3z-bqE8j3Q4eAVbcj5j_uEhLxH5rBNypja2bhFBONdTPQFPVYciKxMJRVZbC5m5nD1skeUjZUwSAqRaRPttB2g4qdPcM7OS92WqgZuqUrjMqCkD-JTPhfHPxaM"/>
+</div>
+</div>
+</nav>
+<main class="max-w-[1600px] mx-auto px-8 py-10">
+<!-- Header -->
+<header class="flex justify-between items-end mb-10">
+<div class="space-y-1">
+<h1 class="text-4xl font-extrabold tracking-tight text-on-surface">Campaign Performance</h1>
+<p class="text-on-surface-variant font-medium">Monitoring ROI and delivery across the active fleet</p>
+</div>
+<button class="bg-gradient-to-br from-primary to-primary-container text-on-primary px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:scale-[1.02] transition-transform shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-xl">add_circle</span>
+                Create New Campaign
+            </button>
+</header>
+<!-- KPI Grid -->
+<section class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-[0px_8px_24px_rgba(44,51,57,0.06)] border-l-4 border-primary">
+<p class="text-on-surface-variant text-sm font-semibold uppercase tracking-wider mb-2">Active Campaigns</p>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-extrabold text-on-surface">14</span>
+<span class="text-primary text-sm font-bold flex items-center"><span class="material-symbols-outlined text-sm">trending_up</span>+2</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-[0px_8px_24px_rgba(44,51,57,0.06)]">
+<p class="text-on-surface-variant text-sm font-semibold uppercase tracking-wider mb-2">Average Pacing</p>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-extrabold text-on-surface">98.4%</span>
+<span class="text-tertiary text-sm font-bold">Stable</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-[0px_8px_24px_rgba(44,51,57,0.06)]">
+<p class="text-on-surface-variant text-sm font-semibold uppercase tracking-wider mb-2">Total Impressions</p>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-extrabold text-on-surface">12.8M</span>
+<span class="text-on-surface-variant text-xs font-medium ml-1">last 7 days</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-[0px_8px_24px_rgba(44,51,57,0.06)]">
+<p class="text-on-surface-variant text-sm font-semibold uppercase tracking-wider mb-2">Total Reach</p>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-extrabold text-on-surface">4.2k</span>
+<span class="text-on-surface-variant text-xs font-medium ml-1">unique vehicles</span>
+</div>
+</div>
+</section>
+<!-- ROI Table -->
+<section class="bg-surface-container-lowest rounded-xl shadow-[0px_8px_24px_rgba(44,51,57,0.06)] overflow-hidden">
+<div class="px-8 py-6 border-b border-surface-variant bg-surface-container-low/50 flex justify-between items-center">
+<h3 class="text-xl font-bold text-on-surface">Active Deployments</h3>
+<div class="flex gap-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">search</span>
+<input class="pl-10 pr-4 py-2 bg-white border-none ring-1 ring-outline-variant/20 rounded-lg text-sm focus:ring-primary/40 focus:outline-none w-64" placeholder="Search campaigns..." type="text"/>
+</div>
+<button class="flex items-center gap-2 px-4 py-2 rounded-lg border border-outline-variant/20 hover:bg-surface-container-low text-sm font-semibold text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-lg">filter_list</span>
+                        Filters
+                    </button>
+</div>
+</div>
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="text-on-surface-variant text-xs font-bold uppercase tracking-widest bg-surface-container-low/30">
+<th class="px-8 py-4">Campaign &amp; Advertiser</th>
+<th class="px-4 py-4">Status</th>
+<th class="px-4 py-4 w-64">Pacing Delivery</th>
+<th class="px-4 py-4">Vehicle Reach</th>
+<th class="px-4 py-4">Impressions</th>
+<th class="px-8 py-4">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-variant/50">
+<!-- Row 1: Live / On Track -->
+<tr class="hover:bg-surface-container-low/20 transition-colors group">
+<td class="px-8 py-6">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Close-up of a steaming latte with heart-shaped foam art on a wooden cafe table" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzNAdwwC51vE1KUcJuzgmd8H2EC-k5cgYLH_1i24il85-NHQY4o5p4jfbq0neWT2rnZOZvwRh5wfgfrRjmlFunORwnjDffa0M6e1j9mJeYjZJ6obaj9-dkLwit9TA0mgJ35xU0jGoLPQuFf5ypr7aipUc7J8okLxjjT8tBxSKslAhx6g9zUoTtBMhfDxh9tFi6rvTKRp4YCD_rYT-ZrkfbuXclwiSlOLH_xj9NDe9gP-cD_asAHA0GWqFDthFUWcQhREi41OfhjuPL"/>
+</div>
+<div>
+<p class="font-bold text-on-surface">Winter Latte Promo</p>
+<p class="text-sm text-on-surface-variant">Starbucks • Q4 Seasonal</p>
+</div>
+</div>
+</td>
+<td class="px-4 py-6">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                                Live
+                            </span>
+</td>
+<td class="px-4 py-6">
+<div class="space-y-1.5">
+<div class="flex justify-between text-[10px] font-bold text-on-surface-variant uppercase">
+<span>Pacing</span>
+<span class="text-primary">102% On Track</span>
+</div>
+<div class="h-2 w-full bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 102%"></div>
+</div>
+</div>
+</td>
+<td class="px-4 py-6">
+<div class="flex items-center gap-2 font-semibold text-on-surface">
+<span class="material-symbols-outlined text-outline-variant text-lg">local_taxi</span>
+                                1,240
+                            </div>
+</td>
+<td class="px-4 py-6 font-bold text-on-surface">4.2M</td>
+<td class="px-8 py-6 text-right"><div class="flex gap-3 justify-start">
+<button class="text-primary hover:bg-primary/10 p-1.5 rounded-lg transition-colors" title="Pause"><span class="material-symbols-outlined">pause_circle</span></button>
+<button class="text-primary hover:bg-primary/10 p-1.5 rounded-lg transition-colors" title="Duplicate"><span class="material-symbols-outlined">content_copy</span></button>
+<button class="text-primary hover:bg-primary/10 p-1.5 rounded-lg transition-colors" title="View Report"><span class="material-symbols-outlined">bar_chart</span></button>
+</div></td>
+</tr>
+<!-- Row 2: Overperforming -->
+<tr class="hover:bg-surface-container-low/20 transition-colors group">
+<td class="px-8 py-6">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Modern athletic footwear on a neon-lit running track at night with motion blur" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBAWaCAwWU6oS8XYVykdvmGAS03hAvvwVlhjpHHr4rFCuQPRfmiaEycevPmFCGcxn3QCqrbKibfMl9mMlx68GNU1QVqWcVfI8yCU-y6ndC7arCQyN5Wog9iNmLQc_ZWtNUodI2wKwoC5Mkyf8fWsUwk_kCeDRYo3ftPK0EekHYBl3VB02pOEKhdBj0kwby1s1yMg6Km8erhO5eEzwfaCeALynwxOIvwRDbCudRvoZJ3yzTj4B5_sO1ZN0dlwTV0zQSa-Zi-faYt3GHH"/>
+</div>
+<div>
+<p class="font-bold text-on-surface">Speed Series 24</p>
+<p class="text-sm text-on-surface-variant">Nike • Performance Line</p>
+</div>
+</div>
+</td>
+<td class="px-4 py-6">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary/10 text-tertiary text-xs font-bold">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+                                Warning
+                            </span>
+</td>
+<td class="px-4 py-6">
+<div class="space-y-1.5">
+<div class="flex justify-between text-[10px] font-bold text-on-surface-variant uppercase">
+<span>Pacing</span>
+<span class="text-tertiary">118% Overshooting</span>
+</div>
+<div class="h-2 w-full bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-tertiary rounded-full" style="width: 100%"></div>
+</div>
+</div>
+</td>
+<td class="px-4 py-6">
+<div class="flex items-center gap-2 font-semibold text-on-surface">
+<span class="material-symbols-outlined text-outline-variant text-lg">local_taxi</span>
+                                3,105
+                            </div>
+</td>
+<td class="px-4 py-6 font-bold text-on-surface">8.1M</td>
+<td class="px-8 py-6 text-right"><div class="flex gap-3 justify-start">
+<button class="text-primary hover:bg-primary/10 p-1.5 rounded-lg transition-colors" title="Pause"><span class="material-symbols-outlined">pause_circle</span></button>
+<button class="text-primary hover:bg-primary/10 p-1.5 rounded-lg transition-colors" title="Duplicate"><span class="material-symbols-outlined">content_copy</span></button>
+<button class="text-primary hover:bg-primary/10 p-1.5 rounded-lg transition-colors" title="View Report"><span class="material-symbols-outlined">bar_chart</span></button>
+</div></td>
+</tr>
+<!-- Row 3: Underperforming -->
+<tr class="hover:bg-surface-container-low/20 transition-colors group">
+<td class="px-8 py-6">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A premium luxury car dashboard with soft ambient blue lighting in a dark garage" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAs-sisFQxEsuoO__kP3Tum1_-fgKMHGe_yGIH904iW4_uRiS8ZVTFP3RM0lXSgQ72qgCw6lCeP79b5zUx38a3y6rS57PwjsI4NfUOde5o3bvr9VvXHX23VP4GtRFQMsWsQWA3FCOh1d_BuK5fxRuul0YoYpK-Vpde4rULJiyIjZ8_n5zRFmKuCtAnc5HTbJ26Bg9Ylg6iumfjAlok6jxcLnOaXQJthw4wwX3MzaQcNwCbZdph0NsHm9oKLlKlt8px3nYKlSvaxjuM"/>
+</div>
+<div>
+<p class="font-bold text-on-surface">Electric SUV Launch</p>
+<p class="text-sm text-on-surface-variant">Tesla • Market Entry</p>
+</div>
+</div>
+</td>
+<td class="px-4 py-6">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-container/20 text-on-primary-fixed-variant text-xs font-bold">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+                                Live
+                            </span>
+</td>
+<td class="px-4 py-6">
+<div class="space-y-1.5">
+<div class="flex justify-between text-[10px] font-bold text-on-surface-variant uppercase">
+<span>Pacing</span>
+<span class="text-primary-dim">64% Cold</span>
+</div>
+<div class="h-2 w-full bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary-container rounded-full" style="width: 64%"></div>
+</div>
+</div>
+</td>
+<td class="px-4 py-6">
+<div class="flex items-center gap-2 font-semibold text-on-surface">
+<span class="material-symbols-outlined text-outline-variant text-lg">local_taxi</span>
+                                842
+                            </div>
+</td>
+<td class="px-4 py-6 font-bold text-on-surface">1.4M</td>
+<td class="px-8 py-6 text-right"><div class="flex gap-3 justify-start">
+<button class="text-primary hover:bg-primary/10 p-1.5 rounded-lg transition-colors" title="Pause"><span class="material-symbols-outlined">pause_circle</span></button>
+<button class="text-primary hover:bg-primary/10 p-1.5 rounded-lg transition-colors" title="Duplicate"><span class="material-symbols-outlined">content_copy</span></button>
+<button class="text-primary hover:bg-primary/10 p-1.5 rounded-lg transition-colors" title="View Report"><span class="material-symbols-outlined">bar_chart</span></button>
+</div></td>
+</tr>
+<!-- Row 4: Paused -->
+<tr class="hover:bg-surface-container-low/20 transition-colors group opacity-60">
+<td class="px-8 py-6">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high overflow-hidden flex-shrink-0 grayscale">
+<img class="w-full h-full object-cover" data-alt="A delicious gourmet pizza on a rustic wooden board in a dimly lit restaurant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDq-xomki3To3naqqWg7rBTbZqvMOOKBQ13YADKkbnlEHM7sbjSpqnGAa3f5YTt-GUmsr6Qid6DCkYbMbQR6Z__VULRqYEL3Uf5bxGgyGCJ7FN_4ugflxjACzVP005IuByIyP6XKLmWnxC7JIq0OtQNUh1hQ1NBwPMeR5HofWVvyGefd7gR26p2RSTXRY69Sh34U3MSB0SoPX6ncbpnz3WGICbTOpIFkdJFdb6zq-pFl9sZ5xyoy733-E29j07qPZQo3xj9yl9AeHKC"/>
+</div>
+<div>
+<p class="font-bold text-on-surface">Friday Night Specials</p>
+<p class="text-sm text-on-surface-variant">Domino's • Weekend Promo</p>
+</div>
+</div>
+</td>
+<td class="px-4 py-6">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-error/10 text-error text-xs font-bold">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+                                Paused
+                            </span>
+</td>
+<td class="px-4 py-6">
+<div class="space-y-1.5">
+<div class="flex justify-between text-[10px] font-bold text-on-surface-variant uppercase">
+<span>Pacing</span>
+<span>Paused</span>
+</div>
+<div class="h-2 w-full bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-outline-variant rounded-full" style="width: 45%"></div>
+</div>
+</div>
+</td>
+<td class="px-4 py-6">
+<div class="flex items-center gap-2 font-semibold text-on-surface">
+<span class="material-symbols-outlined text-outline-variant text-lg">local_taxi</span>
+                                0
+                            </div>
+</td>
+<td class="px-4 py-6 font-bold text-on-surface">920k</td>
+<td class="px-8 py-6 text-right"><div class="flex gap-3 justify-start">
+<button class="text-primary hover:bg-primary/10 p-1.5 rounded-lg transition-colors" title="Resume"><span class="material-symbols-outlined">play_circle</span></button>
+<button class="text-primary hover:bg-primary/10 p-1.5 rounded-lg transition-colors" title="Duplicate"><span class="material-symbols-outlined">content_copy</span></button>
+<button class="text-primary hover:bg-primary/10 p-1.5 rounded-lg transition-colors" title="View Report"><span class="material-symbols-outlined">bar_chart</span></button>
+</div></td>
+</tr>
+</tbody>
+</table>
+<div class="px-8 py-4 bg-surface-container-low/20 border-t border-surface-variant flex justify-between items-center text-sm font-medium text-on-surface-variant">
+<span>Showing 1-4 of 14 campaigns</span>
+<div class="flex gap-2">
+<button class="px-3 py-1 rounded-md hover:bg-surface-container-high transition-colors">Previous</button>
+<button class="px-3 py-1 rounded-md bg-primary text-on-primary shadow-sm shadow-primary/20">1</button>
+<button class="px-3 py-1 rounded-md hover:bg-surface-container-high transition-colors">2</button>
+<button class="px-3 py-1 rounded-md hover:bg-surface-container-high transition-colors">3</button>
+<button class="px-3 py-1 rounded-md hover:bg-surface-container-high transition-colors">Next</button>
+</div>
+</div>
+</section>
+<!-- Insights Bento Grid -->
+</main>
+<!-- Global Action Bar (Minimal) -->
+<div class="fixed bottom-8 right-8 flex flex-col gap-4">
+<button class="w-14 h-14 bg-surface-container-lowest shadow-2xl rounded-full flex items-center justify-center text-primary border border-outline-variant/10 hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">help</span>
+</button>
+</div>
+</body></html>

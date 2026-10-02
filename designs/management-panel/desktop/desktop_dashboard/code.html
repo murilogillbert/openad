@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>OpenAd - Dashboard</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "inverse-surface": "#0b0f11",
+              "surface-tint": "#006788",
+              "on-primary-fixed-variant": "#004f69",
+              "on-tertiary-fixed": "#283257",
+              "on-error-container": "#6e0a12",
+              "on-primary-fixed": "#003042",
+              "surface-container-high": "#e3e9ef",
+              "surface-container": "#e9eef4",
+              "outline": "#747c82",
+              "on-primary": "#f3faff",
+              "on-tertiary": "#faf8ff",
+              "primary-container": "#74d1fe",
+              "surface-container-low": "#f0f4f8",
+              "surface-container-lowest": "#ffffff",
+              "surface-bright": "#f7f9fd",
+              "on-background": "#2c3339",
+              "tertiary-container": "#c6d0fe",
+              "surface-container-highest": "#dce3ea",
+              "on-secondary-fixed-variant": "#4b5e6a",
+              "primary-fixed": "#74d1fe",
+              "on-error": "#fff7f6",
+              "secondary-dim": "#435661",
+              "primary-dim": "#005a77",
+              "error": "#a83836",
+              "tertiary": "#535d85",
+              "error-container": "#fa746f",
+              "on-secondary": "#f4faff",
+              "on-primary-container": "#00465d",
+              "surface": "#f7f9fd",
+              "on-secondary-fixed": "#2f424d",
+              "on-secondary-container": "#415460",
+              "on-surface": "#2c3339",
+              "on-surface-variant": "#586066",
+              "background": "#f7f9fd",
+              "tertiary-fixed-dim": "#b8c2ef",
+              "tertiary-dim": "#475178",
+              "on-tertiary-fixed-variant": "#454f76",
+              "surface-variant": "#dce3ea",
+              "inverse-on-surface": "#9a9da0",
+              "primary": "#006788",
+              "tertiary-fixed": "#c6d0fe",
+              "error-dim": "#67040d",
+              "outline-variant": "#abb3b9",
+              "inverse-primary": "#74d1fe",
+              "secondary-fixed-dim": "#c3d7e5",
+              "on-tertiary-container": "#3b466c",
+              "secondary-container": "#d1e5f4",
+              "primary-fixed-dim": "#65c4ef",
+              "secondary-fixed": "#d1e5f4",
+              "secondary": "#4f626e",
+              "surface-dim": "#d3dbe2"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(20px);
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #dce3ea;
+        border-radius: 10px;
+      }
+    
+        .nav-active {
+            position: relative;
+        }
+        .nav-active::after {
+            content: '';
+            position: absolute;
+            bottom: -18px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #006788;
+        }</style>
+</head>
+<body class="bg-background text-on-background font-body min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<nav class="flex items-center justify-between w-full px-8 py-4 sticky top-0 z-50 bg-[#f7f9fd] dark:bg-slate-900 no-border">
+<!-- Brand Section -->
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-3 group cursor-pointer">
+<img alt="OpenAd Logo" class="h-8 w-auto" data-alt="Modern abstract geometric logo for a digital advertising platform, professional blue tones, clean sharp lines, high tech aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1mRAXFuRv9LWMoF7ZP67R6l-y1vO6EZAJIxkFY59oxKN0gj4i2jpaq6C5l8stV5QoBgEtCpcj_texk45SR7lRs4xJ0hDLaNscm_lMTIBYE4ryiVx0RuZ05AaMR4n6Kdt4n2HpQ_PdU0QjmzgzfEsTUu7IncrXtAMyeguhuVKs989dWKijBigLkIcFnpRxUyefdemh2GdWKZjps4J6SV8ealHzB9r_fsYtxhSMGE7zwjsQfPFc2d4ejxjF05K14IhMUFIFB2-X6ifI"/>
+<span class="text-2xl font-extrabold tracking-tighter text-[#006788] dark:text-[#74d1fe] font-headline">OpenAd</span>
+</div>
+<!-- Navigation Links cluster -->
+<div class="hidden md:flex items-center gap-6">
+<!-- Dashboard (Active State) -->
+<a class="text-[#006788] dark:text-[#74d1fe] font-bold border-b-2 border-[#006788] dark:border-[#74d1fe] pb-1 text-sm font-medium font-inter transition-all" href="#">Dashboard</a>
+<!-- Inactive Links -->
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] dark:hover:text-[#74d1fe] transition-colors text-sm font-inter" href="#">Live Fleet</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] dark:hover:text-[#74d1fe] transition-colors text-sm font-inter" href="#">Devices</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] dark:hover:text-[#74d1fe] transition-colors text-sm font-inter" href="#">Campaigns</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] dark:hover:text-[#74d1fe] transition-colors text-sm font-inter" href="#">Media</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] dark:hover:text-[#74d1fe] transition-colors text-sm font-inter" href="#">Reports</a>
+</div>
+</div>
+<!-- Flexible Spacer -->
+<div class="flex-grow"></div>
+<!-- Actions Cluster -->
+<div class="flex items-center gap-2">
+<!-- Search Action -->
+<button class="p-2 hover:bg-white/50 dark:hover:bg-slate-700/50 rounded-lg transition-all duration-200 active:scale-95 opacity-80 flex items-center justify-center text-[#586066] dark:text-slate-400">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+</button>
+<!-- Notifications Action -->
+<div class="relative">
+<button class="p-2 hover:bg-white/50 dark:hover:bg-slate-700/50 rounded-lg transition-all duration-200 active:scale-95 opacity-80 flex items-center justify-center text-[#586066] dark:text-slate-400">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<!-- Subtle unread indicator -->
+<span class="absolute top-2 right-2.5 w-2 h-2 bg-error rounded-full border-2 border-[#f7f9fd] dark:border-slate-900"></span>
+</div>
+<!-- Profile / Account Action -->
+<button class="ml-2 flex items-center gap-3 pl-3 pr-1 py-1 bg-surface-container-low dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-700 rounded-full transition-all duration-200 group border border-transparent hover:border-outline-variant/20">
+<div class="hidden sm:block text-right">
+<p class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider leading-none">Administrator</p>
+<p class="text-xs font-semibold text-primary dark:text-primary-container">Alex Chen</p>
+</div>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-primary/20 bg-primary-container/30 flex items-center justify-center text-[#006788]">
+<span class="material-symbols-outlined text-xl" data-icon="account_circle" style="font-variation-settings: 'FILL' 1;">account_circle</span>
+</div>
+</button>
+</div>
+</nav>
+<div class="flex flex-1 overflow-hidden">
+<!-- SideNavBar -->
+<aside class="hidden md:flex flex-col gap-2 p-4 h-full bg-slate-100 dark:bg-slate-950 w-64 border-r border-slate-200/50 dark:border-slate-800/50 shrink-0">
+<div class="mb-6 px-2">
+<div class="flex items-center gap-3 mb-1">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">analytics</span>
+<span class="text-lg font-bold text-slate-800 dark:text-slate-100 font-headline tracking-tight">Operations</span>
+</div>
+<span class="text-xs text-on-surface-variant font-medium tracking-widest uppercase opacity-70">Ad Suite Control</span>
+</div>
+<nav class="flex flex-col gap-1">
+<button class="flex items-center gap-3 px-3 py-2.5 bg-white dark:bg-slate-800 text-sky-700 dark:text-sky-400 shadow-sm rounded-lg font-inter text-sm font-medium transition-all active:scale-98">
+<span class="material-symbols-outlined" data-icon="report_problem">report_problem</span>
+<span>Emergency Override</span>
+</button>
+<button class="flex items-center gap-3 px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-300 hover:translate-x-1 transition-all duration-200 font-inter text-sm font-medium active:scale-98">
+<span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
+<span>Add New Player</span>
+</button>
+<button class="flex items-center gap-3 px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-300 hover:translate-x-1 transition-all duration-200 font-inter text-sm font-medium active:scale-98">
+<span class="material-symbols-outlined" data-icon="cloud_upload">cloud_upload</span>
+<span>Quick Upload</span>
+</button>
+<button class="flex items-center gap-3 px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-300 hover:translate-x-1 transition-all duration-200 font-inter text-sm font-medium active:scale-98">
+<span class="material-symbols-outlined" data-icon="auto_schedule">auto_schedule</span>
+<span>Schedule Wizard</span>
+</button>
+</nav>
+<div class="mt-auto p-4 rounded-xl bg-primary/5 border border-primary/10">
+<div class="flex items-center gap-2 mb-2">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="text-xs font-bold text-primary">System Optimal</span>
+</div>
+<p class="text-[10px] text-on-surface-variant leading-relaxed">All regional sync nodes are operating within 15ms latency parameters.</p>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
+<!-- Top Row KPIs -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+<!-- KPI 1 -->
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-none border-none flex flex-col gap-1 transition-transform hover:scale-[1.02] duration-300">
+<span class="text-on-surface-variant text-xs font-semibold tracking-wide uppercase">Network Status</span>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-extrabold font-headline text-on-surface">48/50</span>
+<span class="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">Screens Online</span>
+</div>
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full mt-3 overflow-hidden">
+<div class="bg-primary h-full w-[96%]"></div>
+</div>
+</div>
+<!-- KPI 2 -->
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-none border-none flex flex-col gap-1 transition-transform hover:scale-[1.02] duration-300">
+<span class="text-on-surface-variant text-xs font-semibold tracking-wide uppercase">Active Campaigns</span>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-extrabold font-headline text-on-surface">12</span>
+<span class="text-xs font-medium text-tertiary bg-tertiary/10 px-2 py-0.5 rounded-full">Live Now</span>
+</div>
+<div class="flex mt-3 gap-1">
+<div class="h-1.5 flex-1 bg-primary-container rounded-full"></div>
+<div class="h-1.5 flex-1 bg-primary-container rounded-full"></div>
+<div class="h-1.5 flex-1 bg-primary-container rounded-full"></div>
+<div class="h-1.5 flex-1 bg-surface-container-highest rounded-full"></div>
+</div>
+</div>
+<!-- KPI 3 -->
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-none border-none flex flex-col gap-1 transition-transform hover:scale-[1.02] duration-300">
+<span class="text-on-surface-variant text-xs font-semibold tracking-wide uppercase">Total Impressions (24h)</span>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-extrabold font-headline text-on-surface">1.2M</span>
+<span class="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">↑ 4.2%</span>
+</div>
+<div class="mt-3 flex items-center gap-1 overflow-hidden">
+<div class="h-8 w-full bg-gradient-to-t from-primary/20 to-transparent rounded-sm relative overflow-hidden">
+<svg class="absolute inset-0 w-full h-full preserve-aspect-none" viewbox="0 0 100 40">
+<path d="M0,35 Q20,10 40,30 T80,15 T100,25 L100,40 L0,40 Z" fill="rgba(0,103,136,0.1)" stroke="#006788" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+</svg>
+</div>
+</div>
+</div>
+<!-- KPI 4 -->
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-none border-none flex flex-col gap-1 transition-transform hover:scale-[1.02] duration-300">
+<span class="text-on-surface-variant text-xs font-semibold tracking-wide uppercase">Media Storage</span>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-extrabold font-headline text-on-surface">65%</span>
+<span class="text-xs font-medium text-on-surface-variant opacity-60">1.4TB Used</span>
+</div>
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full mt-3">
+<div class="bg-tertiary h-full w-[65%] rounded-full"></div>
+</div>
+</div>
+</div>
+<!-- Dashboard Grid -->
+<div class="grid grid-cols-12 gap-6">
+<!-- Center-Left: Display Inventory Table -->
+<div class="col-span-12 lg:col-span-8 bg-surface-container-lowest rounded-xl p-6 shadow-sm">
+<div class="flex justify-between items-center mb-6">
+<h2 class="text-xl font-bold font-headline tracking-tight text-on-surface">Display Inventory</h2>
+<button class="text-xs font-bold text-primary flex items-center gap-1 hover:underline transition-all">
+<span class="material-symbols-outlined text-sm">filter_list</span>
+                            Filter Screens
+                        </button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="text-xs font-bold text-on-surface-variant uppercase tracking-wider border-b border-surface-container-highest">
+<th class="pb-3 pl-2">Name/Location</th>
+<th class="pb-3">Status</th>
+<th class="pb-3">Current Layout</th>
+<th class="pb-3">Preview</th>
+<th class="pb-3 text-right pr-2">Uptime %</th>
+</tr>
+</thead>
+<tbody class="text-sm">
+<tr class="group hover:bg-surface-container-low transition-colors">
+<td class="py-4 pl-2">
+<div class="flex flex-col">
+<span class="font-bold text-on-surface">S-04 Main Concourse</span>
+<span class="text-xs text-on-surface-variant">London Heathrow, Terminal 5</span>
+</div>
+</td>
+<td class="py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="text-xs font-medium">Online</span>
+</div>
+</td>
+<td class="py-4">
+<span class="px-2 py-1 bg-surface-container-high rounded text-[11px] font-semibold text-on-surface-variant">Triple Zone A</span>
+</td>
+<td class="py-4">
+<div class="relative w-20 h-12 rounded bg-surface-container-highest overflow-hidden border border-outline-variant/10 group/thumb">
+<img alt="Screen preview" class="w-full h-full object-cover" data-alt="vibrant abstract digital art billboard display with glowing neon blue and purple waves" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBYXhs7mI-BA_8w5SIzhRXZCRCGyoWCW26HUTntNPuUNqQPLqIG3L0L7gkjxbrMTDjZ2F09VsD2uvtfFQa8yODLWzbtHpNrvYD3cJbYJ1vuNj4GI1pOJwd9_GlTwXG68UMfKlmCcW0P2mryC48QJntOUJeNCVMTiOD3_AbtL_5yLMPrO72tCJQMsBmJpAtjMqFr4GL61VWHEyJHStV-7oJ3w_W4tDTaJa3RP_4cofRhlTthJkzyZ6aMqVa56IgQctdNS22RUe3BAlJP"/>
+<button class="absolute inset-0 bg-on-surface/40 flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-white text-sm">refresh</span>
+</button>
+</div>
+</td>
+<td class="py-4 text-right pr-2 font-mono font-medium">99.8%</td>
+</tr>
+<tr class="group hover:bg-surface-container-low transition-colors">
+<td class="py-4 pl-2">
+<div class="flex flex-col">
+<span class="font-bold text-on-surface">S-12 North Gate</span>
+<span class="text-xs text-on-surface-variant">NYC Grand Central Station</span>
+</div>
+</td>
+<td class="py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+<span class="text-xs font-medium">Offline</span>
+</div>
+</td>
+<td class="py-4">
+<span class="px-2 py-1 bg-surface-container-high rounded text-[11px] font-semibold text-on-surface-variant">Full Screen Video</span>
+</td>
+<td class="py-4">
+<div class="relative w-20 h-12 rounded bg-surface-container-highest overflow-hidden border border-outline-variant/10 group/thumb">
+<div class="w-full h-full flex items-center justify-center bg-slate-200">
+<span class="material-symbols-outlined text-slate-400 text-sm">signal_disconnected</span>
+</div>
+</div>
+</td>
+<td class="py-4 text-right pr-2 font-mono font-medium text-error">92.4%</td>
+</tr>
+<tr class="group hover:bg-surface-container-low transition-colors">
+<td class="py-4 pl-2">
+<div class="flex flex-col">
+<span class="font-bold text-on-surface">S-22 High Street</span>
+<span class="text-xs text-on-surface-variant">Berlin Mitte Mall</span>
+</div>
+</td>
+<td class="py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-slate-400"></span>
+<span class="text-xs font-medium">Maintenance</span>
+</div>
+</td>
+<td class="py-4">
+<span class="px-2 py-1 bg-surface-container-high rounded text-[11px] font-semibold text-on-surface-variant">Split Vertical</span>
+</td>
+<td class="py-4">
+<div class="relative w-20 h-12 rounded bg-surface-container-highest overflow-hidden border border-outline-variant/10 group/thumb">
+<img alt="Screen preview" class="w-full h-full object-cover" data-alt="minimalist architecture advertisement on a large digital screen with clean typography and soft shadows" src="https://lh3.googleusercontent.com/aida-public/AB6AXuACzMxeNQZiPonh7BrldVerp_LljFrCnT_ssSn325vFDd1uqe3foFDIdBdfhHuMgXFHnN1AuW1qLIQla7MFRFsIJ3eOKyhGhz0VK5EaLSgwMvnY1qhtiUH9pko-kWwhc0S-qQ-vTb93MgqcoS9N0tERiOMupvWVG_jl77yid489bnQp9FrkXkp5Gy6k7Sf_UzmtuHoi2JtLQq9F7z6AxT7XmsS7KIbiiX2QzXDTXMNrSwPfUH1804ixrivCfxZ8ChEi7mlNTcVxz9yk"/>
+<button class="absolute inset-0 bg-on-surface/40 flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-white text-sm">refresh</span>
+</button>
+</div>
+</td>
+<td class="py-4 text-right pr-2 font-mono font-medium">97.2%</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="mt-6 flex justify-center">
+<button class="text-xs font-bold text-slate-500 hover:text-primary transition-colors flex items-center gap-2">
+                            View All 50 Screens
+                            <span class="material-symbols-outlined text-xs">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Center-Right: Ad Campaign Performance -->
+<div class="col-span-12 lg:col-span-4 flex flex-col gap-6">
+<div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm flex-1">
+<div class="flex justify-between items-center mb-6">
+<h2 class="text-lg font-bold font-headline tracking-tight text-on-surface">Campaign Pacing</h2>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">more_vert</span>
+</div>
+<div class="space-y-6">
+<!-- Campaign 1 -->
+<div class="space-y-2">
+<div class="flex justify-between items-center text-xs">
+<span class="font-bold text-on-surface">Luxury Watch 2024</span>
+<span class="text-on-surface-variant">85% of Target</span>
+</div>
+<div class="relative h-4 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-primary-container w-[85%] rounded-full"></div>
+<div class="absolute inset-y-0 left-0 border-r-2 border-on-surface-variant/40 w-[90%]" title="Target line"></div>
+</div>
+</div>
+<!-- Campaign 2 -->
+<div class="space-y-2">
+<div class="flex justify-between items-center text-xs">
+<span class="font-bold text-on-surface">EV Summer Launch</span>
+<span class="text-emerald-600 font-bold">112% of Target</span>
+</div>
+<div class="relative h-4 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-500 to-emerald-300 w-full rounded-full"></div>
+<div class="absolute inset-y-0 left-0 border-r-2 border-on-surface-variant/40 w-[80%]" title="Target line"></div>
+</div>
+</div>
+<!-- Campaign 3 -->
+<div class="space-y-2">
+<div class="flex justify-between items-center text-xs">
+<span class="font-bold text-on-surface">Global Airlines Promo</span>
+<span class="text-error font-bold">45% of Target</span>
+</div>
+<div class="relative h-4 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="absolute inset-y-0 left-0 bg-gradient-to-r from-error to-error-container w-[45%] rounded-full"></div>
+<div class="absolute inset-y-0 left-0 border-r-2 border-on-surface-variant/40 w-[60%]" title="Target line"></div>
+</div>
+</div>
+</div>
+<div class="mt-8 p-4 rounded-lg bg-surface-container-low border border-outline-variant/10">
+<div class="flex items-center gap-3">
+<div class="p-2 bg-white rounded-md shadow-sm">
+<span class="material-symbols-outlined text-primary">description</span>
+</div>
+<div class="flex-1">
+<p class="text-[11px] font-bold text-on-surface uppercase tracking-wider">Proof-of-Play Quick-Link</p>
+<p class="text-xs text-on-surface-variant">Last report generated 2h ago</p>
+</div>
+<button class="bg-primary text-on-primary px-3 py-1.5 rounded-md text-xs font-bold hover:scale-105 transition-transform active:scale-95 shadow-lg shadow-primary/20">
+                                    Export
+                                </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom: Alerts & Activity Feed -->
+<div class="col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Critical Alerts -->
+<div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm border-l-4 border-error">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">warning</span>
+<h2 class="text-lg font-bold font-headline tracking-tight text-on-surface">Critical Alerts</h2>
+</div>
+<div class="space-y-3">
+<div class="flex items-start gap-4 p-3 rounded-lg bg-error/5 hover:bg-error/10 transition-colors">
+<span class="material-symbols-outlined text-error mt-1 text-sm">device_thermostat</span>
+<div class="flex-1">
+<p class="text-sm font-bold text-on-surface">Screen 04 High Temp</p>
+<p class="text-xs text-on-surface-variant">Core temperature reaching 84°C. Fans operating at 100%.</p>
+<span class="text-[10px] font-bold text-error uppercase mt-1 inline-block">Urgent Attention Required</span>
+</div>
+<span class="text-[10px] font-mono text-on-surface-variant">12:04 PM</span>
+</div>
+<div class="flex items-start gap-4 p-3 rounded-lg bg-tertiary/5 hover:bg-tertiary/10 transition-colors">
+<span class="material-symbols-outlined text-tertiary mt-1 text-sm">storage</span>
+<div class="flex-1">
+<p class="text-sm font-bold text-on-surface">Low Storage Warning</p>
+<p class="text-xs text-on-surface-variant">Node NYC-02 only has 5GB remaining for local cache.</p>
+</div>
+<span class="text-[10px] font-mono text-on-surface-variant">10:45 AM</span>
+</div>
+</div>
+</div>
+<!-- Recent Activity -->
+<div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">history</span>
+<h2 class="text-lg font-bold font-headline tracking-tight text-on-surface">Recent Activity Log</h2>
+</div>
+<div class="space-y-4">
+<div class="flex items-center gap-4 text-xs">
+<div class="w-2 h-2 rounded-full bg-slate-300"></div>
+<span class="font-mono text-on-surface-variant">14:22:01</span>
+<span class="text-on-surface"><span class="font-bold">Media Uploaded:</span> 'Q3_Brand_Film.mp4' by Admin</span>
+</div>
+<div class="flex items-center gap-4 text-xs border-t border-surface-container-highest pt-3">
+<div class="w-2 h-2 rounded-full bg-slate-300"></div>
+<span class="font-mono text-on-surface-variant">13:15:45</span>
+<span class="text-on-surface"><span class="font-bold">Schedule Update:</span> 'Evening Prime' slot adjusted on 12 nodes</span>
+</div>
+<div class="flex items-center gap-4 text-xs border-t border-surface-container-highest pt-3">
+<div class="w-2 h-2 rounded-full bg-slate-300"></div>
+<span class="font-mono text-on-surface-variant">11:50:12</span>
+<span class="text-on-surface"><span class="font-bold">System Check:</span> Weekly automated health scan completed</span>
+</div>
+<div class="flex items-center gap-4 text-xs border-t border-surface-container-highest pt-3">
+<div class="w-2 h-2 rounded-full bg-slate-300"></div>
+<span class="font-mono text-on-surface-variant">09:10:00</span>
+<span class="text-on-surface"><span class="font-bold">Login:</span> User 'Marketing_Lead' from 192.168.1.42</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Mobile Nav Bar (Visible on mobile only) -->
+<div class="md:hidden fixed bottom-0 left-0 right-0 bg-surface-container-lowest dark:bg-slate-900 border-t border-outline-variant/10 px-4 py-2 flex justify-around items-center z-50">
+<button class="flex flex-col items-center gap-1 p-2 text-[#006788]">
+<span class="material-symbols-outlined" data-icon="dashboard" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="text-[10px] font-bold">Dashboard</span>
+</button>
+<button class="flex flex-col items-center gap-1 p-2 text-[#586066]">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="text-[10px] font-medium">Fleet</span>
+</button>
+<button class="flex flex-col items-center gap-1 p-2 text-[#586066]">
+<span class="material-symbols-outlined" data-icon="campaign">campaign</span>
+<span class="text-[10px] font-medium">Ads</span>
+</button>
+<button class="flex flex-col items-center gap-1 p-2 text-[#586066]">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="text-[10px] font-medium">Profile</span>
+</button>
+</div>
+</body></html>

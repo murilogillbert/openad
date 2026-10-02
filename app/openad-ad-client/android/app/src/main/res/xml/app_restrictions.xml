@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Managed configuration (Android Enterprise / EMM).
+  EMM consoles read this schema; policies can push restriction bundles that the app
+  reads at runtime via RestrictionsManager (wire in TS/Java as needed).
+-->
+<restrictions xmlns:android="http://schemas.android.com/apk/res/android">
+    <restriction
+        android:key="openad_api_base_url"
+        android:title="@string/restriction_openad_api_base_url"
+        android:restrictionType="string"
+        android:defaultValue="" />
+    <restriction
+        android:key="openad_mqtt_host"
+        android:title="@string/restriction_openad_mqtt_host"
+        android:restrictionType="string"
+        android:defaultValue="" />
+    <restriction
+        android:key="openad_mqtt_port"
+        android:title="@string/restriction_openad_mqtt_port"
+        android:restrictionType="string"
+        android:defaultValue="" />
+    <restriction
+        android:key="openad_force_kiosk_ui"
+        android:title="@string/restriction_openad_force_kiosk_ui"
+        android:restrictionType="bool"
+        android:defaultValue="false" />
+</restrictions>

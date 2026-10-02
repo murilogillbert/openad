@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Live Map | OpenAd</title>
+<!-- Google Fonts: Manrope & Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "secondary-dim": "#435661",
+              "primary-fixed": "#74d1fe",
+              "surface": "#f7f9fd",
+              "inverse-surface": "#0b0f11",
+              "on-tertiary-fixed": "#283257",
+              "inverse-primary": "#74d1fe",
+              "secondary-fixed": "#d1e5f4",
+              "primary": "#006788",
+              "on-tertiary-container": "#3b466c",
+              "on-primary-container": "#00465d",
+              "error": "#a83836",
+              "on-background": "#2c3339",
+              "primary-fixed-dim": "#65c4ef",
+              "background": "#f7f9fd",
+              "tertiary": "#535d85",
+              "surface-dim": "#d3dbe2",
+              "on-secondary-fixed-variant": "#4b5e6a",
+              "tertiary-fixed-dim": "#b8c2ef",
+              "tertiary-dim": "#475178",
+              "tertiary-container": "#c6d0fe",
+              "on-primary-fixed": "#003042",
+              "on-secondary": "#f4faff",
+              "outline-variant": "#abb3b9",
+              "on-tertiary-fixed-variant": "#454f76",
+              "primary-dim": "#005a77",
+              "outline": "#747c82",
+              "on-primary-fixed-variant": "#004f69",
+              "surface-container-low": "#f0f4f8",
+              "secondary-fixed-dim": "#c3d7e5",
+              "surface-container": "#e9eef4",
+              "secondary-container": "#d1e5f4",
+              "on-error-container": "#6e0a12",
+              "on-tertiary": "#faf8ff",
+              "on-surface-variant": "#586066",
+              "tertiary-fixed": "#c6d0fe",
+              "on-error": "#fff7f6",
+              "primary-container": "#74d1fe",
+              "on-surface": "#2c3339",
+              "surface-variant": "#dce3ea",
+              "secondary": "#4f626e",
+              "surface-container-lowest": "#ffffff",
+              "on-primary": "#f3faff",
+              "surface-container-high": "#e3e9ef",
+              "error-container": "#fa746f",
+              "surface-bright": "#f7f9fd",
+              "surface-tint": "#006788",
+              "on-secondary-container": "#415460",
+              "error-dim": "#67040d",
+              "inverse-on-surface": "#9a9da0",
+              "surface-container-highest": "#dce3ea",
+              "on-secondary-fixed": "#2f424d"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+    .material-symbols-outlined {
+    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+    vertical-align: middle
+    }
+    .map-bg {
+    background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuAo82WrPuoDMKdLcKKm5qztuHlwavdbTFGGmV5f-1yYs0rsBthX4x4ZWUUdg9H3TRvqwZUhHyxVr3ipKTUTnnru2VM_eNKfZNA6i8DmzP1otNrll4cRoGZtQ90JxImjn61_mEZDMe7C-l2oyUr7eah8qMZL3WyKYLN5OZyFNkbd-Zi9sStX0rEujkcVx67dclqkP0lyrACYEaI0Z7saXxWzGRtCydNpiHmkV9fefU7fRafA1mOb3E7MNrjHr43vcN2AmQE5nYTMHhtC);
+    background-size: cover;
+    background-position: center
+    }
+    .geofence-pulse {
+    background: rgba(116, 209, 254, 0.15);
+    border: 2px solid rgba(0, 103, 136, 0.3)
+    }
+    .breadcrumb-line {
+    background: linear-gradient(90deg, transparent, #006788, transparent);
+    height: 2px;
+    width: 150px;
+    transform: rotate(-15deg)
+    }
+</style>
+</head>
+<body class="bg-background text-on-background font-body selection:bg-primary-container selection:text-on-primary-container">
+<!-- New TopNavBar from SCREEN_24 -->
+<nav class="flex items-center justify-between w-full px-8 py-4 fixed top-0 z-50 bg-[#f7f9fd] dark:bg-slate-900 border-none">
+<!-- Brand Section -->
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-3 group cursor-pointer">
+<img alt="OpenAd Logo" class="h-8 w-auto" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1mRAXFuRv9LWMoF7ZP67R6l-y1vO6EZAJIxkFY59oxKN0gj4i2jpaq6C5l8stV5QoBgEtCpcj_texk45SR7lRs4xJ0hDLaNscm_lMTIBYE4ryiVx0RuZ05AaMR4n6Kdt4n2HpQ_PdU0QjmzgzfEsTUu7IncrXtAMyeguhuVKs989dWKijBigLkIcFnpRxUyefdemh2GdWKZjps4J6SV8ealHzB9r_fsYtxhSMGE7zwjsQfPFc2d4ejxjF05K14IhMUFIFB2-X6ifI"/>
+<span class="text-2xl font-extrabold tracking-tighter text-[#006788] dark:text-[#74d1fe] font-headline">OpenAd</span>
+</div>
+<!-- Navigation Links cluster -->
+<div class="hidden md:flex items-center gap-6">
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] dark:hover:text-[#74d1fe] transition-colors text-sm font-inter" href="#">Dashboard</a>
+<a class="text-[#006788] dark:text-[#74d1fe] font-bold border-b-2 border-[#006788] dark:border-[#74d1fe] pb-1 text-sm font-medium font-inter transition-all" href="#">Live Fleet</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] dark:hover:text-[#74d1fe] transition-colors text-sm font-inter" href="#">Devices</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] dark:hover:text-[#74d1fe] transition-colors text-sm font-inter" href="#">Campaigns</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] dark:hover:text-[#74d1fe] transition-colors text-sm font-inter" href="#">Media</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] dark:hover:text-[#74d1fe] transition-colors text-sm font-inter" href="#">Reports</a>
+</div>
+</div>
+<!-- Flexible Spacer -->
+<div class="flex-grow"></div>
+<!-- Actions Cluster -->
+<div class="flex items-center gap-2">
+<button class="p-2 hover:bg-white/50 dark:hover:bg-slate-700/50 rounded-lg transition-all duration-200 active:scale-95 opacity-80 flex items-center justify-center text-[#586066] dark:text-slate-400">
+<span class="material-symbols-outlined">search</span>
+</button>
+<div class="relative">
+<button class="p-2 hover:bg-white/50 dark:hover:bg-slate-700/50 rounded-lg transition-all duration-200 active:scale-95 opacity-80 flex items-center justify-center text-[#586066] dark:text-slate-400">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<span class="absolute top-2 right-2.5 w-2 h-2 bg-error rounded-full border-2 border-[#f7f9fd] dark:border-slate-900"></span>
+</div>
+<button class="ml-2 flex items-center gap-3 pl-3 pr-1 py-1 bg-surface-container-low dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-700 rounded-full transition-all duration-200 group border border-transparent hover:border-outline-variant/20">
+<div class="hidden sm:block text-right">
+<p class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider leading-none">Administrator</p>
+<p class="text-xs font-semibold text-primary dark:text-primary-container">Alex Chen</p>
+</div>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-primary/20 bg-primary-container/30 flex items-center justify-center text-[#006788]">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">account_circle</span>
+</div>
+</button>
+</div>
+</nav>
+<!-- Main Content Canvas (Expanded to fill space) -->
+<main class="pt-16 h-screen relative overflow-hidden">
+<!-- Map Background Layer -->
+<div class="absolute inset-0 z-0 map-bg grayscale-[0.2] brightness-[0.95]" data-location="New York City"></div>
+<div class="absolute inset-0 z-0 bg-primary/5 pointer-events-none"></div>
+<!-- Map Overlays -->
+<div class="absolute inset-0 z-10 p-20 pointer-events-none">
+<!-- Geofence Zone -->
+<div class="absolute top-[40%] left-[30%] w-64 h-64 rounded-full geofence-pulse flex items-center justify-center">
+<span class="bg-primary/20 text-primary-fixed px-3 py-1 rounded-full text-[10px] font-bold tracking-tight backdrop-blur-sm">Starbucks Geofence</span>
+</div>
+<!-- Cluster Marker -->
+<div class="absolute top-[20%] left-[45%] w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-container shadow-xl flex items-center justify-center border-4 border-white/50 animate-pulse pointer-events-auto cursor-pointer">
+<span class="text-white font-headline font-bold text-lg">50</span>
+</div>
+<!-- Active Moving Marker (Target) -->
+<div class="absolute top-[60%] left-[55%] pointer-events-auto cursor-pointer group">
+<!-- Breadcrumb trail -->
+<div class="absolute -top-12 -left-32 breadcrumb-line opacity-60"></div>
+<div class="absolute -top-24 -left-64 breadcrumb-line opacity-30"></div>
+<!-- Directional Arrow -->
+<div class="relative w-10 h-10 bg-white shadow-xl rounded-xl flex items-center justify-center border-2 border-primary-fixed transform rotate-45 transition-transform hover:scale-110">
+<span class="material-symbols-outlined text-primary transform -rotate-45" style="font-variation-settings: 'FILL' 1;">navigation</span>
+</div>
+<!-- Label Tooltip -->
+<div class="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-lg shadow-sm border border-outline-variant/10 whitespace-nowrap">
+<span class="text-xs font-bold text-on-surface">Tab-042</span>
+<span class="text-[10px] text-primary ml-1 font-bold">40km/h</span>
+</div>
+</div>
+<!-- Idling Marker -->
+<div class="absolute top-[35%] left-[65%] pointer-events-auto cursor-pointer">
+<div class="w-6 h-6 bg-tertiary-container rounded shadow-lg border-2 border-white flex items-center justify-center">
+<span class="w-2 h-2 bg-tertiary rounded-sm"></span>
+</div>
+</div>
+<!-- Offline Marker -->
+<div class="absolute top-[75%] left-[25%] pointer-events-auto cursor-pointer">
+<div class="w-6 h-6 bg-error-container rounded-full shadow-lg border-2 border-white flex items-center justify-center">
+<span class="material-symbols-outlined text-error text-xs" style="font-variation-settings: 'FILL' 1;">error</span>
+</div>
+</div>
+</div>
+<!-- Floating Metrics Widget (Repositioned from sidebar to floating overlay) -->
+<div class="absolute top-6 left-6 z-30 flex flex-col gap-4 max-h-[calc(100vh-120px)] w-80 pointer-events-auto">
+<!-- Active Device Card -->
+<div class="bg-surface-container-lowest/90 backdrop-blur-xl rounded-xl shadow-2xl overflow-hidden flex flex-col border border-white/50 pointer-events-auto">
+<!-- Card Header -->
+<div class="p-4 border-b border-outline-variant/10 bg-primary/5 cursor-move">
+<div class="flex justify-between items-start mb-1">
+<div>
+<h3 class="font-headline font-bold text-base text-on-surface tracking-tight">Tab-042</h3>
+<p class="text-[10px] font-medium text-on-surface-variant">Plate: ABC-123</p>
+</div>
+<span class="bg-primary/10 text-primary text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
+<span class="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
+                            ACTIVE
+                        </span>
+</div>
+</div>
+<div class="p-4 flex flex-col gap-4 overflow-y-auto custom-scrollbar">
+<!-- Status & Speed -->
+<div class="flex items-center gap-3">
+<div class="flex-1 p-2.5 bg-surface-container-low rounded-xl text-center">
+<p class="text-[9px] font-bold text-outline-variant uppercase tracking-tighter mb-0.5">Speed</p>
+<p class="font-headline font-extrabold text-lg text-primary">40<span class="text-xs">km/h</span></p>
+</div>
+<div class="flex-1 p-2.5 bg-surface-container-low rounded-xl text-center">
+<p class="text-[9px] font-bold text-outline-variant uppercase tracking-tighter mb-0.5">GPS</p>
+<p class="font-headline font-extrabold text-lg text-on-surface">5<span class="text-xs">m</span></p>
+</div>
+</div>
+<!-- Detailed Metrics Grid -->
+<div class="grid grid-cols-2 gap-y-3">
+<div>
+<p class="text-[9px] font-bold text-outline-variant uppercase">Data Usage</p>
+<p class="text-xs font-semibold text-on-surface">1.2 GB/mo</p>
+</div>
+<div>
+<p class="text-[9px] font-bold text-outline-variant uppercase">Last Sync</p>
+<p class="text-xs font-semibold text-on-surface">4s ago</p>
+</div>
+<div>
+<p class="text-[9px] font-bold text-outline-variant uppercase">Connectivity</p>
+<p class="text-xs font-semibold text-primary">5G Ultra</p>
+</div>
+<div>
+<p class="text-[9px] font-bold text-outline-variant uppercase">Status</p>
+<p class="text-xs font-semibold text-tertiary">12 Logs</p>
+</div>
+</div>
+<!-- Current Ad Loop -->
+<div>
+<div class="flex justify-between items-center mb-2">
+<h4 class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Ad Loop Queue</h4>
+<span class="material-symbols-outlined text-xs text-outline">queue_play_next</span>
+</div>
+<div class="space-y-2">
+<div class="flex items-center gap-3 p-2 bg-primary-fixed/10 rounded-lg">
+<div class="w-8 h-8 bg-slate-200 rounded overflow-hidden flex-shrink-0">
+<img alt="Iced Latte Promo thumbnail" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuClSvcThPfl8BY2QLsLqs0BZ3jrCCNnndyR1f_8HoVExIvPArHaIZXqFeuBZmkn1P9x3ON6SLvVLzJf53d6f0MN3act-sCgkIPysnGAAOtIoirRfg30c8Tp_Pj8s670Y0HgRiB9SpMdGEFTtuxMVBUM9HN9eoSwxRCbObENDtlLOt27Rr9h_hPWEe5_-z08hkqup4CVgBpSeFZIZIMkqI0UO-IgB6TrivgkLaHpaV7VerHN7jI2mRH7Z-v5LqzHqyiUm6NxoHCNKNXU"/>
+</div>
+<div class="overflow-hidden">
+<p class="text-[11px] font-bold text-on-surface truncate">Iced Latte Promo</p>
+<p class="text-[9px] text-on-surface-variant">0:15 Remaining</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Hourly Plays Sparkline -->
+<div>
+<div class="flex justify-between items-center mb-2">
+<h4 class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Hourly Plays</h4>
+<span class="text-[9px] font-bold text-primary">+12%</span>
+</div>
+<div class="h-8 w-full flex items-end gap-1">
+<div class="flex-1 bg-primary/20 h-[40%] rounded-t-sm"></div>
+<div class="flex-1 bg-primary/20 h-[60%] rounded-t-sm"></div>
+<div class="flex-1 bg-primary/20 h-[45%] rounded-t-sm"></div>
+<div class="flex-1 bg-primary/40 h-[75%] rounded-t-sm"></div>
+<div class="flex-1 bg-primary/20 h-[50%] rounded-t-sm"></div>
+<div class="flex-1 bg-primary/60 h-[90%] rounded-t-sm"></div>
+<div class="flex-1 bg-primary/30 h-[55%] rounded-t-sm"></div>
+<div class="flex-1 bg-primary h-[100%] rounded-t-sm"></div>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex gap-2 pt-1">
+<button class="flex-1 py-2 px-3 bg-surface-container-high text-on-surface-variant text-[10px] font-bold rounded-lg hover:bg-slate-200 transition-colors">
+                            Edit
+                        </button>
+<button class="flex-1 py-2 px-3 outline outline-primary/20 text-primary text-[10px] font-bold rounded-lg hover:bg-primary/5 transition-all">
+                            Ping
+                        </button>
+</div>
+</div>
+</div>
+<!-- Mini Legend (Now as a floating card at the bottom) -->
+<div class="bg-surface-container-lowest/80 backdrop-blur-md p-3 rounded-xl border border-white/50 shadow-lg pointer-events-auto">
+<h4 class="text-[9px] font-bold text-outline-variant uppercase tracking-widest mb-2">Map Legend</h4>
+<div class="grid grid-cols-2 gap-x-4 gap-y-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-xs" style="font-variation-settings: 'FILL' 1;">navigation</span>
+<span class="text-[9px] font-semibold">Active</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-2.5 h-2.5 bg-tertiary-container rounded-sm border border-tertiary/20"></div>
+<span class="text-[9px] font-semibold">Idling</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 bg-error rounded-full"></span>
+<span class="text-[9px] font-semibold">Offline</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-2.5 h-2.5 bg-primary/20 rounded-full border border-primary/40"></div>
+<span class="text-[9px] font-semibold">Geofence</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Map Navigation Controls (Shifted to bottom right) -->
+<div class="absolute bottom-6 right-6 z-20 flex flex-col gap-2 pointer-events-auto">
+<div class="bg-white rounded-xl shadow-lg border border-outline-variant/10 overflow-hidden flex flex-col">
+<button class="p-3 text-slate-500 hover:text-primary transition-colors border-b border-outline-variant/10">
+<span class="material-symbols-outlined">add</span>
+</button>
+<button class="p-3 text-slate-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">remove</span>
+</button>
+</div>
+<button class="bg-white p-3 rounded-xl shadow-lg border border-outline-variant/10 text-slate-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">my_location</span>
+</button>
+</div>
+</main>
+<style>
+    /* Utility for cleaner layout in floating widgets */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(0, 103, 136, 0.1);
+        border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 103, 136, 0.2);
+    }
+</style>
+</body></html>

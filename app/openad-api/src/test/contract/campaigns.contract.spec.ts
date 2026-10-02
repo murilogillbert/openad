@@ -1,0 +1,133 @@
+import request from 'supertest';
+import { randomUUID } from 'crypto';
+import { getModelToken } from '@nestjs/mongoose';
+import { MqttService } from '../../infrastructure/mqtt/mqtt.service';
+import {
+  createTestApp,
+  loginAsCampaignManager,
+  shutdownTestApp,
+  type TestAppContext,
+} from '../test-app.factory';
+import { GeoZone } from '../../modules/geo-zones/geo-zone.schema';
+
+describe('Campaigns REST (contract)', () => {
+  let ctx: TestAppContext;
+
+  beforeAll(async () => {
+    ctx = await createTestApp();
+    const mqtt = ctx.app.get(MqttService);
+    jest.spyOn(mqtt, 'publish').mockResolvedValue(undefined);
+  }, 120_000);
+
+  afterAll(async () => {
+    await shutdownTestApp(ctx);
+  }, 30_000);
+
+  it('POST /campaigns → 201 draft', async () => {
+    const token = await loginAsCampaignManager(ctx.app);
+    const res = await request(ctx.app.getHttpServer())
+      .post('/api/v1/campaigns')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: 'Coffee AM',
+        advertiserName: 'Acme',
+        priority: 1,
+        scheduledStart: new Date().toISOString(),
+        scheduledEnd: new Date(Date.now() + 86400000).toISOString(),
+        budget: {
+          totalAmount: 10000,
+          currency: 'USD',
+          ratePerImpression: 0.05,
+        },
+      });
+    expect(res.status).toBe(201);
+    expect(res.body.campaignId).toBeTruthy();
+    expect(res.body.status).toBe('draft');
+  });
+
+  it('POST asset + rule + PATCH status active', async () => {
+    const token = await loginAsCampaignManager(ctx.app);
+    const zoneId = randomUUID();
+
+    const gz = ctx.app.get(getModelToken(GeoZone.name));
+    await gz.create({
+      zoneId,
+      name: 'Downtown',
+      description: 'd',
+      city: 'Test',
+      geometry: {
+        type: 'Polygon',
+        coordinates: [
+          [
+            [-46.7, -23.5],
+            [-46.6, -23.5],
+            [-46.6, -23.6],
+            [-46.7, -23.6],
+            [-46.7, -23.5],
+          ],
+        ],
+      },
+      tags: [],
+    });
+
+    const c = await request(ctx.app.getHttpServer())
+      .post('/api/v1/campaigns')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: 'Rule flow',
+        advertiserName: 'X',
+        priority: 2,
+        scheduledStart: new Date().toISOString(),
+        scheduledEnd: new Date(Date.now() + 86400000 * 7).toISOString(),
+        budget: {
+          totalAmount: 1,
+          currency: 'USD',
+          ratePerImpression: 0.01,
+        },
+      });
+    expect(c.status).toBe(201);
+    const campaignId = c.body.campaignId as string;
+
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      'base64'
+    );
+
+    const up = await request(ctx.app.getHttpServer())
+      .post(`/api/v1/campaigns/${campaignId}/assets`)
+      .set('Authorization', `Bearer ${token}`)
+      .field('mimeType', 'image/png')
+      .attach('file', png, 'pixel.png');
+
+    expect(up.status).toBe(201);
+    expect(up.body.status).toBe('verified');
+    const assetId = up.body.assetId as string;
+
+    const rule = await request(ctx.app.getHttpServer())
+      .post(`/api/v1/campaigns/${campaignId}/rules`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        assetId,
+        geoZoneIds: [zoneId],
+        timeWindows: [
+          {
+            daysOfWeek: ['MON'],
+            startTime: '06:00',
+            endTime: '10:00',
+            timezone: 'UTC',
+          },
+        ],
+        dwellThresholdSeconds: 30,
+        priority: null,
+      });
+    expect(rule.status).toBe(201);
+    expect(rule.body.ruleId).toBeTruthy();
+
+    const act = await request(ctx.app.getHttpServer())
+      .patch(`/api/v1/campaigns/${campaignId}/status`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ status: 'active' });
+    expect(act.status).toBe(200);
+    expect(act.body.status).toBe('active');
+  });
+});

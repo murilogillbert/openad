@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>OpenAd Login</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-fixed-variant": "#454f76",
+                    "on-secondary": "#f4faff",
+                    "tertiary": "#535d85",
+                    "primary-container": "#74d1fe",
+                    "surface-container-highest": "#dce3ea",
+                    "secondary-fixed-dim": "#c3d7e5",
+                    "secondary": "#4f626e",
+                    "surface-tint": "#006788",
+                    "error": "#a83836",
+                    "surface-bright": "#f7f9fd",
+                    "on-tertiary-container": "#3b466c",
+                    "error-container": "#fa746f",
+                    "inverse-on-surface": "#9a9da0",
+                    "secondary-fixed": "#d1e5f4",
+                    "on-primary-fixed": "#003042",
+                    "surface-variant": "#dce3ea",
+                    "primary": "#006788",
+                    "outline-variant": "#abb3b9",
+                    "tertiary-container": "#c6d0fe",
+                    "on-background": "#2c3339",
+                    "on-surface-variant": "#586066",
+                    "inverse-surface": "#0b0f11",
+                    "tertiary-fixed-dim": "#b8c2ef",
+                    "on-primary": "#f3faff",
+                    "on-secondary-fixed-variant": "#4b5e6a",
+                    "inverse-primary": "#74d1fe",
+                    "tertiary-fixed": "#c6d0fe",
+                    "primary-fixed": "#74d1fe",
+                    "surface-container-low": "#f0f4f8",
+                    "secondary-dim": "#435661",
+                    "surface-container-high": "#e3e9ef",
+                    "surface-container": "#e9eef4",
+                    "secondary-container": "#d1e5f4",
+                    "tertiary-dim": "#475178",
+                    "outline": "#747c82",
+                    "on-tertiary-fixed": "#283257",
+                    "on-tertiary": "#faf8ff",
+                    "on-surface": "#2c3339",
+                    "on-error-container": "#6e0a12",
+                    "error-dim": "#67040d",
+                    "on-secondary-fixed": "#2f424d",
+                    "on-secondary-container": "#415460",
+                    "on-primary-container": "#00465d",
+                    "primary-dim": "#005a77",
+                    "surface-container-lowest": "#ffffff",
+                    "background": "#f7f9fd",
+                    "on-error": "#fff7f6",
+                    "surface-dim": "#d3dbe2",
+                    "surface": "#f7f9fd",
+                    "on-primary-fixed-variant": "#004f69",
+                    "primary-fixed-dim": "#65c4ef"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, .brand-text { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .login-gradient {
+            background: linear-gradient(135deg, #006788 0%, #74d1fe 100%);
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col items-center justify-between selection:bg-primary-container selection:text-on-primary-container">
+<!-- Top Spacer / Hidden Header -->
+<header class="w-full h-16"></header>
+<!-- Main Content Canvas -->
+<main class="w-full max-w-md px-8 flex flex-col items-center justify-center flex-grow">
+<!-- Brand Identity Section -->
+<div class="flex flex-col items-center mb-12">
+<div class="mb-4 text-primary bg-surface-container-low p-4 rounded-xl">
+<span class="material-symbols-outlined text-5xl" data-icon="analytics">analytics</span>
+</div>
+<h1 class="text-4xl font-black text-primary tracking-tighter brand-text">OpenAd</h1>
+<p class="text-on-surface-variant font-medium tracking-wide mt-2 text-sm uppercase">Precision DOOH Ecosystem</p>
+</div>
+<!-- Login Form Container -->
+<div class="w-full space-y-8">
+<div class="text-center">
+<h2 class="text-2xl font-bold text-on-surface tracking-tight mb-2">Welcome Back</h2>
+<p class="text-on-surface-variant text-sm">Enter your credentials to access the console.</p>
+</div>
+<form class="space-y-6" onsubmit="return false;">
+<!-- Email Field -->
+<div class="space-y-2">
+<label class="block text-xs font-semibold text-on-secondary-fixed-variant uppercase tracking-widest ml-1" for="email">Email</label>
+<div class="relative group">
+<input class="w-full px-5 py-4 bg-surface-container-low border-none rounded-xl text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary/30 transition-all duration-200 outline-none" id="email" name="email" placeholder="name@openad.precision" type="email"/>
+</div>
+</div>
+<!-- Password Field -->
+<div class="space-y-2">
+<label class="block text-xs font-semibold text-on-secondary-fixed-variant uppercase tracking-widest ml-1" for="password">Password</label>
+<div class="relative group">
+<input class="w-full px-5 py-4 bg-surface-container-low border-none rounded-xl text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary/30 transition-all duration-200 outline-none" id="password" name="password" placeholder="••••••••" type="password"/>
+</div>
+</div>
+<!-- Primary Action -->
+<button class="login-gradient w-full py-4 rounded-xl text-on-primary font-bold flex items-center justify-center space-x-2 shadow-lg shadow-primary/10 hover:scale-[1.02] active:scale-[0.98] transition-transform duration-150 group" type="submit">
+<span>Login</span>
+<span class="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</form>
+</div>
+</main>
+<!-- Minimalist Footer -->
+<footer class="w-full py-12 px-8 flex flex-col items-center space-y-6">
+<div class="flex items-center space-x-6">
+<a class="text-on-surface-variant text-xs font-medium uppercase tracking-widest hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<div class="w-1 h-1 rounded-full bg-outline-variant"></div>
+<a class="text-on-surface-variant text-xs font-medium uppercase tracking-widest hover:text-primary transition-colors" href="#">Terms of Service</a>
+</div>
+<p class="text-[10px] text-outline font-medium tracking-widest uppercase">
+            © 2024 OpenAd Precision. All rights reserved.
+        </p>
+</footer>
+<!-- Atmosphere Background Element -->
+<div class="fixed top-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary-container/10 blur-[100px] rounded-full -z-10"></div>
+<div class="fixed bottom-[-5%] left-[-5%] w-[30%] h-[30%] bg-tertiary-container/10 blur-[80px] rounded-full -z-10"></div>
+</body></html>

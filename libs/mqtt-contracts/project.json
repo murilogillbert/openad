@@ -1,0 +1,9 @@
+{
+  "name": "mqtt-contracts",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/mqtt-contracts/src",
+  "projectType": "library",
+  "tags": ["scope:shared", "type:contracts"],
+  "// targets": "to see all targets run: nx show project mqtt-contracts --web",
+  "targets": {}
+}

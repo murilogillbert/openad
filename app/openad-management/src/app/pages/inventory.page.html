@@ -1,0 +1,15 @@
+<app-inventory-list
+  [vehicles]="vehicles()"
+  [totalCount]="totalCount()"
+  [loading]="loading()"
+  [loadError]="loadError()"
+  [statusFilter]="statusFilter()"
+  (statusFilterChange)="onStatusFilter($event)"
+  (viewVehicle)="onViewVehicle($event)"
+  (addVehicle)="onAddVehicle()"
+/>
+<app-add-vehicle-dialog
+  [visible]="addVehicleOpen()"
+  (visibleChange)="addVehicleOpen.set($event)"
+  (created)="onVehicleCreated()"
+/>

@@ -1,0 +1,36 @@
+<div class="mx-auto max-w-[1920px] px-4 pb-8 pt-6 md:pt-8">
+  <header class="mb-6 border-b border-surface-200 pb-4 dark:border-surface-300">
+    <p
+      class="text-muted-color mb-1 text-xs font-bold uppercase tracking-wider"
+    >
+      Operations
+    </p>
+    <h1
+      class="app-font-display text-color mb-2 text-2xl font-extrabold tracking-tight md:text-3xl"
+    >
+      Fleet &amp; devices
+    </h1>
+    <p class="text-muted-color max-w-2xl text-sm md:text-base">
+      Switch between the vehicle roster, tablet hardware inventory, and the
+      pairing queue.
+    </p>
+  </header>
+
+  <div role="navigation" aria-label="Devices hub areas" class="mb-6">
+    <p-tabs [value]="tabValue()" (valueChange)="onTabChange($event)">
+      <p-tablist class="border-b border-surface-200 dark:border-surface-300">
+        <p-tab value="vehicles">Vehicles</p-tab>
+        <p-tab value="hardware">Devices</p-tab>
+        <p-tab value="pairing">Pairing</p-tab>
+      </p-tablist>
+      <!-- Routed content lives in router-outlet below; panels satisfy Tabs a11y. -->
+      <p-tabpanels class="hidden" aria-hidden="true">
+        <p-tabpanel value="vehicles"></p-tabpanel>
+        <p-tabpanel value="hardware"></p-tabpanel>
+        <p-tabpanel value="pairing"></p-tabpanel>
+      </p-tabpanels>
+    </p-tabs>
+  </div>
+
+  <router-outlet />
+</div>

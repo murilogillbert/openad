@@ -1,0 +1,5 @@
+{
+  "type": "Circle",
+  "center": { "lng": -122.4, "lat": 37.78 },
+  "radiusMeters": 500
+}

@@ -1,0 +1,46 @@
+.pairing {
+  max-width: 32rem;
+  margin: 2rem auto;
+  padding: 1rem;
+  font-family: system-ui, sans-serif;
+}
+
+.hint {
+  color: #444;
+  font-size: 0.95rem;
+}
+
+.row {
+  margin: 1rem 0;
+}
+
+.device-id {
+  word-break: break-all;
+  font-size: 0.9rem;
+}
+
+.secret-label {
+  display: block;
+  margin-top: 1rem;
+  font-weight: 600;
+}
+
+input {
+  width: 100%;
+  max-width: 20rem;
+  padding: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.error {
+  color: #b00020;
+}
+
+.ok {
+  color: #0d6e3f;
+}
+
+button {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}

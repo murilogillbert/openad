@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>OpenAd Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container": "#e9eef4",
+                        "tertiary-fixed-dim": "#b8c2ef",
+                        "error-dim": "#67040d",
+                        "surface-bright": "#f7f9fd",
+                        "on-tertiary-container": "#3b466c",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary": "#f3faff",
+                        "inverse-on-surface": "#9a9da0",
+                        "surface-dim": "#d3dbe2",
+                        "inverse-primary": "#74d1fe",
+                        "on-tertiary": "#faf8ff",
+                        "tertiary-dim": "#475178",
+                        "error-container": "#fa746f",
+                        "secondary": "#4f626e",
+                        "on-primary-fixed-variant": "#004f69",
+                        "tertiary-fixed": "#c6d0fe",
+                        "primary": "#006788",
+                        "background": "#f7f9fd",
+                        "tertiary-container": "#c6d0fe",
+                        "on-error": "#fff7f6",
+                        "secondary-fixed-dim": "#c3d7e5",
+                        "primary-fixed-dim": "#65c4ef",
+                        "on-surface-variant": "#586066",
+                        "surface-tint": "#006788",
+                        "on-tertiary-fixed-variant": "#454f76",
+                        "primary-dim": "#005a77",
+                        "surface": "#f7f9fd",
+                        "secondary-container": "#d1e5f4",
+                        "on-background": "#2c3339",
+                        "inverse-surface": "#0b0f11",
+                        "on-secondary": "#f4faff",
+                        "secondary-dim": "#435661",
+                        "on-primary-container": "#00465d",
+                        "primary-container": "#74d1fe",
+                        "on-surface": "#2c3339",
+                        "surface-container-high": "#e3e9ef",
+                        "on-primary-fixed": "#003042",
+                        "surface-container-low": "#f0f4f8",
+                        "tertiary": "#535d85",
+                        "outline": "#747c82",
+                        "surface-container-highest": "#dce3ea",
+                        "on-secondary-fixed-variant": "#4b5e6a",
+                        "error": "#a83836",
+                        "surface-variant": "#dce3ea",
+                        "secondary-fixed": "#d1e5f4",
+                        "on-secondary-fixed": "#2f424d",
+                        "outline-variant": "#abb3b9",
+                        "on-error-container": "#6e0a12",
+                        "on-secondary-container": "#415460",
+                        "on-tertiary-fixed": "#283257",
+                        "primary-fixed": "#74d1fe"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-nav {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        body {
+            background-color: #f7f9fd;
+            color: #2c3339;
+            font-family: 'Inter', sans-serif;
+        }
+        .text-tight { letter-spacing: -0.02em; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="flex flex-col min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="bg-slate-50 dark:bg-slate-900 flex justify-between items-center px-6 py-4 w-full sticky top-0 z-50">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-sky-700 dark:text-sky-400 cursor-pointer">menu</span>
+<h1 class="font-manrope font-black text-sky-800 dark:text-sky-300 tracking-tighter text-xl">OpenAd</h1>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-colors p-2 rounded-full cursor-pointer">search</span>
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-container-high border border-outline-variant/20">
+<img class="w-full h-full object-cover" data-alt="close-up portrait of a professional male operations manager in a bright office environment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAU2pkMOieUFZxF8oYw90huqtBJNwoYQJkp6-3ei0okAnGrczSFDPQeFpl53CKnV0tNZmiQh4w2y7buVPadZQEX_DCMSrDCBYAEn6hspZdS-JpHbNQMa67eClOFYTo5qZfhNvjlcXv5GL81D_IiB3S_6ObQgrhmATNGp1NVzH9V-huT8Vwab56EYgzc7-jpNDpNyWrh5h510wwPVhdKLmTPkeOL1AydGUZ-2P9MboRMeb-egL4IbB4YizLdd0wOJkhxJZO-tHEdlDO1"/>
+</div>
+</div>
+</header>
+<main class="flex-1 px-6 pt-6 space-y-8">
+<!-- North Star KPIs -->
+<section class="space-y-4">
+<div class="flex items-end justify-between">
+<h2 class="font-headline font-extrabold text-2xl text-on-surface text-tight">Network Vitals</h2>
+<span class="font-label text-xs font-semibold text-primary uppercase tracking-widest">Live Updates</span>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<!-- KPI Card 1 -->
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-[0_8px_24px_rgba(44,51,57,0.06)] space-y-2 border-l-4 border-primary">
+<p class="font-label text-xs font-medium text-on-surface-variant uppercase tracking-wider">Total Impressions</p>
+<div class="flex items-baseline gap-1">
+<span class="font-headline font-extrabold text-2xl text-on-surface">1.2M</span>
+<span class="font-label text-[10px] text-primary font-bold">+12%</span>
+</div>
+</div>
+<!-- KPI Card 2 -->
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-[0_8px_24px_rgba(44,51,57,0.06)] space-y-2 border-l-4 border-tertiary">
+<p class="font-label text-xs font-medium text-on-surface-variant uppercase tracking-wider">Active Fleet</p>
+<div class="flex items-baseline gap-1">
+<span class="font-headline font-extrabold text-2xl text-on-surface">842</span>
+<span class="font-label text-[10px] text-on-surface-variant font-medium">/ 900</span>
+</div>
+</div>
+</div>
+<!-- Primary Gradient KPI -->
+<div class="bg-gradient-to-br from-primary to-primary-container p-6 rounded-xl text-on-primary shadow-lg shadow-primary/20 flex justify-between items-center overflow-hidden relative">
+<div class="relative z-10 space-y-1">
+<p class="font-label text-xs font-medium uppercase tracking-widest opacity-80">Projected Revenue</p>
+<h3 class="font-headline font-extrabold text-3xl text-tight">$42,900.00</h3>
+</div>
+<div class="relative z-10 text-right">
+<span class="material-symbols-outlined text-4xl opacity-40" style="font-variation-settings: 'FILL' 1;">trending_up</span>
+</div>
+<!-- Decorative element -->
+<div class="absolute -right-4 -bottom-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
+</div>
+</section>
+<!-- Active Alerts (Priority) -->
+<section class="space-y-4">
+<div class="flex items-center justify-between">
+<h2 class="font-headline font-bold text-lg text-on-surface text-tight">Critical Alerts</h2>
+<button class="text-primary font-label text-sm font-semibold hover:underline">View All</button>
+</div>
+<div class="space-y-3">
+<!-- Alert Item -->
+<div class="bg-surface-container-low p-4 rounded-xl flex items-start gap-4">
+<div class="bg-error-container/20 p-2 rounded-lg">
+<span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">error</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-center">
+<h4 class="font-body font-bold text-on-surface text-sm">Media Player Timeout</h4>
+<span class="text-[10px] font-medium text-on-surface-variant">2m ago</span>
+</div>
+<p class="text-xs text-on-surface-variant mt-1">Screen ID #4429 - Broadway &amp; 7th Ave</p>
+</div>
+</div>
+<!-- Alert Item -->
+<div class="bg-surface-container-low p-4 rounded-xl flex items-start gap-4">
+<div class="bg-tertiary-container/30 p-2 rounded-lg">
+<span class="material-symbols-outlined text-tertiary" style="font-variation-settings: 'FILL' 1;">warning</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-center">
+<h4 class="font-body font-bold text-on-surface text-sm">Low Device Storage</h4>
+<span class="text-[10px] font-medium text-on-surface-variant">14m ago</span>
+</div>
+<p class="text-xs text-on-surface-variant mt-1">12 units in London Central Cluster</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Display Inventory -->
+<section class="space-y-4">
+<h2 class="font-headline font-bold text-lg text-on-surface text-tight">Display Inventory</h2>
+<div class="grid grid-cols-1 gap-4">
+<!-- Inventory Card -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_4px_16px_rgba(44,51,57,0.04)] border border-outline-variant/10">
+<div class="h-32 w-full relative">
+<img class="w-full h-full object-cover" data-alt="modern outdoor digital billboard in a busy metropolitan square at twilight showing vibrant content" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB49gPwc1oO4CLEt1uKC-WCszIj8d4HdbFDHeqXBALbshPDIVtldKxQMlvp3OkLnqV68S0EDdLOkwl2avW63sRyRt6zsEnuDqELBLI1XbeA4rVO1uu8677hcB-H07rqPyV299ZJ1okvYn1YWXazNx5dyMhP7TQRzmJVarN-qHd11cpggZt4eVhDPioBsfenn-y98DLAAC7QNLMwrvRNHl6UCgS9Y_p7Osh6j7EL24Beh1TSOhX1aP9lMBe7uDcmIP8nNy_VMxxABMzH"/>
+<div class="absolute top-3 right-3 bg-primary/90 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-tighter glass-nav">Premium Tier</div>
+</div>
+<div class="p-4 space-y-3">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-headline font-bold text-on-surface">Main St. Digital Totem</h4>
+<p class="text-xs text-on-surface-variant">Downtown Shopping District</p>
+</div>
+<div class="flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="text-[10px] font-bold text-primary uppercase">Online</span>
+</div>
+</div>
+<div class="flex justify-between items-center pt-2">
+<div class="flex gap-4">
+<div class="text-center">
+<p class="text-[10px] text-on-surface-variant uppercase font-medium">Uptime</p>
+<p class="text-xs font-bold text-on-surface">99.8%</p>
+</div>
+<div class="text-center">
+<p class="text-[10px] text-on-surface-variant uppercase font-medium">Reach</p>
+<p class="text-xs font-bold text-on-surface">240k/mo</p>
+</div>
+</div>
+<button class="bg-surface-container text-primary p-2 rounded-lg hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-sm">open_in_new</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Secondary Inventory Item -->
+<div class="bg-surface-container-lowest p-4 rounded-xl flex items-center gap-4 shadow-[0_4px_16px_rgba(44,51,57,0.04)] border border-outline-variant/10">
+<div class="w-16 h-16 rounded-lg bg-surface-container-high overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="interior digital display mounted on a corporate lobby wall with minimalist architecture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAf0dw-7hglnrYASSjFDxeEbb17BGaYTIV-V_P46r5KyZukbjH94Gg8Dhxn6f6_9UCVe9OwURNP-p90ekxjJuixo9Ptq5CeGQ9HFK8mAdkatzK5UyEWsUVvKt8zVltI-3yrQQFKW1D4eFmyOn3JvQJoN6Z3Cr-L-6KmsWWY3AYAe-xdmIGLQMImiOSRFYldjaVvLGB35Eqd8TDpWo6xUafQ3mGWSQUkx9nWxu8oKGo4r7x-D8D3IZBzdCneHnYcbSCKeNE7NoIGOqTD"/>
+</div>
+<div class="flex-1">
+<h4 class="font-headline font-bold text-on-surface text-sm">Lobby Screen B</h4>
+<p class="text-xs text-on-surface-variant">Tech Hub HQ</p>
+<div class="mt-2 h-1 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[75%]"></div>
+</div>
+<p class="text-[9px] text-on-surface-variant mt-1">Memory Usage: 75%</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-2 bg-white/80 dark:bg-slate-950/80 glass-nav rounded-t-xl shadow-[0_-8px_24px_rgba(44,51,57,0.06)]">
+<!-- Dashboard (Active) -->
+<a class="flex flex-col items-center justify-center bg-sky-100 dark:bg-sky-900/40 text-sky-800 dark:text-sky-200 rounded-xl p-2.5 transition-all duration-300 scale-105" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="font-inter text-[10px] font-medium uppercase tracking-wider mt-1">Dashboard</span>
+</a>
+<!-- Fleet -->
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 p-2.5 hover:text-sky-500 transition-all duration-300" href="#">
+<span class="material-symbols-outlined">local_shipping</span>
+<span class="font-inter text-[10px] font-medium uppercase tracking-wider mt-1">Fleet</span>
+</a>
+<!-- Devices -->
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 p-2.5 hover:text-sky-500 transition-all duration-300" href="#">
+<span class="material-symbols-outlined">devices</span>
+<span class="font-inter text-[10px] font-medium uppercase tracking-wider mt-1">Devices</span>
+</a>
+<!-- Ads -->
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 p-2.5 hover:text-sky-500 transition-all duration-300" href="#">
+<span class="material-symbols-outlined">campaign</span>
+<span class="font-inter text-[10px] font-medium uppercase tracking-wider mt-1">Ads</span>
+</a>
+<!-- Media -->
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 p-2.5 hover:text-sky-500 transition-all duration-300" href="#">
+<span class="material-symbols-outlined">perm_media</span>
+<span class="font-inter text-[10px] font-medium uppercase tracking-wider mt-1">Media</span>
+</a>
+</nav>
+</body></html>

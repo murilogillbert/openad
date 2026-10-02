@@ -1,0 +1,78 @@
+/* designs/management-panel/desktop_login + mobile_login */
+.tonal-layer-shadow {
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--p-surface-900) 6%, transparent);
+}
+
+.login-gradient-bar {
+  background: linear-gradient(135deg, var(--p-primary-color) 0%, var(--p-primary-300) 100%);
+}
+
+.login-cta {
+  background: linear-gradient(135deg, var(--p-primary-color) 0%, var(--p-primary-300) 100%);
+  color: var(--p-primary-contrast-color);
+}
+
+.login-cta:not(:disabled):hover {
+  filter: brightness(1.03);
+}
+
+/* IconField + InputIcon own start padding; avoid shorthand padding that would override it */
+:host ::ng-deep .login-iconfield .login-input.p-inputtext {
+  width: 100%;
+  border: none;
+  background: var(--p-surface-100);
+  color: var(--p-text-color);
+  border-radius: 0.75rem;
+  padding-block: 1rem;
+  padding-inline-end: 1.25rem;
+  font-size: 0.875rem;
+  transition:
+    box-shadow 0.2s,
+    background 0.2s;
+}
+
+@media (min-width: 768px) {
+  :host ::ng-deep .login-iconfield .login-input.p-inputtext {
+    border-radius: 0.5rem;
+    padding-block: 0.75rem;
+    padding-inline-end: 1rem;
+  }
+}
+
+:host ::ng-deep .login-iconfield .login-input.p-inputtext:enabled:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--p-primary-color) 30%, transparent);
+}
+
+:host ::ng-deep .login-iconfield-password .login-password-wrap {
+  width: 100%;
+  flex: 1;
+  min-width: 0;
+}
+
+:host ::ng-deep .login-iconfield-password .login-password-wrap .p-password-input,
+:host ::ng-deep .login-iconfield-password .login-password-input {
+  width: 100% !important;
+  border: none;
+  background: var(--p-surface-100);
+  color: var(--p-text-color);
+  border-radius: 0.75rem;
+  padding-block: 1rem;
+  padding-inline-end: 2.75rem;
+  font-size: 0.875rem;
+}
+
+@media (min-width: 768px) {
+  :host ::ng-deep .login-iconfield-password .login-password-wrap .p-password-input,
+  :host ::ng-deep .login-iconfield-password .login-password-input {
+    border-radius: 0.5rem;
+    padding-block: 0.75rem;
+    padding-inline-end: 2.75rem;
+  }
+}
+
+:host ::ng-deep .login-iconfield-password .login-password-wrap .p-password-input:enabled:focus,
+:host ::ng-deep .login-iconfield-password .login-password-input:enabled:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--p-primary-color) 30%, transparent);
+}

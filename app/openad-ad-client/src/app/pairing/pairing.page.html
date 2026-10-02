@@ -1,0 +1,43 @@
+<section class="pairing">
+  <h1>Device pairing</h1>
+  <p class="hint">
+    Register this tablet, then ask an admin for a pairing code and enter it below.
+  </p>
+
+  <div class="row">
+    <button type="button" (click)="onRegister()" [disabled]="loading()">
+      {{ loading() ? 'Working…' : '1. Register device' }}
+    </button>
+  </div>
+
+  @if (deviceId()) {
+    <p class="device-id">
+      <strong>Device ID</strong> (for admin):
+      <code>{{ deviceId() }}</code>
+    </p>
+  }
+
+  <label class="secret-label" for="secret">2. Pairing code</label>
+  <input
+    id="secret"
+    name="secret"
+    type="text"
+    [ngModel]="secretCode()"
+    (ngModelChange)="secretCode.set($event)"
+    autocomplete="one-time-code"
+    placeholder="Code from admin"
+  />
+
+  <div class="row">
+    <button type="button" (click)="onBind()" [disabled]="loading() || !deviceId()">
+      3. Complete bind
+    </button>
+  </div>
+
+  @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+  }
+  @if (success()) {
+    <p class="ok">Paired. MQTT and manifest will connect automatically.</p>
+  }
+</section>

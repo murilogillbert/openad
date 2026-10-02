@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-surface": "#2c3339",
+              "inverse-primary": "#74d1fe",
+              "primary-fixed-dim": "#65c4ef",
+              "on-primary-container": "#00465d",
+              "surface-container": "#e9eef4",
+              "on-primary-fixed": "#003042",
+              "tertiary-dim": "#475178",
+              "on-tertiary-fixed-variant": "#454f76",
+              "primary": "#006788",
+              "tertiary": "#535d85",
+              "surface-container-highest": "#dce3ea",
+              "surface-container-lowest": "#ffffff",
+              "secondary": "#4f626e",
+              "on-tertiary-fixed": "#283257",
+              "on-secondary": "#f4faff",
+              "on-primary-fixed-variant": "#004f69",
+              "secondary-dim": "#435661",
+              "primary-fixed": "#74d1fe",
+              "primary-container": "#74d1fe",
+              "surface-tint": "#006788",
+              "surface-container-high": "#e3e9ef",
+              "error-dim": "#67040d",
+              "surface": "#f7f9fd",
+              "error-container": "#fa746f",
+              "on-background": "#2c3339",
+              "surface-bright": "#f7f9fd",
+              "primary-dim": "#005a77",
+              "secondary-fixed": "#d1e5f4",
+              "outline-variant": "#abb3b9",
+              "inverse-surface": "#0b0f11",
+              "secondary-container": "#d1e5f4",
+              "surface-dim": "#d3dbe2",
+              "inverse-on-surface": "#9a9da0",
+              "surface-variant": "#dce3ea",
+              "on-secondary-fixed": "#2f424d",
+              "on-primary": "#f3faff",
+              "secondary-fixed-dim": "#c3d7e5",
+              "surface-container-low": "#f0f4f8",
+              "on-tertiary-container": "#3b466c",
+              "tertiary-fixed": "#c6d0fe",
+              "tertiary-container": "#c6d0fe",
+              "outline": "#747c82",
+              "on-secondary-fixed-variant": "#4b5e6a",
+              "on-error-container": "#6e0a12",
+              "background": "#f7f9fd",
+              "on-tertiary": "#faf8ff",
+              "tertiary-fixed-dim": "#b8c2ef",
+              "on-surface-variant": "#586066",
+              "on-error": "#fff7f6",
+              "on-secondary-container": "#415460",
+              "error": "#a83836"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        display: inline-block;
+        line-height: 1;
+        text-transform: none;
+        letter-spacing: normal;
+        word-wrap: normal;
+        white-space: nowrap;
+        direction: ltr;
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body antialiased">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16 w-full bg-[#f7f9fd] dark:bg-slate-950">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#006788] dark:text-[#74d1fe]" data-icon="analytics">analytics</span>
+<h1 class="text-lg font-extrabold tracking-tighter text-[#006788] dark:text-[#74d1fe]">Precision DOOH</h1>
+</div>
+<button class="hover:bg-[#f0f4f8] dark:hover:bg-slate-800 transition-colors p-2 rounded-full">
+<span class="material-symbols-outlined text-[#586066] dark:text-slate-400" data-icon="search">search</span>
+</button>
+</header>
+<main class="pt-20 pb-28 px-4 max-w-md mx-auto">
+<!-- Fleet Summary KPIs 2x2 Grid -->
+<section class="grid grid-cols-2 gap-3 mb-6">
+<div class="bg-surface-container-lowest p-4 rounded-xl shadow-[0px_8px_24px_rgba(44,51,57,0.06)] border border-outline-variant/10">
+<p class="text-on-surface-variant text-[10px] font-semibold uppercase tracking-wider mb-1">Total</p>
+<p class="font-headline font-extrabold text-2xl text-on-surface tracking-tight">1,284</p>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-xl shadow-[0px_8px_24px_rgba(44,51,57,0.06)] border border-outline-variant/10">
+<div class="flex items-center gap-2 mb-1">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<p class="text-on-surface-variant text-[10px] font-semibold uppercase tracking-wider">Active</p>
+</div>
+<p class="font-headline font-extrabold text-2xl text-on-surface tracking-tight">1,240</p>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-xl shadow-[0px_8px_24px_rgba(44,51,57,0.06)] border border-outline-variant/10">
+<div class="flex items-center gap-2 mb-1">
+<div class="w-2 h-2 rounded-full bg-tertiary"></div>
+<p class="text-on-surface-variant text-[10px] font-semibold uppercase tracking-wider">Syncing</p>
+</div>
+<p class="font-headline font-extrabold text-2xl text-on-surface tracking-tight">32</p>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-xl shadow-[0px_8px_24px_rgba(44,51,57,0.06)] border border-outline-variant/10">
+<div class="flex items-center gap-2 mb-1">
+<div class="w-2 h-2 rounded-full bg-error"></div>
+<p class="text-on-surface-variant text-[10px] font-semibold uppercase tracking-wider">Offline</p>
+</div>
+<p class="font-headline font-extrabold text-2xl text-on-surface tracking-tight">12</p>
+</div>
+</section>
+<!-- Search and Filter Bar -->
+<div class="flex gap-2 mb-6">
+<div class="relative flex-1">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg" data-icon="search">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-lg py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/30 transition-all placeholder:text-on-surface-variant/50" placeholder="Search devices..." type="text"/>
+</div>
+<button class="bg-surface-container-low p-2.5 rounded-lg flex items-center justify-center aspect-square text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="filter_list">filter_list</span>
+</button>
+</div>
+<!-- Device List Cards -->
+<div class="space-y-4">
+<!-- Device Card 1 -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0px_8px_24px_rgba(44,51,57,0.06)] border border-outline-variant/10">
+<div class="p-4">
+<div class="flex justify-between items-start mb-3">
+<div>
+<h3 class="font-headline font-bold text-on-surface tracking-tight">NY-772-BX</h3>
+<div class="flex items-center gap-1.5 mt-0.5">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<span class="text-[11px] font-medium text-on-surface-variant">Online • Last seen 2m ago</span>
+</div>
+</div>
+<span class="bg-primary-container text-on-primary-container text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Premium</span>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-lg" data-icon="wifi">wifi</span>
+<div class="flex flex-col">
+<span class="text-[10px] text-on-surface-variant uppercase font-semibold">Connectivity</span>
+<span class="text-xs font-bold">5G • 92%</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-lg" data-icon="battery_full">battery_full</span>
+<div class="flex flex-col">
+<span class="text-[10px] text-on-surface-variant uppercase font-semibold">Battery</span>
+<span class="text-xs font-bold">98%</span>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-low px-4 py-2 flex justify-between items-center">
+<div class="flex gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-lg" data-icon="visibility">visibility</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-lg" data-icon="edit">edit</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-lg" data-icon="refresh">refresh</span>
+</button>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">ID: DE-00912</span>
+</div>
+</div>
+<!-- Device Card 2 -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0px_8px_24px_rgba(44,51,57,0.06)] border border-outline-variant/10">
+<div class="p-4">
+<div class="flex justify-between items-start mb-3">
+<div>
+<h3 class="font-headline font-bold text-on-surface tracking-tight">CA-102-KJ</h3>
+<div class="flex items-center gap-1.5 mt-0.5">
+<div class="w-2 h-2 rounded-full bg-error"></div>
+<span class="text-[11px] font-medium text-on-surface-variant">Offline • Last seen 14h ago</span>
+</div>
+</div>
+<span class="bg-surface-container-high text-on-surface-variant text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Basic</span>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-4">
+<div class="flex items-center gap-2 opacity-50">
+<span class="material-symbols-outlined text-secondary text-lg" data-icon="signal_cellular_alt">signal_cellular_alt</span>
+<div class="flex flex-col">
+<span class="text-[10px] text-on-surface-variant uppercase font-semibold">Connectivity</span>
+<span class="text-xs font-bold">LTE • 0%</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-error text-lg" data-icon="battery_alert">battery_alert</span>
+<div class="flex flex-col">
+<span class="text-[10px] text-on-surface-variant uppercase font-semibold">Battery</span>
+<span class="text-xs font-bold text-error">12%</span>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-low px-4 py-2 flex justify-between items-center">
+<div class="flex gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="visibility">visibility</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="edit">edit</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="refresh">refresh</span>
+</button>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">ID: DE-00445</span>
+</div>
+</div>
+<!-- Device Card 3 -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0px_8px_24px_rgba(44,51,57,0.06)] border border-outline-variant/10">
+<div class="p-4">
+<div class="flex justify-between items-start mb-3">
+<div>
+<h3 class="font-headline font-bold text-on-surface tracking-tight">TX-911-RR</h3>
+<div class="flex items-center gap-1.5 mt-0.5">
+<div class="w-2 h-2 rounded-full bg-tertiary"></div>
+<span class="text-[11px] font-medium text-on-surface-variant">Syncing • Last seen 1m ago</span>
+</div>
+</div>
+<span class="bg-primary-container text-on-primary-container text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Standard</span>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-lg" data-icon="wifi">wifi</span>
+<div class="flex flex-col">
+<span class="text-[10px] text-on-surface-variant uppercase font-semibold">Connectivity</span>
+<span class="text-xs font-bold">5G • 78%</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-lg" data-icon="battery_5_bar">battery_5_bar</span>
+<div class="flex flex-col">
+<span class="text-[10px] text-on-surface-variant uppercase font-semibold">Battery</span>
+<span class="text-xs font-bold">82%</span>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-low px-4 py-2 flex justify-between items-center">
+<div class="flex gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="visibility">visibility</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="edit">edit</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="refresh">refresh</span>
+</button>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">ID: DE-01221</span>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl z-50 rounded-t-xl shadow-[0px_-8px_24px_rgba(44,51,57,0.06)]">
+<div class="flex flex-col items-center justify-center text-[#586066] dark:text-slate-400 px-3 py-1 hover:text-[#006788] transition-transform active:scale-95">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-['Inter'] text-[10px] font-semibold uppercase tracking-wider mt-1">Dashboard</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#006788] dark:text-[#74d1fe] bg-[#f0f4f8] dark:bg-slate-800/50 rounded-xl px-3 py-1 scale-102 transition-transform">
+<span class="material-symbols-outlined" data-icon="dataset">dataset</span>
+<span class="font-['Inter'] text-[10px] font-semibold uppercase tracking-wider mt-1">Fleet</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#586066] dark:text-slate-400 px-3 py-1 hover:text-[#006788] transition-transform active:scale-95">
+<span class="material-symbols-outlined" data-icon="router">router</span>
+<span class="font-['Inter'] text-[10px] font-semibold uppercase tracking-wider mt-1">Devices</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#586066] dark:text-slate-400 px-3 py-1 hover:text-[#006788] transition-transform active:scale-95">
+<span class="material-symbols-outlined" data-icon="ads_click">ads_click</span>
+<span class="font-['Inter'] text-[10px] font-semibold uppercase tracking-wider mt-1">Campaigns</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#586066] dark:text-slate-400 px-3 py-1 hover:text-[#006788] transition-transform active:scale-95">
+<span class="material-symbols-outlined" data-icon="perm_media">perm_media</span>
+<span class="font-['Inter'] text-[10px] font-semibold uppercase tracking-wider mt-1">Media</span>
+</div>
+</nav>
+</body></html>

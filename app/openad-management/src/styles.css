@@ -1,0 +1,120 @@
+@import 'tailwindcss';
+@import 'tailwindcss-primeui';
+@import 'primeicons/primeicons.css';
+/* Explicit scan (relative to postcss `base`: app/openad-management/src) — belt-and-suspenders with Nx + SSR chunks */
+@source './**/*.{html,ts}';
+
+/* Manual dark toggle — align with providePrimeNG `darkModeSelector: '.dark'` */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-display: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Aether typography — designs/management-panel/aether_* */
+html {
+  color-scheme: light;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', var(--font-sans, system-ui, sans-serif);
+}
+
+/*
+  Angular inserts the activated view as the *next sibling* of <router-outlet>, not inside it.
+  In flex layouts the outlet would otherwise participate as an extra flex item and steal space.
+*/
+router-outlet {
+  display: none;
+}
+
+router-outlet + * {
+  flex: 1 1 0%;
+  min-height: 0;
+  min-width: 0;
+  align-self: stretch;
+}
+
+/*
+  PrimeNG Drawer: disableModality() removes the mask only after `animationend` on the mask node
+  (see primeng-drawer.mjs). If the theme does not define a leave animation for
+  `.p-overlay-mask-leave-active`, the event never fires and the mask blocks the whole UI.
+*/
+@keyframes openad-overlay-mask-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes openad-overlay-mask-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.p-drawer-mask.p-overlay-mask-enter-active,
+.p-speeddial-mask.p-overlay-mask-enter-active {
+  animation: openad-overlay-mask-fade-in 0.2s ease-out forwards;
+}
+
+.p-drawer-mask.p-overlay-mask-leave-active,
+.p-speeddial-mask.p-overlay-mask-leave-active {
+  animation: openad-overlay-mask-fade-out 0.2s ease-out forwards;
+  pointer-events: none;
+}
+
+/* Media explorer: inspector drawer — default Prime drawer content padding gutters the preview */
+.app-media-inspector-drawer .p-drawer-content {
+  padding: 0 !important;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+h1,
+h2,
+h3,
+.app-font-display {
+  font-family: 'Manrope', var(--font-display, system-ui, sans-serif);
+  letter-spacing: -0.02em;
+}
+
+/* Shell — Material Symbols (designs/management-panel/*_navbar) */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  display: inline-block;
+  line-height: 1;
+}
+
+.material-symbols-outlined.filled {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.active-glow {
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--p-primary-color) 40%, transparent));
+}
+
+/* designs/management-panel/desktop_dashboard scroll */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--p-surface-300);
+  border-radius: 10px;
+}

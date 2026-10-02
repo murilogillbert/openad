@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Campaign Wizard: Scheduling &amp; Logic</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-bright": "#f7f9fd",
+                    "primary-fixed-dim": "#65c4ef",
+                    "outline": "#747c82",
+                    "error": "#a83836",
+                    "tertiary-fixed": "#c6d0fe",
+                    "error-container": "#fa746f",
+                    "inverse-primary": "#74d1fe",
+                    "on-primary-fixed-variant": "#004f69",
+                    "on-tertiary-fixed-variant": "#454f76",
+                    "tertiary-dim": "#475178",
+                    "primary": "#006788",
+                    "secondary-fixed": "#d1e5f4",
+                    "on-primary-fixed": "#003042",
+                    "tertiary": "#535d85",
+                    "surface-container-lowest": "#ffffff",
+                    "outline-variant": "#abb3b9",
+                    "surface-container": "#e9eef4",
+                    "on-secondary": "#f4faff",
+                    "surface-container-highest": "#dce3ea",
+                    "secondary-dim": "#435661",
+                    "surface-tint": "#006788",
+                    "primary-dim": "#005a77",
+                    "tertiary-fixed-dim": "#b8c2ef",
+                    "on-secondary-container": "#415460",
+                    "surface-container-low": "#f0f4f8",
+                    "inverse-on-surface": "#9a9da0",
+                    "error-dim": "#67040d",
+                    "primary-container": "#74d1fe",
+                    "on-surface": "#2c3339",
+                    "on-secondary-fixed": "#2f424d",
+                    "surface": "#f7f9fd",
+                    "on-tertiary-fixed": "#283257",
+                    "on-surface-variant": "#586066",
+                    "secondary-fixed-dim": "#c3d7e5",
+                    "on-primary": "#f3faff",
+                    "on-error-container": "#6e0a12",
+                    "primary-fixed": "#74d1fe",
+                    "secondary-container": "#d1e5f4",
+                    "surface-dim": "#d3dbe2",
+                    "on-background": "#2c3339",
+                    "on-tertiary": "#faf8ff",
+                    "on-secondary-fixed-variant": "#4b5e6a",
+                    "secondary": "#4f626e",
+                    "on-tertiary-container": "#3b466c",
+                    "surface-container-high": "#e3e9ef",
+                    "surface-variant": "#dce3ea",
+                    "background": "#f7f9fd",
+                    "on-error": "#fff7f6",
+                    "inverse-surface": "#0b0f11",
+                    "tertiary-container": "#c6d0fe",
+                    "on-primary-container": "#00465d"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        ::-webkit-scrollbar { width: 0; background: transparent; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body selection:bg-primary-container/30">
+<!-- Top AppBar (from JSON guidance) -->
+<header class="w-full top-0 sticky z-50 bg-[#f7f9fd] dark:bg-slate-950 flex justify-between items-center px-6 py-4">
+<div class="flex items-center gap-3">
+<button class="material-symbols-outlined text-slate-500 hover:scale-[1.02] transition-transform duration-200">arrow_back</button>
+<div class="flex flex-col">
+<h1 class="font-headline font-bold tracking-tight text-slate-800 dark:text-slate-100 text-lg leading-tight">New Campaign</h1>
+<span class="text-[10px] uppercase tracking-widest text-on-surface-variant font-semibold">Drafting Mode</span>
+</div>
+</div>
+<button class="bg-primary text-on-primary text-xs font-bold px-4 py-2 rounded-md hover:scale-[1.02] transition-transform duration-200">Save Draft</button>
+</header>
+<!-- Progress Tracker -->
+<div class="bg-surface-container-low px-6 py-4 space-y-3">
+<div class="flex justify-between items-center text-[10px] font-bold text-on-surface-variant tracking-wider uppercase">
+<span>Progress</span>
+<span class="text-primary">Step 4 of 5</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden flex gap-1">
+<div class="h-full bg-primary-container w-1/5 rounded-full"></div>
+<div class="h-full bg-primary-container w-1/5 rounded-full"></div>
+<div class="h-full bg-primary-container w-1/5 rounded-full"></div>
+<div class="h-full bg-primary w-1/5 rounded-full"></div>
+<div class="h-full bg-surface-container-highest w-1/5 rounded-full"></div>
+</div>
+</div>
+<main class="px-6 pb-32 pt-6 space-y-8">
+<!-- Header Section -->
+<section>
+<h2 class="font-headline text-2xl font-extrabold tracking-tight text-on-surface leading-tight">Scheduling &amp; Logic</h2>
+<p class="text-on-surface-variant text-sm mt-1">Define when and how often your creative appears across the network.</p>
+</section>
+<!-- Date Range Selection -->
+<section class="space-y-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg">calendar_today</span>
+<h3 class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Date Range</h3>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-1.5">
+<label class="text-[10px] font-bold text-on-surface-variant/80 uppercase ml-1">Start Date</label>
+<div class="bg-surface-container-lowest p-3 rounded-xl shadow-[0px_4px_12px_rgba(44,51,57,0.03)] border border-outline-variant/10 flex items-center justify-between">
+<span class="text-sm font-medium">Oct 24, 2023</span>
+<span class="material-symbols-outlined text-outline-variant text-sm">event</span>
+</div>
+</div>
+<div class="space-y-1.5">
+<label class="text-[10px] font-bold text-on-surface-variant/80 uppercase ml-1">End Date</label>
+<div class="bg-surface-container-lowest p-3 rounded-xl shadow-[0px_4px_12px_rgba(44,51,57,0.03)] border border-outline-variant/10 flex items-center justify-between">
+<span class="text-sm font-medium">Nov 24, 2023</span>
+<span class="material-symbols-outlined text-outline-variant text-sm">event</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Day-Parting Grid -->
+<section class="space-y-4">
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg">schedule</span>
+<h3 class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Day-Parting</h3>
+</div>
+<button class="text-[10px] font-bold bg-primary-container/20 text-primary-dim px-3 py-1 rounded-full hover:scale-105 transition-all">Morning Rush Preset</button>
+</div>
+<div class="bg-surface-container-low rounded-2xl p-4 space-y-4">
+<div class="grid grid-cols-6 gap-2">
+<!-- Time Slots Simulation -->
+<div class="h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-[10px] font-bold text-on-surface-variant">6A</div>
+<div class="h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-[10px] font-bold text-on-surface-variant">7A</div>
+<!-- Active Slots -->
+<div class="h-10 rounded-lg bg-primary text-on-primary flex items-center justify-center text-[10px] font-bold shadow-lg shadow-primary/20 ring-2 ring-primary-container/50">8A</div>
+<div class="h-10 rounded-lg bg-primary text-on-primary flex items-center justify-center text-[10px] font-bold shadow-lg shadow-primary/20 ring-2 ring-primary-container/50">9A</div>
+<div class="h-10 rounded-lg bg-primary text-on-primary flex items-center justify-center text-[10px] font-bold shadow-lg shadow-primary/20 ring-2 ring-primary-container/50">10A</div>
+<div class="h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-[10px] font-bold text-on-surface-variant">11A</div>
+<div class="h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-[10px] font-bold text-on-surface-variant">12P</div>
+<div class="h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-[10px] font-bold text-on-surface-variant">1P</div>
+<div class="h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-[10px] font-bold text-on-surface-variant">2P</div>
+<div class="h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-[10px] font-bold text-on-surface-variant">3P</div>
+<div class="h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-[10px] font-bold text-on-surface-variant">4P</div>
+<div class="h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-[10px] font-bold text-on-surface-variant">5P</div>
+</div>
+<div class="flex items-center gap-3 justify-center">
+<div class="flex items-center gap-1">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<span class="text-[10px] font-medium text-on-surface-variant">Selected</span>
+</div>
+<div class="flex items-center gap-1">
+<div class="w-2 h-2 rounded-full bg-surface-container-highest"></div>
+<span class="text-[10px] font-medium text-on-surface-variant">Inactive</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Frequency Rules -->
+<section class="space-y-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg">reorder</span>
+<h3 class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Frequency Rules</h3>
+</div>
+<div class="space-y-3">
+<!-- Radio Option 1 -->
+<div class="flex items-center justify-between p-4 rounded-xl bg-surface-container-lowest border border-outline-variant/10 shadow-[0px_4px_12px_rgba(44,51,57,0.03)]">
+<div class="flex items-center gap-3">
+<div class="w-5 h-5 rounded-full border-2 border-outline-variant flex items-center justify-center">
+</div>
+<span class="text-sm font-medium text-on-surface-variant">Play as often as possible</span>
+</div>
+</div>
+<!-- Radio Option 2 (Selected) -->
+<div class="space-y-3 p-4 rounded-xl bg-surface-container-lowest border-2 border-primary/20 shadow-[0px_8px_24px_rgba(0,103,136,0.05)]">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center">
+<div class="w-2.5 h-2.5 rounded-full bg-primary"></div>
+</div>
+<span class="text-sm font-bold text-on-surface">Custom Interval</span>
+</div>
+</div>
+<div class="flex items-center gap-3 pl-8">
+<div class="flex-1 bg-surface-container-low rounded-lg flex items-center px-4 py-2">
+<input class="bg-transparent border-none focus:ring-0 text-sm font-bold w-full text-primary" type="number" value="15"/>
+<span class="text-[10px] font-bold text-on-surface-variant uppercase">Minutes</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Action Buttons -->
+<section class="flex flex-col gap-3 pt-4">
+<button class="w-full py-4 bg-gradient-to-br from-primary to-primary-container text-on-primary font-bold rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all text-sm tracking-tight">
+                Next Step: Review
+            </button>
+<button class="w-full py-4 text-on-surface-variant font-bold text-sm tracking-tight hover:bg-surface-container-low rounded-xl transition-all">
+                Back
+            </button>
+</section>
+</main>
+<!-- Bottom Navigation Bar (from JSON guidance) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-t-xl shadow-[0px_-8px_24px_rgba(44,51,57,0.06)] border-t border-[#abb3b9]/15">
+<div class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 p-3">
+<span class="material-symbols-outlined text-2xl" data-icon="dashboard">dashboard</span>
+<span class="font-['Inter'] text-[10px] font-medium mt-1">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-[#74d1fe]/20 text-[#006788] dark:text-[#74d1fe] rounded-xl p-3">
+<span class="material-symbols-outlined text-2xl" data-icon="ads_click">ads_click</span>
+<span class="font-['Inter'] text-[10px] font-bold mt-1">Campaigns</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 p-3">
+<span class="material-symbols-outlined text-2xl" data-icon="calendar_month">calendar_month</span>
+<span class="font-['Inter'] text-[10px] font-medium mt-1">Schedule</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 p-3">
+<span class="material-symbols-outlined text-2xl" data-icon="analytics">analytics</span>
+<span class="font-['Inter'] text-[10px] font-medium mt-1">Reports</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 p-3">
+<span class="material-symbols-outlined text-2xl" data-icon="settings">settings</span>
+<span class="font-['Inter'] text-[10px] font-medium mt-1">Settings</span>
+</div>
+</nav>
+</body></html>

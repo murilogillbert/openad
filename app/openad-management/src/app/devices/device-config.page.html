@@ -1,0 +1,99 @@
+<p-toast />
+
+@if (store.loading()) {
+  <div class="flex justify-center py-16">
+    <p-progressSpinner strokeWidth="3" />
+  </div>
+} @else if (store.detail(); as v) {
+  <p-card styleClass="border-surface-200 shadow-sm dark:border-surface-300">
+    <ng-template pTemplate="header">
+      <div class="px-4 pt-4">
+        <h2 class="text-color text-lg font-bold">Vehicle configuration</h2>
+        <p class="text-muted-color text-sm">
+          Registration, classification, and passenger layout (saved to the API).
+        </p>
+      </div>
+    </ng-template>
+
+    <div class="grid gap-6 md:grid-cols-2">
+      <div class="flex flex-col gap-2">
+        <label class="text-muted-color text-xs font-bold uppercase" for="plate"
+          >Registration plate</label
+        >
+        <input
+          pInputText
+          id="plate"
+          class="w-full"
+          [(ngModel)]="registrationPlate"
+          autocomplete="off"
+        />
+      </div>
+      <div class="flex flex-col gap-2">
+        <label class="text-muted-color text-xs font-bold uppercase" for="make">Make</label>
+        <input pInputText id="make" class="w-full" [(ngModel)]="make" autocomplete="off" />
+      </div>
+      <div class="flex flex-col gap-2">
+        <label class="text-muted-color text-xs font-bold uppercase" for="model">Model</label>
+        <input pInputText id="model" class="w-full" [(ngModel)]="model" autocomplete="off" />
+      </div>
+      <div class="flex flex-col gap-2">
+        <label class="text-muted-color text-xs font-bold uppercase" for="year">Year</label>
+        <p-inputNumber
+          inputId="year"
+          class="w-full"
+          [(ngModel)]="year"
+          [useGrouping]="false"
+          [min]="1900"
+          [max]="2100"
+        />
+      </div>
+      <div class="flex flex-col gap-2">
+        <label class="text-muted-color text-xs font-bold uppercase">Commercial tier</label>
+        <p-select
+          [options]="fleetOptions"
+          optionLabel="label"
+          optionValue="value"
+          [(ngModel)]="commercialTier"
+          class="w-full"
+          [showClear]="false"
+        />
+      </div>
+      <div class="flex flex-col gap-2">
+        <label class="text-muted-color text-xs font-bold uppercase" for="screens"
+          >Screen count</label
+        >
+        <p-inputNumber
+          inputId="screens"
+          class="w-full"
+          [(ngModel)]="screenCount"
+          [useGrouping]="false"
+          [min]="1"
+        />
+      </div>
+      <div class="flex flex-col gap-2">
+        <label class="text-muted-color text-xs font-bold uppercase" for="cap"
+          >Passenger capacity</label
+        >
+        <p-inputNumber
+          inputId="cap"
+          class="w-full"
+          [(ngModel)]="passengerCapacity"
+          [useGrouping]="false"
+          [min]="1"
+        />
+      </div>
+    </div>
+
+    <div class="mt-8 flex justify-end gap-2">
+      <button
+        pButton
+        type="button"
+        label="Save changes"
+        [disabled]="saving()"
+        [loading]="saving()"
+        (click)="save()"
+        class="signature-gradient border-0 font-bold text-white"
+      ></button>
+    </div>
+  </p-card>
+}

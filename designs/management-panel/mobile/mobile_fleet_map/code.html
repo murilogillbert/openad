@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "secondary-dim": "#435661",
+            "on-tertiary-fixed-variant": "#454f76",
+            "secondary-fixed": "#d1e5f4",
+            "on-tertiary": "#faf8ff",
+            "tertiary-fixed": "#c6d0fe",
+            "surface-container-lowest": "#ffffff",
+            "surface-container": "#e9eef4",
+            "on-error": "#fff7f6",
+            "surface-variant": "#dce3ea",
+            "inverse-primary": "#74d1fe",
+            "tertiary": "#535d85",
+            "surface-container-highest": "#dce3ea",
+            "on-tertiary-fixed": "#283257",
+            "primary-container": "#74d1fe",
+            "secondary": "#4f626e",
+            "outline": "#747c82",
+            "on-surface-variant": "#586066",
+            "on-primary-fixed": "#003042",
+            "surface-tint": "#006788",
+            "error": "#a83836",
+            "background": "#f7f9fd",
+            "primary-fixed-dim": "#65c4ef",
+            "on-surface": "#2c3339",
+            "inverse-on-surface": "#9a9da0",
+            "secondary-fixed-dim": "#c3d7e5",
+            "on-error-container": "#6e0a12",
+            "on-primary": "#f3faff",
+            "outline-variant": "#abb3b9",
+            "tertiary-fixed-dim": "#b8c2ef",
+            "primary-dim": "#005a77",
+            "error-dim": "#67040d",
+            "on-secondary-fixed-variant": "#4b5e6a",
+            "inverse-surface": "#0b0f11",
+            "surface-bright": "#f7f9fd",
+            "surface": "#f7f9fd",
+            "on-primary-container": "#00465d",
+            "on-tertiary-container": "#3b466c",
+            "on-secondary-fixed": "#2f424d",
+            "on-primary-fixed-variant": "#004f69",
+            "primary-fixed": "#74d1fe",
+            "secondary-container": "#d1e5f4",
+            "surface-container-high": "#e3e9ef",
+            "surface-container-low": "#f0f4f8",
+            "tertiary-dim": "#475178",
+            "on-secondary": "#f4faff",
+            "primary": "#006788",
+            "surface-dim": "#d3dbe2",
+            "on-background": "#2c3339",
+            "tertiary-container": "#c6d0fe",
+            "on-secondary-container": "#415460",
+            "error-container": "#fa746f"
+          },
+          fontFamily: {
+            "headline": ["Manrope"],
+            "body": ["Inter"],
+            "label": ["Inter"]
+          },
+          borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    .map-container {
+      height: calc(100vh - 64px - 72px);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background font-body text-on-surface select-none">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#f7f9fd] dark:bg-slate-950 flex justify-between items-center px-6 h-16 w-full">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#006788] dark:text-[#74d1fe] hover:scale-105 transition-transform duration-200">menu</span>
+<h1 class="text-xl font-extrabold tracking-tighter text-[#006788] dark:text-[#74d1fe] font-['Manrope']">OpenAd</h1>
+</div>
+<div class="flex items-center">
+<span class="material-symbols-outlined text-[#006788] dark:text-[#74d1fe] hover:scale-105 transition-transform duration-200">search</span>
+</div>
+</header>
+<!-- Main Content (Map Area) -->
+<main class="pt-16 pb-[72px] h-screen w-full relative overflow-hidden">
+<!-- Full-height Interactive Map -->
+<div class="absolute inset-0 z-0 map-container w-full h-full bg-surface-container-high" data-location="Chicago" style="">
+<img class="w-full h-full object-cover grayscale-[0.2] brightness-[1.05]" data-alt="Detailed urban city map with light blue transit lines and minimalist cartography style for a professional fleet management dashboard" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAuO78Il07yFcOmQJ5m3PJ_YvNmoMrtX7wIULpyzvhiSeHUm2XygE-JJoHPPXOmJGDJu5nglbEWURKtjRFTCG8MQ7AKa6cFtI09l4ivpsLdhm4rPbDTfVIoumIDpb4mMBLtQzrU_v06pG_oaN2UCfZTVCgNMcrOhllp6CAfiSos9b68LadrASdCXDIN8LE-kz7pCF6DmzPq_KtLdPAdsHO_TgIsuOellIzQn2qSEB_xNvpYCwUx31ZrdXpZzapfY8jGzg2jXNfBdsRT"/>
+<!-- Mock Vehicle Markers -->
+<div class="absolute top-[35%] left-[45%] z-10">
+<div class="relative group">
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white shadow-lg border-2 border-white transform transition-transform group-active:scale-125">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">local_shipping</span>
+</div>
+<div class="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-on-surface text-white text-[10px] px-1.5 py-0.5 rounded shadow-sm font-label uppercase tracking-tighter whitespace-nowrap">CAB-420</div>
+</div>
+</div>
+<div class="absolute top-[55%] left-[60%] z-10">
+<div class="w-6 h-6 rounded-full bg-tertiary flex items-center justify-center text-white shadow-lg border-2 border-white opacity-80">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">sensors_off</span>
+</div>
+</div>
+</div>
+<!-- Floating Search Bar -->
+<div class="absolute top-4 left-0 right-0 px-4 z-20">
+<div class="glass-effect rounded-xl shadow-[0px_8px_24px_rgba(44,51,57,0.06)] p-1.5 flex items-center gap-3">
+<div class="w-10 h-10 flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">map</span>
+</div>
+<input class="bg-transparent border-none focus:ring-0 text-sm font-medium flex-1 placeholder:text-outline-variant" placeholder="Search devices or areas..." type="text"/>
+<button class="w-10 h-10 rounded-lg bg-primary text-white flex items-center justify-center hover:scale-105 transition-transform active:scale-95 shadow-md">
+<span class="material-symbols-outlined text-lg">tune</span>
+</button>
+</div>
+</div>
+<!-- Device Status Summary (Floating Over Map) -->
+<div class="absolute top-20 left-4 z-20">
+<div class="glass-effect rounded-xl p-3 shadow-lg border border-white/20 flex flex-col gap-2">
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="text-[11px] font-bold text-on-surface font-label">12 MOVING</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="text-[11px] font-bold text-on-surface font-label">4 IDLE</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+<span class="text-[11px] font-bold text-on-surface font-label">1 OFF</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Map Controls (Bottom Right) -->
+<div class="absolute bottom-28 right-4 z-20 flex flex-col gap-2">
+<button class="w-12 h-12 glass-effect rounded-full shadow-lg flex items-center justify-center text-primary active:scale-90 transition-all border border-white/30">
+<span class="material-symbols-outlined">my_location</span>
+</button>
+<div class="flex flex-col glass-effect rounded-2xl shadow-lg border border-white/30 overflow-hidden">
+<button class="w-12 h-12 flex items-center justify-center text-on-surface active:bg-surface-container-low border-b border-outline-variant/10">
+<span class="material-symbols-outlined">add</span>
+</button>
+<button class="w-12 h-12 flex items-center justify-center text-on-surface active:bg-surface-container-low">
+<span class="material-symbols-outlined">remove</span>
+</button>
+</div>
+</div>
+<!-- Quick Metrics Card (Repositioned to Bottom Overlay) -->
+<div class="absolute bottom-4 left-4 right-4 z-20">
+<div class="glass-effect rounded-2xl shadow-[0px_12px_32px_rgba(44,51,57,0.1)] p-4 border border-white/50">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+<span class="text-[10px] font-bold tracking-widest text-on-surface-variant uppercase font-label">Device Fleet Active</span>
+</div>
+<span class="text-[10px] font-medium text-outline">Last Sync: 2m ago</span>
+</div>
+<div class="grid grid-cols-3 gap-4">
+<div class="flex flex-col">
+<span class="text-[10px] font-medium text-on-surface-variant mb-0.5">Speed</span>
+<span class="text-lg font-bold font-headline text-on-surface leading-tight">40<span class="text-xs font-normal text-outline ml-0.5 tracking-tighter">km/h</span></span>
+</div>
+<div class="flex flex-col px-3 border-x border-outline-variant/20">
+<span class="text-[10px] font-medium text-on-surface-variant mb-0.5">GPS Precision</span>
+<span class="text-lg font-bold font-headline text-on-surface leading-tight">5<span class="text-xs font-normal text-outline ml-0.5 tracking-tighter">m</span></span>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-[10px] font-medium text-on-surface-variant mb-0.5">Coverage</span>
+<span class="text-lg font-bold font-headline text-primary leading-tight">98<span class="text-xs font-normal text-primary/70 ml-0.5 tracking-tighter">%</span></span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full rounded-t-xl z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-[0px_-8px_24px_rgba(44,51,57,0.06)] flex justify-around items-center px-4 py-3 w-full">
+<button class="text-[#586066] dark:text-slate-500 p-3 hover:bg-[#f0f4f8] dark:hover:bg-slate-800 rounded-xl transition-all">
+<span class="material-symbols-outlined">dashboard</span>
+</button>
+<button class="bg-[#74d1fe]/20 text-[#006788] dark:text-[#74d1fe] rounded-xl p-3 scale-110 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">router</span>
+</button>
+<button class="text-[#586066] dark:text-slate-500 p-3 hover:bg-[#f0f4f8] dark:hover:bg-slate-800 rounded-xl transition-all">
+<span class="material-symbols-outlined">devices</span>
+</button>
+<button class="text-[#586066] dark:text-slate-500 p-3 hover:bg-[#f0f4f8] dark:hover:bg-slate-800 rounded-xl transition-all">
+<span class="material-symbols-outlined">campaign</span>
+</button>
+<button class="text-[#586066] dark:text-slate-500 p-3 hover:bg-[#f0f4f8] dark:hover:bg-slate-800 rounded-xl transition-all">
+<span class="material-symbols-outlined">analytics</span>
+</button>
+</nav>
+</body></html>

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>OpenAd - My Profile Settings</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Manrope:wght@500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-secondary-fixed": "#2f424d",
+                      "surface": "#f7f9fd",
+                      "on-error": "#fff7f6",
+                      "surface-tint": "#006788",
+                      "on-primary-container": "#00465d",
+                      "on-surface-variant": "#586066",
+                      "secondary": "#4f626e",
+                      "on-primary-fixed": "#003042",
+                      "error-dim": "#67040d",
+                      "inverse-on-surface": "#9a9da0",
+                      "on-tertiary-fixed-variant": "#454f76",
+                      "surface-container-low": "#f0f4f8",
+                      "on-secondary-fixed-variant": "#4b5e6a",
+                      "on-primary-fixed-variant": "#004f69",
+                      "surface-dim": "#d3dbe2",
+                      "outline": "#747c82",
+                      "primary-fixed-dim": "#65c4ef",
+                      "on-tertiary": "#faf8ff",
+                      "on-secondary": "#f4faff",
+                      "tertiary-fixed-dim": "#b8c2ef",
+                      "surface-container-high": "#e3e9ef",
+                      "surface-variant": "#dce3ea",
+                      "surface-container": "#e9eef4",
+                      "error": "#a83836",
+                      "tertiary-container": "#c6d0fe",
+                      "tertiary": "#535d85",
+                      "primary-dim": "#005a77",
+                      "secondary-fixed-dim": "#c3d7e5",
+                      "background": "#f7f9fd",
+                      "primary-container": "#74d1fe",
+                      "on-tertiary-fixed": "#283257",
+                      "primary": "#006788",
+                      "on-tertiary-container": "#3b466c",
+                      "inverse-surface": "#0b0f11",
+                      "surface-container-highest": "#dce3ea",
+                      "inverse-primary": "#74d1fe",
+                      "on-background": "#2c3339",
+                      "surface-container-lowest": "#ffffff",
+                      "on-primary": "#f3faff",
+                      "on-secondary-container": "#415460",
+                      "surface-bright": "#f7f9fd",
+                      "secondary-fixed": "#d1e5f4",
+                      "primary-fixed": "#74d1fe",
+                      "tertiary-fixed": "#c6d0fe",
+                      "secondary-dim": "#435661",
+                      "on-error-container": "#6e0a12",
+                      "tertiary-dim": "#475178",
+                      "outline-variant": "#abb3b9",
+                      "on-surface": "#2c3339",
+                      "secondary-container": "#d1e5f4",
+                      "error-container": "#fa746f"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {},
+              "fontFamily": {
+                      "headline": [
+                              "Manrope"
+                      ],
+                      "display": [
+                              "Manrope"
+                      ],
+                      "body": [
+                              "Inter"
+                      ],
+                      "label": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {}
+      },
+          },
+        }
+      </script>
+<style>
+        body {
+            background-color: theme('colors.background');
+            color: theme('colors.on-background');
+            font-family: 'Inter', sans-serif;
+        }
+        h1, h2, h3, h4, h5, h6, .font-headline {
+            font-family: 'Manrope', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .gradient-btn {
+            background: linear-gradient(135deg, theme('colors.primary') 0%, theme('colors.primary-container') 100%);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="bg-[#f7f9fd] dark:bg-slate-900 docked full-width top-0 z-50 flex justify-between items-center w-full px-8 py-4 no-border bg-[#f7f9fd] flat no shadows">
+<div class="flex items-center gap-8">
+<div class="text-2xl font-black font-manrope text-[#006788] dark:text-[#74d1fe] tracking-tighter">OpenAd</div>
+<nav class="hidden md:flex gap-6">
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] transition-colors hover:bg-[#f0f4f8] dark:hover:bg-slate-800 rounded-md px-3 py-2 scale-102 active:scale-95 transition-transform duration-200" href="#">Dashboard</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] transition-colors hover:bg-[#f0f4f8] dark:hover:bg-slate-800 rounded-md px-3 py-2 scale-102 active:scale-95 transition-transform duration-200" href="#">Live Fleet</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] transition-colors hover:bg-[#f0f4f8] dark:hover:bg-slate-800 rounded-md px-3 py-2 scale-102 active:scale-95 transition-transform duration-200" href="#">Devices</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] transition-colors hover:bg-[#f0f4f8] dark:hover:bg-slate-800 rounded-md px-3 py-2 scale-102 active:scale-95 transition-transform duration-200" href="#">Campaigns</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] transition-colors hover:bg-[#f0f4f8] dark:hover:bg-slate-800 rounded-md px-3 py-2 scale-102 active:scale-95 transition-transform duration-200" href="#">Media</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] transition-colors hover:bg-[#f0f4f8] dark:hover:bg-slate-800 rounded-md px-3 py-2 scale-102 active:scale-95 transition-transform duration-200" href="#">Reports</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-[#586066] hover:text-[#006788] hover:bg-[#f0f4f8] rounded-md transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-10 h-10 rounded-full bg-surface-container-highest overflow-hidden border border-outline-variant/15">
+<img alt="User profile avatar" class="w-full h-full object-cover" data-alt="professional headshot of a business person in a modern office setting, well-lit, soft background focus" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAymzjyLXFTTCAFzzB8ZtfroGVm-LQZ7yNcG84AQTC4-73YwNNrjDwgxvwbe8UzJDl_8CugRuvs-JeTQkVP6L2NBTjKYtIbQJOcviCNaWefqqpWLAJvHgVRhoXXEbDs9On9A7lqz-9aPcGH1snISju9LEHMgT136OtGRwnQ8guI8b2eg0dHALYdwzvY81yyBVKf9rX15-4p3sYaowiFSP1BFBm5Xx6t5uYs5WyhYHorw6mFBywnqxrsnArMKVKcgh-BDwwMXiGS7wbb"/>
+</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- SideNavBar -->
+<aside class="bg-[#f0f4f8] dark:bg-slate-950 h-screen w-72 left-0 sticky top-0 tonal shift via background contrast flat no shadows flex flex-col gap-2 p-6 h-full border-r border-outline-variant/15 md:flex hidden">
+<div class="mb-8 px-2">
+<h2 class="text-lg font-bold font-manrope text-on-surface">Settings</h2>
+<p class="text-sm font-medium font-inter text-on-surface-variant">Management &amp; MDM</p>
+</div>
+<a class="flex items-center gap-3 px-4 py-3 bg-white dark:bg-slate-800 text-[#006788] dark:text-[#74d1fe] rounded-lg shadow-sm font-bold text-sm font-semibold font-inter translate-x-1 duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person</span>
+                My Profile
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#586066] dark:text-slate-400 hover:text-[#006788] dark:hover:text-[#74d1fe] hover:bg-white/50 dark:hover:bg-slate-800/50 transition-all text-sm font-semibold font-inter rounded-lg" href="#">
+<span class="material-symbols-outlined">settings</span>
+                Platform Configuration
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#586066] dark:text-slate-400 hover:text-[#006788] dark:hover:text-[#74d1fe] hover:bg-white/50 dark:hover:bg-slate-800/50 transition-all text-sm font-semibold font-inter rounded-lg" href="#">
+<span class="material-symbols-outlined">system_update</span>
+                Device App Releases
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#586066] dark:text-slate-400 hover:text-[#006788] dark:hover:text-[#74d1fe] hover:bg-white/50 dark:hover:bg-slate-800/50 transition-all text-sm font-semibold font-inter rounded-lg" href="#">
+<span class="material-symbols-outlined">receipt_long</span>
+                Audit Logs
+            </a>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 overflow-y-auto p-8 lg:p-12 pb-32">
+<div class="max-w-4xl mx-auto space-y-8">
+<header class="mb-10">
+<h1 class="text-3xl font-extrabold font-headline text-on-surface tracking-tight" style="letter-spacing: -0.02em;">My Profile</h1>
+<p class="text-on-surface-variant mt-2 font-body">Manage your personal information and security preferences.</p>
+</header>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Left Column: Avatar -->
+<div class="lg:col-span-1">
+<div class="bg-surface-container-lowest rounded-xl p-6 h-full flex flex-col items-center text-center">
+<div class="relative group mb-6">
+<div class="w-32 h-32 rounded-full overflow-hidden border-4 border-surface-container-low shadow-[0px_8px_24px_rgba(44,51,57,0.06)]">
+<img alt="Profile Preview" class="w-full h-full object-cover" data-alt="professional headshot of a business person in a modern office setting, well-lit, soft background focus" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB96MlTyAFhHk3qsfAVC3TTbWW8RRqnmlc-7HxxgxKerEW7bX9QVlpfAnmLDws3tMJexaO_jMs1nFkpPxP1rDSOIl9v-vlO87aHhMOANKcb-yoVJauhS9SdQdG2F2_tChyGeLzsztbzBpjJYJ4-JkDJy5ODYROpjM-CzTMuuOBm-4DIK-4ZueSoYqp_0MaOUhAxzZ8KzRDRgAlvOnq4XPtVKOquyarSjv_mtJCvhE_fLiCFNEHDj_MRfMMsTR2SFetr4AxiyrAUxuMJ"/>
+</div>
+<button class="absolute bottom-0 right-0 w-10 h-10 bg-primary text-on-primary rounded-full flex items-center justify-center shadow-md hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-sm">edit</span>
+</button>
+</div>
+<div class="flex flex-col gap-3 w-full">
+<button class="w-full py-2 px-4 rounded-lg bg-surface-container-low text-primary font-semibold text-sm hover:bg-surface-container-high transition-colors">
+                                    Upload New Image
+                                </button>
+<button class="w-full py-2 px-4 rounded-lg text-error font-medium text-sm hover:bg-error-container/20 transition-colors">
+                                    Remove
+                                </button>
+</div>
+<div class="mt-6 p-4 bg-surface-container-low rounded-lg w-full text-left">
+<p class="text-xs text-on-surface-variant leading-relaxed">
+<span class="font-semibold text-on-surface block mb-1">Note:</span>
+                                    Keep it professional—your drivers might see this on their sync logs!
+                                </p>
+</div>
+</div>
+</div>
+<!-- Right Column: Info & Security -->
+<div class="lg:col-span-2 space-y-8">
+<!-- Personal Info -->
+<section class="bg-surface-container-lowest rounded-xl p-8">
+<h3 class="text-lg font-bold font-headline text-on-surface mb-6">Personal Information</h3>
+<div class="space-y-5">
+<div>
+<label class="block text-sm font-semibold text-on-surface mb-2 font-label">Full Name</label>
+<input class="w-full bg-surface-container-low border-0 rounded-lg px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/30 transition-shadow" type="text" value="Jane Doe"/>
+</div>
+<div>
+<label class="block text-sm font-semibold text-on-surface mb-2 font-label">Email Address</label>
+<div class="relative">
+<input class="w-full bg-surface-container-low border-0 rounded-lg px-4 py-3 text-on-surface-variant cursor-not-allowed opacity-80" readonly="" type="email" value="jane.doe@openad.inc"/>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">lock</span>
+</div>
+<p class="text-xs text-on-surface-variant mt-1">Contact your administrator to change your email.</p>
+</div>
+<div>
+<label class="block text-sm font-semibold text-on-surface mb-2 font-label">Phone Number</label>
+<input class="w-full bg-surface-container-low border-0 rounded-lg px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/30 transition-shadow" type="tel" value="+1 (555) 123-4567"/>
+</div>
+</div>
+</section>
+<!-- Security -->
+<section class="bg-surface-container-lowest rounded-xl p-8">
+<h3 class="text-lg font-bold font-headline text-on-surface mb-6">Security</h3>
+<div class="space-y-6">
+<div>
+<h4 class="text-sm font-bold text-on-surface mb-4">Change Password</h4>
+<div class="space-y-4">
+<input class="w-full bg-surface-container-low border-0 rounded-lg px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/30 transition-shadow placeholder:text-on-surface-variant/50" placeholder="Current Password" type="password"/>
+<input class="w-full bg-surface-container-low border-0 rounded-lg px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/30 transition-shadow placeholder:text-on-surface-variant/50" placeholder="New Password" type="password"/>
+<input class="w-full bg-surface-container-low border-0 rounded-lg px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/30 transition-shadow placeholder:text-on-surface-variant/50" placeholder="Confirm New Password" type="password"/>
+</div>
+<button class="mt-4 text-sm font-semibold text-primary hover:text-primary-container transition-colors">Update Password</button>
+</div>
+<div class="h-px w-full bg-surface-container-highest my-6"></div>
+<div>
+<div class="flex justify-between items-center mb-4">
+<h4 class="text-sm font-bold text-on-surface">Active Sessions</h4>
+<button class="text-sm font-semibold text-error hover:text-error-dim transition-colors">Revoke All</button>
+</div>
+<div class="space-y-3">
+<div class="flex items-center justify-between p-4 bg-surface-container-low rounded-lg">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">desktop_windows</span>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">Mac OS • Chrome</p>
+<p class="text-xs text-on-surface-variant">New York, USA • Current Session</p>
+</div>
+</div>
+<span class="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded">Active</span>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container-low rounded-lg">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">smartphone</span>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">iOS • Safari</p>
+<p class="text-xs text-on-surface-variant">New York, USA • Last seen 2 hours ago</p>
+</div>
+</div>
+<button class="text-on-surface-variant hover:text-error transition-colors p-2">
+<span class="material-symbols-outlined text-sm">close</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</div>
+</main>
+<!-- Fixed Action Bar -->
+<div class="fixed bottom-0 right-0 left-0 md:left-72 glass-panel border-t border-outline-variant/15 p-4 flex justify-end px-8 lg:px-12 z-40">
+<button class="gradient-btn text-on-primary font-bold font-inter text-sm px-8 py-3 rounded-md hover:scale-105 active:scale-95 transition-transform shadow-[0px_8px_24px_rgba(44,51,57,0.1)]">
+                Save Changes
+            </button>
+</div>
+</div>
+</body></html>

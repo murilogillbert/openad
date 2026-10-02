@@ -1,0 +1,336 @@
+<!-- Active Deployments section (desktop + mobile shell) -->
+<section
+  class="overflow-hidden rounded-xl bg-surface-0 shadow-[0px_8px_24px_rgba(44,51,57,0.06)] dark:bg-surface-50"
+>
+  <!-- Toolbar: matches desktop_campaign_listing -->
+  <div
+    class="flex flex-col gap-4 border-b border-surface-200 bg-surface-50/50 px-4 py-4 sm:px-6 sm:py-6 md:flex-row md:items-center md:justify-between dark:border-surface-300 dark:bg-surface-100/50"
+  >
+    <h3 class="text-lg font-bold text-color md:text-xl">Active Deployments</h3>
+    <div class="flex flex-wrap items-center gap-3">
+      <div class="relative min-w-0 flex-1 md:max-w-xs">
+        <span
+          class="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg text-muted-color"
+          >search</span
+        >
+        <input
+          pInputText
+          type="search"
+          class="w-full rounded-lg border-none py-2 pl-10 pr-4 text-sm ring-1 ring-surface-300 focus:ring-primary dark:bg-surface-0 dark:ring-surface-400"
+          placeholder="Search campaigns..."
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQueryChange.emit($event)"
+        />
+      </div>
+      <button
+        type="button"
+        class="flex items-center gap-2 rounded-lg border border-surface-300 px-4 py-2 text-sm font-semibold text-muted-color transition-colors hover:bg-surface-100 dark:border-surface-400"
+        disabled
+        title="Coming soon"
+      >
+        <span class="material-symbols-outlined text-lg">filter_list</span>
+        Filters
+      </button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="px-6 py-12 text-center text-muted-color">Loading campaigns…</div>
+  } @else if (campaigns().length === 0) {
+    <div class="px-6 py-12 text-center text-muted-color">
+      No campaigns yet. Create one to get started.
+    </div>
+  } @else {
+    <!-- Desktop: table -->
+    <div class="hidden overflow-x-auto md:block">
+      <table class="w-full border-collapse text-left">
+        <thead>
+          <tr
+            class="bg-surface-100/30 text-xs font-bold uppercase tracking-widest text-muted-color dark:bg-surface-200/30"
+          >
+            <th class="px-6 py-4">Campaign &amp; Advertiser</th>
+            <th class="px-4 py-4">Status</th>
+            <th class="hidden w-56 px-4 py-4 lg:table-cell">Pacing</th>
+            <th class="hidden px-4 py-4 xl:table-cell">Vehicle reach</th>
+            <th class="hidden px-4 py-4 xl:table-cell">Impressions</th>
+            <th class="px-6 py-4 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-surface-200 dark:divide-surface-300">
+          @for (row of campaigns(); track row.campaignId) {
+            <tr
+              class="group transition-colors hover:bg-surface-50/80 dark:hover:bg-surface-100/40"
+            >
+              <td class="px-6 py-6">
+                <div class="flex items-center gap-4">
+                  <div
+                    class="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-surface-200 dark:bg-surface-300"
+                  >
+                    <span class="material-symbols-outlined text-2xl text-muted-color"
+                      >campaign</span
+                    >
+                  </div>
+                  <div>
+                    <p class="font-bold text-color">{{ row.name }}</p>
+                    <p class="text-sm text-muted-color">
+                      {{ row.advertiserName }}
+                    </p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-4 py-6">
+                <ng-container *ngTemplateOutlet="statusPill; context: { $implicit: row }" />
+              </td>
+              <td class="hidden px-4 py-6 lg:table-cell">
+                <div class="space-y-1.5">
+                  <div
+                    class="flex justify-between text-[10px] font-bold uppercase text-muted-color"
+                  >
+                    <span>Pacing</span>
+                    <span>—</span>
+                  </div>
+                  <div
+                    class="h-2 w-full overflow-hidden rounded-full bg-surface-200 dark:bg-surface-300"
+                  >
+                    <div class="h-full w-0 rounded-full bg-primary"></div>
+                  </div>
+                </div>
+              </td>
+              <td class="hidden px-4 py-6 font-semibold text-color xl:table-cell">
+                —
+              </td>
+              <td class="hidden px-4 py-6 font-bold text-color xl:table-cell">
+                —
+              </td>
+              <td class="px-6 py-6 text-right">
+                <div class="flex flex-wrap justify-end gap-2">
+                  <ng-container
+                    *ngTemplateOutlet="rowActions; context: { $implicit: row }"
+                  />
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile: cards (matches mobile_campaign_listing) -->
+    <div class="space-y-6 p-4 md:hidden">
+      @for (row of campaigns(); track row.campaignId) {
+        <div
+          class="overflow-hidden rounded-xl bg-surface-0 shadow-[0px_8px_24px_rgba(44,51,57,0.06)] dark:bg-surface-50"
+          [class.opacity-80]="row.status === 'completed'"
+        >
+          <div class="p-5">
+            <div class="mb-4 flex items-start justify-between">
+              <div class="space-y-0.5">
+                <span
+                  class="text-[10px] font-bold uppercase tracking-widest text-primary"
+                  >{{ row.advertiserName }}</span
+                >
+                <h3
+                  class="font-headline text-lg font-bold leading-tight text-color"
+                >
+                  {{ row.name }}
+                </h3>
+              </div>
+              <ng-container *ngTemplateOutlet="statusPill; context: { $implicit: row }" />
+            </div>
+            <div class="space-y-4">
+              <div class="space-y-1.5">
+                <div
+                  class="flex justify-between text-[11px] font-medium text-muted-color"
+                >
+                  <span>Pacing</span>
+                  <span class="text-color">—</span>
+                </div>
+                <div
+                  class="h-1.5 w-full overflow-hidden rounded-full bg-surface-200 dark:bg-surface-300"
+                >
+                  <div
+                    class="h-full w-0 rounded-full bg-gradient-to-r from-[#006788] to-[#74d1fe]"
+                  ></div>
+                </div>
+              </div>
+              <div
+                class="grid grid-cols-2 gap-4 border-y border-surface-200 py-2 dark:border-surface-300"
+              >
+                <div>
+                  <p class="text-[10px] font-medium uppercase text-muted-color">
+                    Reach / vehicle
+                  </p>
+                  <p class="text-sm font-bold text-color">—</p>
+                </div>
+                <div>
+                  <p class="text-[10px] font-medium uppercase text-muted-color">
+                    Impressions
+                  </p>
+                  <p class="text-sm font-bold text-color">—</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            class="flex items-center justify-between bg-surface-100 px-5 py-3 dark:bg-surface-200/50"
+          >
+            <div class="flex gap-4">
+              <ng-container
+                *ngTemplateOutlet="mobileRowActions; context: { $implicit: row }"
+              />
+            </div>
+            <button
+              type="button"
+              class="flex items-center gap-2 rounded-lg bg-primary px-4 py-1.5 text-xs font-bold text-primary-contrast transition-all active:scale-95"
+              (click)="reportRequested.emit()"
+            >
+              <span>Report</span>
+              <span class="material-symbols-outlined text-sm">analytics</span>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Footer strip -->
+  @if (!loading() && campaigns().length > 0) {
+    <div
+      class="flex flex-col items-stretch justify-between gap-3 border-t border-surface-200 bg-surface-50/30 px-4 py-4 text-sm font-medium text-muted-color sm:flex-row sm:items-center sm:px-8 dark:border-surface-300 dark:bg-surface-100/30"
+    >
+      <span
+        >Showing {{ campaigns().length }} of {{ totalCount() }} campaigns</span
+      >
+    </div>
+  }
+</section>
+
+<!-- Shared status pill -->
+<ng-template #statusPill let-row>
+  @switch (row.status) {
+    @case ('active') {
+      <span
+        class="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary"
+      >
+        <span class="h-2 w-2 animate-pulse rounded-full bg-primary"></span>
+        Live
+      </span>
+    }
+    @case ('paused') {
+      <span
+        class="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-3 py-1 text-xs font-bold text-red-700 dark:text-red-400"
+      >
+        <span class="h-2 w-2 rounded-full bg-red-500"></span>
+        Paused
+      </span>
+    }
+    @case ('draft') {
+      <span
+        class="inline-flex items-center gap-1.5 rounded-full bg-surface-200 px-3 py-1 text-xs font-bold uppercase text-muted-color dark:bg-surface-300"
+      >
+        Draft
+      </span>
+    }
+    @case ('completed') {
+      <span
+        class="inline-flex items-center gap-1.5 rounded-full bg-surface-200/80 px-3 py-1 text-[10px] font-bold uppercase text-muted-color"
+      >
+        Completed
+      </span>
+    }
+    @default {
+      <span
+        class="inline-flex items-center gap-1.5 rounded-full bg-surface-200 px-3 py-1 text-xs font-bold text-muted-color"
+      >
+        {{ row.status }}
+      </span>
+    }
+  }
+</ng-template>
+
+<!-- Desktop row actions -->
+<ng-template #rowActions let-row>
+  @if (row.status === 'active') {
+    <button
+      type="button"
+      class="rounded-lg p-1.5 text-primary transition-colors hover:bg-primary/10"
+      title="Pause"
+      (click)="pauseRequested.emit(row)"
+    >
+      <span class="material-symbols-outlined">pause_circle</span>
+    </button>
+  }
+  @if (row.status === 'paused') {
+    <button
+      type="button"
+      class="rounded-lg p-1.5 text-primary transition-colors hover:bg-primary/10"
+      title="Resume"
+      (click)="resumeRequested.emit(row)"
+    >
+      <span class="material-symbols-outlined">play_circle</span>
+    </button>
+  }
+  @if (row.status === 'draft') {
+    <button
+      type="button"
+      class="rounded-lg px-2 py-1 text-xs font-bold text-primary hover:bg-primary/10"
+      (click)="activate.emit(row)"
+    >
+      Activate
+    </button>
+  }
+  <button
+    type="button"
+    class="rounded-lg p-1.5 text-primary transition-colors hover:bg-primary/10"
+    title="Duplicate"
+    (click)="duplicateRequested.emit()"
+  >
+    <span class="material-symbols-outlined">content_copy</span>
+  </button>
+  <button
+    type="button"
+    class="rounded-lg p-1.5 text-primary transition-colors hover:bg-primary/10"
+    title="Report"
+    (click)="reportRequested.emit()"
+  >
+    <span class="material-symbols-outlined">bar_chart</span>
+  </button>
+</ng-template>
+
+<!-- Mobile row actions (icon strip) -->
+<ng-template #mobileRowActions let-row>
+  @if (row.status === 'active') {
+    <button
+      type="button"
+      class="text-muted-color transition-colors hover:text-primary active:scale-90"
+      (click)="pauseRequested.emit(row)"
+    >
+      <span class="material-symbols-outlined text-xl">pause_circle</span>
+    </button>
+  }
+  @if (row.status === 'paused') {
+    <button
+      type="button"
+      class="text-muted-color transition-colors hover:text-primary active:scale-90"
+      (click)="resumeRequested.emit(row)"
+    >
+      <span class="material-symbols-outlined text-xl">play_circle</span>
+    </button>
+  }
+  @if (row.status === 'draft') {
+    <button
+      type="button"
+      class="text-xs font-bold text-primary"
+      (click)="activate.emit(row)"
+    >
+      Activate
+    </button>
+  }
+  <button
+    type="button"
+    class="text-muted-color transition-colors hover:text-primary active:scale-90"
+    (click)="duplicateRequested.emit()"
+  >
+    <span class="material-symbols-outlined text-xl">content_copy</span>
+  </button>
+</ng-template>

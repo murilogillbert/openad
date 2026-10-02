@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container": "#e9eef4",
+                        "surface-container-highest": "#dce3ea",
+                        "surface-container-high": "#e3e9ef",
+                        "on-primary-fixed": "#003042",
+                        "on-secondary-fixed": "#2f424d",
+                        "error": "#a83836",
+                        "tertiary-container": "#c6d0fe",
+                        "surface-bright": "#f7f9fd",
+                        "primary-dim": "#005a77",
+                        "on-primary-container": "#00465d",
+                        "surface-variant": "#dce3ea",
+                        "outline": "#747c82",
+                        "inverse-on-surface": "#9a9da0",
+                        "secondary-fixed": "#d1e5f4",
+                        "surface": "#f7f9fd",
+                        "background": "#f7f9fd",
+                        "secondary-container": "#d1e5f4",
+                        "primary": "#006788",
+                        "on-secondary-container": "#415460",
+                        "error-dim": "#67040d",
+                        "on-error-container": "#6e0a12",
+                        "on-secondary": "#f4faff",
+                        "secondary": "#4f626e",
+                        "on-tertiary-container": "#3b466c",
+                        "secondary-dim": "#435661",
+                        "error-container": "#fa746f",
+                        "on-primary-fixed-variant": "#004f69",
+                        "tertiary-dim": "#475178",
+                        "tertiary": "#535d85",
+                        "on-error": "#fff7f6",
+                        "on-secondary-fixed-variant": "#4b5e6a",
+                        "tertiary-fixed-dim": "#b8c2ef",
+                        "primary-container": "#74d1fe",
+                        "surface-tint": "#006788",
+                        "surface-dim": "#d3dbe2",
+                        "primary-fixed": "#74d1fe",
+                        "inverse-surface": "#0b0f11",
+                        "on-primary": "#f3faff",
+                        "on-tertiary-fixed": "#283257",
+                        "inverse-primary": "#74d1fe",
+                        "on-surface-variant": "#586066",
+                        "on-surface": "#2c3339",
+                        "outline-variant": "#abb3b9",
+                        "on-tertiary": "#faf8ff",
+                        "on-background": "#2c3339",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed-dim": "#c3d7e5",
+                        "on-tertiary-fixed-variant": "#454f76",
+                        "tertiary-fixed": "#c6d0fe",
+                        "primary-fixed-dim": "#65c4ef",
+                        "surface-container-low": "#f0f4f8"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface-container-low min-h-screen font-body text-on-surface selection:bg-primary-container selection:text-on-primary-container">
+<header class="fixed top-0 left-0 right-0 z-50 bg-[#f7f9fd] dark:bg-slate-900">
+<div class="flex justify-between items-center w-full px-6 py-4">
+<div class="flex items-center">
+<h1 class="text-2xl font-black tracking-tighter text-[#006788] dark:text-[#74d1fe] font-['Manrope']">
+                OpenAd
+            </h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="flex items-center justify-center w-10 h-10 rounded-full text-[#006788] dark:text-[#74d1fe] hover:scale-105 transition-transform duration-200 ease-out active:scale-95">
+<span class="material-symbols-outlined text-2xl" data-icon="search">search</span>
+</button>
+<button class="relative flex items-center justify-center overflow-hidden rounded-full w-10 h-10 hover:scale-105 transition-transform duration-200 ease-out active:scale-95">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="Close-up portrait of a professional man in a bright office with soft morning light and blurred background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB40AAbK0owzZlLp-kGNRQJpGRvusKSN05Dp6dVu_eAWvOHgaUSgbJFk3tL7vt69Rak2-qOSv75Q8OLDHTLM7lpW_2p9m6t1THD2QXhw8ClDYTFjDyibndglVEVxhW-fpfuPkejJwZkaHHs0JR5AVWeYnchTxb24NsNBY8OD2qhutjRAf2f_y9tx7uTLZrQLMDbD0z0ujKhUlnzkN0S-i1iCTtLn_ew0Ai6jXpFRs_6rQvG05w01EZra6LNL6Gs_bajHTfIcdR8ihrI"/>
+</button>
+</div>
+</div>
+</header>
+
+</body></html>

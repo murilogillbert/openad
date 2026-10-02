@@ -1,0 +1,426 @@
+<p-toast />
+
+<div class="relative flex min-w-0 flex-col">
+  <div class="mx-auto w-full min-w-0 max-w-6xl px-4 py-8 pb-28 sm:px-6">
+    <header class="mb-10">
+      <h1 class="text-3xl font-extrabold tracking-tight text-color">
+        Platform Configuration
+      </h1>
+      <p class="mt-2 max-w-2xl text-sm text-muted-color">
+        Global parameters for fleet management, media validation, and system security thresholds.
+      </p>
+    </header>
+
+    @if (loading() || !draft()) {
+      <p class="text-sm text-muted-color">Loading…</p>
+    } @else {
+      <div
+        class="grid grid-cols-1 gap-6 2xl:grid-cols-2"
+      >
+        <!-- Dashboard -->
+        <section
+          class="@container min-w-0 overflow-hidden rounded-xl bg-surface-0 p-6 shadow-sm"
+        >
+          <header class="mb-6 flex min-w-0 items-center gap-3">
+            <i class="pi pi-chart-line text-primary"></i>
+            <h2 class="text-lg font-bold text-color">Dashboard</h2>
+          </header>
+
+          <div class="flex min-w-0 flex-col gap-2">
+            <label for="dashMediaQuota" class="text-sm font-semibold text-color">
+              Media storage quota (bytes)
+            </label>
+            <p class="text-xs text-muted-color">
+              Optional. When set, the Dashboard “Media Storage” card shows a % bar. Leave empty to
+              show raw usage only.
+            </p>
+            <p-inputNumber
+              inputId="dashMediaQuota"
+              styleClass="w-full"
+              [(ngModel)]="draft()!.dashboard.mediaStorageQuotaBytes"
+              [min]="1"
+              [useGrouping]="true"
+              [placeholder]="'Unset'"
+              (onInput)="markDirty()"
+            />
+          </div>
+        </section>
+
+        <!-- Pairing & Security -->
+        <section
+          class="@container min-w-0 overflow-hidden rounded-xl bg-surface-0 p-6 shadow-sm"
+        >
+          <header class="mb-6 flex min-w-0 items-center gap-3">
+            <i class="pi pi-lock text-primary"></i>
+            <h2 class="text-lg font-bold text-color">Pairing &amp; Security</h2>
+          </header>
+
+          <div class="flex flex-col gap-5">
+            <div class="flex min-w-0 flex-col gap-2">
+              <label for="hbFlaggedMs" class="text-sm font-semibold text-color">
+                Heartbeat Flagged Threshold (ms)
+              </label>
+              <p class="text-xs text-muted-color">
+                If a device goes this long without a successful heartbeat, fleet health can move toward flagged or offline. Shorter is stricter; longer tolerates patchy networks.
+              </p>
+              <p-inputNumber
+                inputId="hbFlaggedMs"
+                styleClass="w-full"
+                [(ngModel)]="draft()!.fleetHealth.heartbeatFlaggedThresholdMs"
+                [min]="10_000"
+                [useGrouping]="true"
+                (onInput)="markDirty()"
+              />
+            </div>
+
+            <div
+              class="flex flex-col gap-3 rounded-lg bg-surface-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between dark:bg-surface-200"
+            >
+              <div class="min-w-0 flex flex-col">
+                <span class="text-sm font-semibold text-color">Enable Analytics</span>
+                <span class="text-xs text-muted-color">
+                  Master switch for play ingestion, reconciliation, reporting, and fraud checks. When off, downstream analytics may be limited or empty.
+                </span>
+              </div>
+              <div class="shrink-0 self-end sm:self-auto">
+                <p-toggleswitch
+                  [(ngModel)]="draft()!.analytics.enabled"
+                  (onChange)="markDirty()"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Media Validation -->
+        <section
+          class="@container min-w-0 overflow-hidden rounded-xl bg-surface-0 p-6 shadow-sm"
+        >
+          <header class="mb-6 flex items-center gap-3">
+            <i class="pi pi-video text-primary"></i>
+            <h2 class="text-lg font-bold text-color">Media Validation</h2>
+          </header>
+
+          <div class="grid grid-cols-1 gap-5 @md:grid-cols-2">
+            <div class="flex min-w-0 flex-col gap-2">
+              <label for="maxVideoBytes" class="text-sm font-semibold text-color">
+                Max File Size (bytes)
+              </label>
+              <p class="text-xs text-muted-color">
+                Reject uploads larger than this when validating campaign media. Set from your largest expected creative and storage limits.
+              </p>
+              <p-inputNumber
+                inputId="maxVideoBytes"
+                styleClass="w-full"
+                [(ngModel)]="draft()!.mediaLimits.maxVideoBytes"
+                [min]="1"
+                [useGrouping]="true"
+                (onInput)="markDirty()"
+              />
+            </div>
+            <div class="flex min-w-0 flex-col gap-2">
+              <label for="playBatchBytes" class="text-sm font-semibold text-color">
+                Play Batch Max (bytes)
+              </label>
+              <p class="text-xs text-muted-color">
+                Maximum size for a single playback log batch the API accepts from devices. Lower values reduce load spikes; too low can cause more requests.
+              </p>
+              <p-inputNumber
+                inputId="playBatchBytes"
+                styleClass="w-full"
+                [(ngModel)]="draft()!.analytics.playBatchMaxBytes"
+                [min]="1024"
+                [useGrouping]="true"
+                (onInput)="markDirty()"
+              />
+            </div>
+          </div>
+
+          <div class="mt-5 flex flex-col gap-2">
+            <label for="maxRes" class="text-sm font-semibold text-color">
+              Max Resolution
+            </label>
+            <p class="text-xs text-muted-color">
+              Upper bound for video width and height in pixels. Creatives above this are rejected; pick the highest quality your network and screens support.
+            </p>
+            <p-select
+              inputId="maxRes"
+              class="w-full"
+              [options]="resolutionOptions"
+              optionLabel="label"
+              optionValue="key"
+              [(ngModel)]="selectedResolutionKey"
+            />
+          </div>
+
+          <div class="mt-6 flex flex-col gap-3">
+            <div class="flex items-end justify-between">
+              <label for="durationMax" class="text-sm font-semibold text-color">
+                Max Duration (Sec)
+              </label>
+              <span class="text-xs font-semibold text-primary">
+                5 - {{ draft()!.mediaLimits.maxDurationSeconds }}
+              </span>
+            </div>
+            <p class="text-xs text-muted-color">
+              Longest single asset duration allowed. Validation uses this to catch corrupt or wrong-length files; it should cover your longest ad slot.
+            </p>
+            <p-slider
+              inputId="durationMax"
+              class="w-full"
+              [(ngModel)]="draft()!.mediaLimits.maxDurationSeconds"
+              [min]="5"
+              [max]="600"
+              (onChange)="markDirty()"
+            />
+          </div>
+        </section>
+
+        <!-- Media VFS Engine (maps to fraud + misc for now) -->
+        <section
+          class="@container min-w-0 overflow-hidden rounded-xl bg-surface-0 p-6 shadow-sm"
+        >
+          <header class="mb-6 flex items-center gap-3">
+            <i class="pi pi-cloud-upload text-primary"></i>
+            <h2 class="text-lg font-bold text-color">Media VFS Engine</h2>
+          </header>
+
+          <div class="grid grid-cols-1 gap-5 @md:grid-cols-2">
+            <div class="flex min-w-0 flex-col gap-2">
+              <label for="blackoutLux" class="text-sm font-semibold text-color">
+                Blackout Max (lux)
+              </label>
+              <p class="text-xs text-muted-color">
+                When ambient light at the display is at or below this value during a play, the system may treat the play as a blackout (screen effectively off). Raise if night runs are incorrectly flagged.
+              </p>
+              <p-inputNumber
+                inputId="blackoutLux"
+                styleClass="w-full"
+                [(ngModel)]="draft()!.analytics.fraudBlackoutMaxLux"
+                [min]="0"
+                [max]="500"
+                (onInput)="markDirty()"
+              />
+            </div>
+            <div class="flex min-w-0 flex-col gap-2">
+              <label for="hbInterval" class="text-sm font-semibold text-color">
+                Heartbeat Interval (s)
+              </label>
+              <p class="text-xs text-muted-color">
+                Expected seconds between device heartbeats/telemetry used in fraud checks. Should match or exceed what devices are configured to send; used with the Heartbeat min ratio field in Analytics &amp; Fraud.
+              </p>
+              <p-inputNumber
+                inputId="hbInterval"
+                styleClass="w-full"
+                [(ngModel)]="draft()!.analytics.fraudHeartbeatIntervalSec"
+                [min]="1"
+                [max]="300"
+                (onInput)="markDirty()"
+              />
+            </div>
+          </div>
+        </section>
+
+        <!-- Fleet Health Thresholds -->
+        <section
+          class="@container min-w-0 overflow-hidden rounded-xl bg-surface-0 p-6 shadow-sm"
+        >
+          <header class="mb-6 flex items-center gap-3">
+            <i class="pi pi-heart text-primary"></i>
+            <h2 class="text-lg font-bold text-color">Fleet Health Thresholds</h2>
+          </header>
+
+          <div class="grid grid-cols-1 gap-5 @md:grid-cols-2">
+            <div class="flex min-w-0 flex-col gap-2">
+              <label for="gpsHdopMax" class="text-sm font-semibold text-color">
+                Max GPS HDOP
+              </label>
+              <p class="text-xs text-muted-color">
+                Horizontal dilution of precision: lower means stricter GPS quality. Readings worse than this can mark location-related health or plays as suspect; typical good fixes are 1–2, poor sky 5+.
+              </p>
+              <p-inputNumber
+                inputId="gpsHdopMax"
+                styleClass="w-full"
+                [(ngModel)]="draft()!.fleetHealth.gpsHdopMax"
+                [min]="0"
+                [max]="50"
+                [minFractionDigits]="0"
+                [maxFractionDigits]="2"
+                (onInput)="markDirty()"
+              />
+            </div>
+            <div class="flex min-w-0 flex-col gap-2">
+              <label for="maxHeight" class="text-sm font-semibold text-color">
+                Max Height (px)
+              </label>
+              <p class="text-xs text-muted-color">
+                Maximum video frame height in pixels (validation). Keep in sync with your max resolution policy; the preset under Media Validation also updates this together with width.
+              </p>
+              <p-inputNumber
+                inputId="maxHeight"
+                styleClass="w-full"
+                [(ngModel)]="draft()!.mediaLimits.maxHeight"
+                [min]="1"
+                (onInput)="markDirty()"
+              />
+            </div>
+          </div>
+
+          <div class="mt-6 flex flex-col gap-5">
+            <div class="flex flex-col gap-3">
+              <div class="flex items-end justify-between">
+                <label for="minBattery" class="text-sm font-semibold text-color">
+                  Min Battery Level
+                </label>
+                <span class="text-xs font-semibold text-primary">
+                  {{ draft()!.fleetHealth.minBatteryPercent }}%
+                </span>
+              </div>
+              <p class="text-xs text-muted-color">
+                When reported battery falls below this, the device can surface as needing attention. Use for operations (swap/charge) rather than for billing.
+              </p>
+              <p-slider
+                inputId="minBattery"
+                class="w-full"
+                [(ngModel)]="draft()!.fleetHealth.minBatteryPercent"
+                [min]="0"
+                [max]="100"
+                (onChange)="markDirty()"
+              />
+            </div>
+
+            <div class="flex flex-col gap-3">
+              <div class="flex items-end justify-between">
+                <label for="maxStorage" class="text-sm font-semibold text-color">
+                  Max Storage Usage
+                </label>
+                <span class="text-xs font-semibold text-primary">
+                  {{ draft()!.fleetHealth.maxStoragePercent }}%
+                </span>
+              </div>
+              <p class="text-xs text-muted-color">
+                Fleet health warning when on-device media storage use exceeds this share of capacity. Encourages cleanup before failed downloads or play errors.
+              </p>
+              <p-slider
+                inputId="maxStorage"
+                class="w-full"
+                [(ngModel)]="draft()!.fleetHealth.maxStoragePercent"
+                [min]="0"
+                [max]="100"
+                (onChange)="markDirty()"
+              />
+            </div>
+          </div>
+        </section>
+
+        <!-- Analytics & Fraud -->
+        <section
+          class="@container min-w-0 overflow-hidden rounded-xl bg-surface-0 p-6 shadow-sm 2xl:col-span-2"
+        >
+          <header class="mb-6 flex items-center gap-3">
+            <i class="pi pi-shield text-primary"></i>
+            <h2 class="text-lg font-bold text-color">Analytics &amp; Fraud Protection</h2>
+          </header>
+
+          <div
+            class="grid grid-cols-1 gap-6 @md:grid-cols-2 @min-[72rem]:grid-cols-4"
+          >
+            <div class="flex min-w-0 flex-col gap-2">
+              <label for="maxVelocity" class="text-sm font-semibold text-color">
+                Max Velocity (km/h)
+              </label>
+              <p class="text-xs text-muted-color">
+                Implied speed from GPS movement over the play window. Plays above this are marked as speed-based fraud (e.g. impossible vehicle motion). Set to your network’s realistic top speed with a small margin.
+              </p>
+              <p-inputNumber
+                inputId="maxVelocity"
+                styleClass="w-full"
+                [(ngModel)]="draft()!.analytics.maxVelocityKmh"
+                [min]="0"
+                [max]="200"
+                (onInput)="markDirty()"
+              />
+            </div>
+
+            <div class="flex min-w-0 flex-col gap-2">
+              <label for="minPlayRatio" class="text-sm font-semibold text-color">
+                Min Play Ratio
+              </label>
+              <p class="text-xs text-muted-color">
+                Minimum fraction of the creative that must have played to count for reconciliation (0–1, e.g. 0.9 = 90%). Use for “full play” policies and to drop partial or skipped plays.
+              </p>
+              <p-inputNumber
+                inputId="minPlayRatio"
+                styleClass="w-full"
+                [(ngModel)]="draft()!.analytics.reconFullPlayMinRatio"
+                [min]="0"
+                [max]="1"
+                [minFractionDigits]="1"
+                [maxFractionDigits]="3"
+                (onInput)="markDirty()"
+              />
+            </div>
+
+            <div class="flex min-w-0 flex-col gap-2">
+              <label for="minDuration" class="text-sm font-semibold text-color">
+                Min Duration (sec)
+              </label>
+              <p class="text-xs text-muted-color">
+                Plays shorter than this are not treated as full impressions (reconciliation). Filters glitches, UI taps, and ultra-short events; should be below your shortest real ad slot.
+              </p>
+              <p-inputNumber
+                inputId="minDuration"
+                styleClass="w-full"
+                [(ngModel)]="draft()!.analytics.reconMinDurationSec"
+                [min]="1"
+                [max]="60"
+                (onInput)="markDirty()"
+              />
+            </div>
+
+            <div class="flex min-w-0 flex-col gap-2">
+              <label for="fraudHbMinRatio" class="text-sm font-semibold text-color">
+                Heartbeat Min Ratio
+              </label>
+              <p class="text-xs text-muted-color">
+                Minimum ratio of received heartbeats/telemetry to the expected count over the play window. Below this, the play can be marked as heartbeat fraud. Tune together with the Heartbeat interval (s) value in Media VFS Engine and what devices actually send.
+              </p>
+              <p-inputNumber
+                inputId="fraudHbMinRatio"
+                styleClass="w-full"
+                [(ngModel)]="draft()!.analytics.fraudHeartbeatMinRatio"
+                [min]="0"
+                [max]="1"
+                [minFractionDigits]="1"
+                [maxFractionDigits]="3"
+                (onInput)="markDirty()"
+              />
+            </div>
+          </div>
+        </section>
+      </div>
+    }
+  </div>
+
+  <!-- Floating footer actions -->
+  <div
+    class="fixed bottom-0 left-0 right-0 z-10 border-t border-surface-200 bg-surface-0/80 px-4 py-4 backdrop-blur dark:border-surface-300 dark:bg-surface-100/80 sm:px-6"
+  >
+    <div class="mx-auto flex w-full min-w-0 max-w-6xl items-center justify-end gap-3">
+      <p-button
+        label="Restore Defaults"
+        severity="secondary"
+        [text]="true"
+        [loading]="restoring()"
+        (onClick)="restoreDefaults()"
+      />
+      <p-button
+        label="Save Configuration"
+        [loading]="saving()"
+        [disabled]="!dirty()"
+        (onClick)="save()"
+      />
+    </div>
+  </div>
+</div>
+

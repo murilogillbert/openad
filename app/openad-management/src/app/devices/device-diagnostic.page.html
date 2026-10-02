@@ -1,0 +1,211 @@
+<p-toast />
+
+<div class="space-y-6">
+  @if (store.loading()) {
+    <div class="flex justify-center py-16">
+      <p-progressSpinner strokeWidth="3" />
+    </div>
+  } @else if (store.detail(); as v) {
+    @if (v.boundDevice; as d) {
+      <p-card styleClass="border-surface-200 shadow-sm dark:border-surface-300">
+        <ng-template pTemplate="header">
+          <div class="px-4 pt-4">
+            <h2 class="text-color text-lg font-bold">Health & capability</h2>
+            <p class="text-muted-color text-sm">Hardware, runtime manifest, and reported health.</p>
+          </div>
+        </ng-template>
+        <div
+          class="border-surface-200 mb-6 border-b pb-6 dark:border-surface-300"
+        >
+          <h3 class="text-color mb-3 text-sm font-bold">Hardware profile</h3>
+          <dl class="grid gap-2 text-sm md:grid-cols-2">
+            <div class="flex justify-between gap-4">
+              <dt class="text-muted-color">Resolution</dt>
+              <dd class="font-mono text-xs">
+                {{ d.hardwareProfile.screenWidthPx }}×{{ d.hardwareProfile.screenHeightPx }}
+              </dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-muted-color">Diagonal</dt>
+              <dd>{{ d.hardwareProfile.screenSizeInches }}"</dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-muted-color">OS</dt>
+              <dd class="text-xs">{{ d.hardwareProfile.osVersion }}</dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-muted-color">Storage</dt>
+              <dd>{{ d.hardwareProfile.storageCapacityGb }} GB</dd>
+            </div>
+          </dl>
+        </div>
+        @if (d.lastHealthMetrics; as h) {
+          <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <p class="text-muted-color text-[10px] font-bold uppercase">Battery</p>
+              <p class="text-color text-xl font-black">{{ h.batteryPercentage }}%</p>
+            </div>
+            <div>
+              <p class="text-muted-color text-[10px] font-bold uppercase">Storage</p>
+              <p class="text-color text-xl font-black">{{ h.storageUtilizationPercent }}%</p>
+            </div>
+            <div>
+              <p class="text-muted-color text-[10px] font-bold uppercase">GPS</p>
+              <p class="text-color text-sm font-bold">
+                {{ h.gpsLocked ? 'Locked' : 'No lock' }}
+                @if (h.gpsHdop != null) {
+                  <span class="text-muted-color font-normal"> · HDOP {{ h.gpsHdop }}</span>
+                }
+              </p>
+            </div>
+            <div>
+              <p class="text-muted-color text-[10px] font-bold uppercase">Reported</p>
+              <p class="text-muted-color text-sm">{{ relative(h.reportedAt) }}</p>
+            </div>
+          </div>
+        } @else {
+          <p class="text-muted-color text-sm">No health metrics reported yet.</p>
+        }
+
+        @if (d.capabilityManifest; as m) {
+          <div
+            class="border-surface-200 mt-6 border-t pt-6 dark:border-surface-300"
+          >
+            <h3 class="text-color mb-2 text-sm font-bold">Capability manifest</h3>
+            <dl class="grid gap-2 text-sm md:grid-cols-2">
+              <div class="flex justify-between gap-4">
+                <dt class="text-muted-color">Resolution</dt>
+                <dd class="font-mono text-xs">{{ m.screenWidthPx }}×{{ m.screenHeightPx }}</dd>
+              </div>
+              <div class="flex justify-between gap-4">
+                <dt class="text-muted-color">Storage free</dt>
+                <dd>{{ m.availableStorageGb }} / {{ m.totalStorageGb }} GB</dd>
+              </div>
+              <div class="flex justify-between gap-4">
+                <dt class="text-muted-color">App</dt>
+                <dd class="font-mono text-xs">{{ m.appVersion }}</dd>
+              </div>
+              <div class="flex justify-between gap-4">
+                <dt class="text-muted-color">OS</dt>
+                <dd class="text-xs">{{ m.osVersion }}</dd>
+              </div>
+            </dl>
+          </div>
+        }
+      </p-card>
+
+      <p-card styleClass="border-surface-200 shadow-sm dark:border-surface-300">
+        <ng-template pTemplate="header">
+          <div
+            class="flex flex-col gap-3 px-4 pt-4 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div>
+              <h2 class="text-color text-lg font-bold">Lifecycle history</h2>
+              <p class="text-muted-color text-sm">Recorded state transitions</p>
+            </div>
+            <button
+              pButton
+              type="button"
+              class="p-button-outlined p-button-sm"
+              label="Refresh"
+              [disabled]="eventsLoading()"
+              (click)="refreshLifecycle()"
+            ></button>
+          </div>
+        </ng-template>
+
+        @if (eventsLoading()) {
+          <div class="flex justify-center py-12">
+            <p-progressSpinner strokeWidth="3" />
+          </div>
+        } @else if (eventsError(); as ee) {
+          <p class="text-muted-color text-sm" role="alert">{{ ee }}</p>
+        } @else {
+          <p-table [value]="events()" styleClass="p-datatable-sm">
+            <ng-template pTemplate="header">
+              <tr>
+                <th>When</th>
+                <th>Transition</th>
+                <th>Trigger</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-row>
+              <tr>
+                <td class="text-muted-color text-sm">{{ relative(row.occurredAt) }}</td>
+                <td>
+                  <span class="text-xs font-semibold">{{ row.fromState }}</span>
+                  <span class="text-muted-color px-1">→</span>
+                  <span class="text-xs font-semibold">{{ row.toState }}</span>
+                </td>
+                <td class="max-w-[240px] truncate text-xs" [title]="row.trigger.detail">
+                  <p-tag [value]="row.trigger.type" styleClass="text-[10px] uppercase" />
+                  {{ row.trigger.detail }}
+                </td>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="3" class="text-muted-color p-6 text-center text-sm">
+                  No lifecycle events yet.
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        }
+      </p-card>
+
+      @if (canTransitionState) {
+        <p-card styleClass="border-surface-200 shadow-sm dark:border-surface-300">
+          <ng-template pTemplate="header">
+            <div class="px-4 pt-4">
+              <h2 class="text-color text-lg font-bold">Admin · lifecycle transition</h2>
+              <p class="text-muted-color text-sm">
+                Moves the device between operational states (fleet admin).
+              </p>
+            </div>
+          </ng-template>
+          <div class="flex max-w-xl flex-col gap-4">
+            <div class="flex flex-col gap-2">
+              <label class="text-muted-color text-xs font-bold uppercase">Target state</label>
+              <p-select
+                [options]="stateOptions"
+                optionLabel="label"
+                optionValue="value"
+                [(ngModel)]="transitionTo"
+                class="w-full"
+              />
+            </div>
+            <div class="flex flex-col gap-2">
+              <label class="text-muted-color text-xs font-bold uppercase" for="reason"
+                >Reason</label
+              >
+              <input
+                pInputText
+                id="reason"
+                class="w-full"
+                [(ngModel)]="transitionReason"
+                placeholder="Audit trail detail"
+                autocomplete="off"
+              />
+            </div>
+            <button
+              pButton
+              type="button"
+              label="Apply transition"
+              class="p-button-warning"
+              [disabled]="transitionBusy"
+              [loading]="transitionBusy"
+              (click)="applyTransition()"
+            ></button>
+          </div>
+        </p-card>
+      }
+    } @else {
+      <div
+        class="border-surface-200 bg-surface-0 text-muted-color rounded-xl border p-6 text-sm"
+      >
+        Bind a device to this vehicle to see diagnostics and lifecycle history.
+      </div>
+    }
+  }
+</div>

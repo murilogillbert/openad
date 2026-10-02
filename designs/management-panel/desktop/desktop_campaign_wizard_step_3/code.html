@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Precision Atmosphere - Campaign Wizard</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;800&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-primary": "#74d1fe",
+                        "primary-dim": "#005a77",
+                        "on-primary-container": "#00465d",
+                        "surface-container-high": "#e3e9ef",
+                        "on-primary-fixed-variant": "#004f69",
+                        "surface-variant": "#dce3ea",
+                        "on-tertiary": "#faf8ff",
+                        "surface-tint": "#006788",
+                        "surface-container": "#e9eef4",
+                        "surface-container-highest": "#dce3ea",
+                        "on-tertiary-container": "#3b466c",
+                        "secondary-container": "#d1e5f4",
+                        "on-error-container": "#6e0a12",
+                        "on-error": "#fff7f6",
+                        "on-primary": "#f3faff",
+                        "error-dim": "#67040d",
+                        "secondary-fixed": "#d1e5f4",
+                        "surface-dim": "#d3dbe2",
+                        "secondary-fixed-dim": "#c3d7e5",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-container": "#74d1fe",
+                        "on-primary-fixed": "#003042",
+                        "outline-variant": "#abb3b9",
+                        "on-surface": "#2c3339",
+                        "on-secondary-fixed": "#2f424d",
+                        "surface-container-low": "#f0f4f8",
+                        "primary": "#006788",
+                        "tertiary-fixed": "#c6d0fe",
+                        "tertiary-container": "#c6d0fe",
+                        "background": "#f7f9fd",
+                        "on-tertiary-fixed-variant": "#454f76",
+                        "primary-fixed-dim": "#65c4ef",
+                        "on-background": "#2c3339",
+                        "error": "#a83836",
+                        "inverse-surface": "#0b0f11",
+                        "tertiary": "#535d85",
+                        "secondary-dim": "#435661",
+                        "on-secondary-container": "#415460",
+                        "primary-fixed": "#74d1fe",
+                        "on-tertiary-fixed": "#283257",
+                        "outline": "#747c82",
+                        "secondary": "#4f626e",
+                        "on-secondary": "#f4faff",
+                        "tertiary-fixed-dim": "#b8c2ef",
+                        "inverse-on-surface": "#9a9da0",
+                        "on-surface-variant": "#586066",
+                        "on-secondary-fixed-variant": "#4b5e6a",
+                        "surface": "#f7f9fd",
+                        "error-container": "#fa746f",
+                        "tertiary-dim": "#475178",
+                        "surface-bright": "#f7f9fd"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bento-glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+        }
+        .tonal-shift {
+            transition: background-color 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar (Updated Style from SCREEN_11) -->
+<header class="flex justify-between items-center px-8 h-16 w-full bg-[#f7f9fd] dark:bg-[#0f172a] tonal-shift border-b border-outline-variant/10 sticky top-0 z-50">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-black text-[#006788] dark:text-[#74d1fe] tracking-tighter font-headline">Precision Atmosphere</span>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] dark:hover:text-[#74d1fe] transition-colors font-headline" href="#">Dashboard</a>
+<a class="text-[#006788] dark:text-[#74d1fe] border-b-2 border-[#006788] font-bold transition-colors font-headline" href="#">Campaigns</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] dark:hover:text-[#74d1fe] transition-colors font-headline" href="#">Live Fleet</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] dark:hover:text-[#74d1fe] transition-colors font-headline" href="#">Devices</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] dark:hover:text-[#74d1fe] transition-colors font-headline" href="#">Media</a>
+<a class="text-[#586066] dark:text-slate-400 font-medium hover:text-[#006788] dark:hover:text-[#74d1fe] transition-colors font-headline" href="#">Reports</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-full">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-full">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="h-8 w-8 rounded-full overflow-hidden border border-outline-variant/20">
+<img alt="User profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBcAQ0dceC_WCtR0WIvbakKDzjnGZI4ULytSvNzHZpibv7f03XgUGcJGOvQ7zvr15QXpjSmmJWVhwqmGJL2J-0ZQ_Zd1BAmN2o4bqXFzMboHaURfJcM-8qXFQudi0VUo1DDig9KhVuhC1dwr7J1OFyY3LcGRNUdxQXgbOuhOX8dC6gZi3x70e4Xh026Z4LPquMP0bTtLjeY8r3zXr5gqeSmXZmMBuu3HhzWRHAFAUv8as98_rpE_9FhdHCka5pIx-6zXMJqW-pRrp6a"/>
+</div>
+</div>
+</header>
+<main class="flex flex-col min-h-[calc(100vh-4rem)]">
+<!-- Campaign Header & Progress Bar (From SCREEN_11) -->
+<div class="bg-surface-container-low border-b border-outline-variant/10 sticky top-16 z-40">
+<div class="max-w-7xl mx-auto px-8 py-6">
+<div class="flex items-center justify-between mb-6">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">campaign</span>
+</div>
+<div>
+<h2 class="text-lg font-bold text-[#2c3339] dark:text-white font-headline leading-tight">New Campaign</h2>
+<p class="text-xs text-on-surface-variant font-medium">Drafting Mode</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="py-2 px-4 rounded-lg bg-surface-container-highest text-on-surface-variant font-semibold text-sm hover:bg-surface-container-high transition-colors">
+                        Save Draft
+                    </button>
+<button class="py-2 px-6 rounded-lg bg-gradient-to-br from-primary to-primary-container text-on-primary font-bold text-sm flex items-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-primary/20">
+                        Next Step
+                        <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+<div class="relative">
+<!-- Progress Tracks -->
+<div class="flex gap-2 h-1.5 w-full mb-4">
+<div class="flex-1 bg-primary rounded-full"></div>
+<div class="flex-1 bg-primary rounded-full"></div>
+<div class="flex-1 bg-primary rounded-full"></div>
+<div class="flex-1 bg-outline-variant/20 rounded-full"></div>
+<div class="flex-1 bg-outline-variant/20 rounded-full"></div>
+</div>
+<!-- Step Labels -->
+<div class="grid grid-cols-5 text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
+<div class="text-primary/60">1. Objective</div>
+<div class="text-center text-primary/60">2. Creative</div>
+<div class="text-center text-primary font-bold">3. Targeting</div>
+<div class="text-center opacity-50">4. Scheduling</div>
+<div class="text-right opacity-50">5. Review</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Targeting Control Bar -->
+<div class="bg-surface-container-lowest border-b border-outline-variant/10 px-8 py-4 z-30 shadow-sm">
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-8">
+<!-- Zone Selection Horizontal -->
+<div class="flex-1 flex flex-col gap-2">
+<h3 class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Zone Selection</h3>
+<div class="flex gap-3">
+<button class="flex items-center gap-3 px-4 py-2 rounded-lg border border-outline-variant/20 hover:bg-surface-container-low transition-all text-left">
+<span class="material-symbols-outlined text-primary text-lg">public</span>
+<span class="font-bold text-xs">Global</span>
+</button>
+<button class="flex items-center gap-3 px-4 py-2 rounded-lg ring-2 ring-primary bg-primary/5 text-left">
+<span class="material-symbols-outlined text-primary text-lg">location_on</span>
+<div class="flex flex-col">
+<span class="font-bold text-xs text-primary">Point-Interest</span>
+<span class="text-[10px] text-on-surface-variant">5km Heathrow</span>
+</div>
+</button>
+<button class="flex items-center gap-3 px-4 py-2 rounded-lg border border-outline-variant/20 hover:bg-surface-container-low transition-all text-left">
+<span class="material-symbols-outlined text-primary text-lg">polyline</span>
+<span class="font-bold text-xs">Polygon</span>
+</button>
+</div>
+</div>
+<!-- Vertical Divider -->
+<div class="hidden md:block w-px h-10 bg-outline-variant/20"></div>
+<!-- Fleet Tiers Horizontal -->
+<div class="flex-1 flex flex-col gap-2">
+<h3 class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Fleet Tiers</h3>
+<div class="flex gap-6">
+<label class="flex items-center gap-2 cursor-pointer group">
+<input checked="" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/>
+<span class="text-xs font-semibold">Premium Black Cars</span>
+<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-surface-container-highest">420</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer group">
+<input checked="" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/>
+<span class="text-xs font-semibold">Airport Taxis</span>
+<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-surface-container-highest">850</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer group opacity-60">
+<input class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/>
+<span class="text-xs font-semibold">City Couriers</span>
+<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-surface-container-highest">1.2k</span>
+</label>
+</div>
+</div>
+</div>
+</div>
+<!-- Map Area (Full Width) -->
+<section class="flex-1 relative bg-[#1e293b] overflow-hidden">
+<!-- Technical Dark Map Placeholder -->
+<div class="absolute inset-0 grayscale contrast-125 opacity-40">
+<img alt="Satellite view map of London Heathrow area" class="w-full h-full object-cover" data-alt="Technical top-down satellite view of London Heathrow airport runways and surrounding highway networks in a dark cinematic lighting" data-location="London" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBb8_VCevpruSnIkZrjY79I-gO_IzkzaOxZ7svGpZ9u_uCz7eAM44KFkaBfMGfVuNhbKeEFwSx1CPvO34a_82gLTt0cLDs26BDBzaUbx8TfHbdjyBTxoo01MimT6-Yj1-SpTgPsjZ2KM1irIjJjxNsMpMaxfbj7sMmq0vyTjIXLaxbZJaBwUBTvKYFWny2VKRfgfi69VbkhVtuqqwHncxcTqqnp0YX6Gs1jI9suvgjd5uLLAwN39o4TYCqBaGM8FJYuolKX10exsaGL"/>
+</div>
+<!-- Geofence Visualization -->
+<div class="absolute inset-0 flex items-center justify-center">
+<div class="relative">
+<!-- Heathrow Radius Circle -->
+<div class="w-96 h-96 rounded-full bg-primary/20 border-2 border-primary-container animate-pulse flex items-center justify-center">
+<div class="w-2 h-2 rounded-full bg-primary ring-4 ring-primary-container shadow-2xl"></div>
+</div>
+<!-- Info Tag -->
+<div class="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 bento-glass p-3 rounded-xl shadow-2xl ring-1 ring-white/20 min-w-[140px]">
+<p class="text-[10px] font-bold uppercase text-on-surface-variant">Target Radius</p>
+<p class="text-sm font-extrabold text-primary">Heathrow Area</p>
+<p class="text-[10px] text-on-surface-variant mt-1">5,000m Coverage</p>
+</div>
+</div>
+</div>
+<!-- Map Controls -->
+<div class="absolute top-6 right-6 flex flex-col gap-2">
+<div class="bg-surface-container-lowest/90 backdrop-blur-md rounded-xl shadow-xl overflow-hidden flex flex-col ring-1 ring-black/5">
+<button class="p-3 hover:bg-primary/10 text-on-surface transition-colors">
+<span class="material-symbols-outlined">add</span>
+</button>
+<div class="h-px bg-surface-container mx-2"></div>
+<button class="p-3 hover:bg-primary/10 text-on-surface transition-colors">
+<span class="material-symbols-outlined">remove</span>
+</button>
+</div>
+<button class="bg-surface-container-lowest/90 backdrop-blur-md p-3 rounded-xl shadow-xl ring-1 ring-black/5 hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined">layers</span>
+</button>
+<button class="bg-surface-container-lowest/90 backdrop-blur-md p-3 rounded-xl shadow-xl ring-1 ring-black/5 hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined">push_pin</span>
+</button>
+</div>
+<!-- Fleet Density Legend -->
+<div class="absolute bottom-6 right-6 bento-glass p-4 rounded-2xl shadow-2xl ring-1 ring-white/30 max-w-xs">
+<div class="flex items-center justify-between mb-3">
+<h4 class="text-xs font-extrabold font-headline uppercase tracking-tight text-on-surface">Fleet Density</h4>
+<div class="flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="text-[10px] font-bold">Live</span>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex items-center justify-between">
+<span class="text-xs font-medium text-on-surface-variant">Active Displays</span>
+<span class="text-sm font-bold text-on-surface">1,270</span>
+</div>
+<div class="w-full bg-surface-container h-1 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[85%]"></div>
+</div>
+<p class="text-[10px] text-on-surface-variant mt-2 italic">Estimating 2.4M hourly impressions in selected zone.</p>
+</div>
+</div>
+<!-- Coordinate Ticker -->
+<div class="absolute bottom-6 left-6 font-mono text-[10px] text-primary-container bg-slate-900/80 px-3 py-1.5 rounded-full tracking-widest backdrop-blur-sm border border-primary/20">
+            51.4700° N, 0.4543° W // ZOOM 14.5x
+        </div>
+</section>
+</main>
+</body></html>

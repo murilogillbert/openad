@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Login | Precision Atmosphere</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-high": "#e3e9ef",
+                    "primary-fixed-dim": "#65c4ef",
+                    "tertiary-fixed": "#c6d0fe",
+                    "surface-variant": "#dce3ea",
+                    "on-tertiary": "#faf8ff",
+                    "error-container": "#fa746f",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary-fixed-variant": "#454f76",
+                    "outline-variant": "#abb3b9",
+                    "surface-dim": "#d3dbe2",
+                    "error": "#a83836",
+                    "background": "#f7f9fd",
+                    "primary-dim": "#005a77",
+                    "on-primary-fixed": "#003042",
+                    "secondary": "#4f626e",
+                    "surface": "#f7f9fd",
+                    "primary-container": "#74d1fe",
+                    "on-background": "#2c3339",
+                    "on-secondary-fixed-variant": "#4b5e6a",
+                    "on-secondary": "#f4faff",
+                    "surface-bright": "#f7f9fd",
+                    "outline": "#747c82",
+                    "surface-container-low": "#f0f4f8",
+                    "tertiary-dim": "#475178",
+                    "surface-tint": "#006788",
+                    "on-primary-fixed-variant": "#004f69",
+                    "tertiary": "#535d85",
+                    "primary": "#006788",
+                    "on-surface": "#2c3339",
+                    "on-primary-container": "#00465d",
+                    "tertiary-fixed-dim": "#b8c2ef",
+                    "inverse-on-surface": "#9a9da0",
+                    "secondary-fixed-dim": "#c3d7e5",
+                    "on-tertiary-fixed": "#283257",
+                    "error-dim": "#67040d",
+                    "on-tertiary-container": "#3b466c",
+                    "inverse-primary": "#74d1fe",
+                    "on-error": "#fff7f6",
+                    "secondary-fixed": "#d1e5f4",
+                    "secondary-dim": "#435661",
+                    "surface-container-highest": "#dce3ea",
+                    "inverse-surface": "#0b0f11",
+                    "surface-container": "#e9eef4",
+                    "on-primary": "#f3faff",
+                    "on-surface-variant": "#586066",
+                    "secondary-container": "#d1e5f4",
+                    "on-secondary-container": "#415460",
+                    "on-secondary-fixed": "#2f424d",
+                    "primary-fixed": "#74d1fe",
+                    "tertiary-container": "#c6d0fe",
+                    "on-error-container": "#6e0a12"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .tonal-layer-shadow {
+            box-shadow: 0px 8px 24px rgba(44, 51, 57, 0.06);
+        }
+        .signature-gradient {
+            background: linear-gradient(135deg, #006788 0%, #74d1fe 100%);
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        h1, h2, h3 {
+            font-family: 'Manrope', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen flex flex-col items-center justify-between">
+<!-- Header Section (Suppressed Shell - Branding Only) -->
+<header class="w-full px-6 py-8 flex justify-center">
+<div class="flex items-center gap-3">
+<img alt="OpenAd Professional Logo" class="h-10 w-auto object-contain" data-alt="minimalist corporate logo with clean geometric lines and a tech-forward aesthetic using professional blue and white" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAo4VnIhPeniBlNL5Sm_kl0idwMz17CoSGyxVJnEbLWINuLzhClSuWYgW1OYRSnvYO92DlVCZqaLdttKkut5BIISUqex-C3p3pRAlgzfMThQEORQHAyroaCR6NPvmv55suZ7EnXs9zCuZhXhXq2zazeKVUT14rfOJ1Ll9xppPD012MXe5SPreAo7Y7LPz-W7YRsTF4pcimPGLSfDIS-UjZJK79lZo9ilXNaSiXMMj1bnQK29qorXdzKqqZ60ct1Hm2u-05veQwU_ZB"/>
+<span class="text-xl font-headline font-bold tracking-tight text-on-background">OpenAd</span>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow flex items-center justify-center px-4 w-full max-w-4xl">
+<div class="w-full max-w-md bg-surface-container-lowest rounded-xl tonal-layer-shadow p-10 flex flex-col gap-8">
+<!-- Form Header -->
+<div class="text-center">
+<h1 class="text-3xl font-headline font-extrabold tracking-tighter text-on-surface mb-2">Welcome Back</h1>
+<p class="text-on-surface-variant font-body text-sm">Enter your credentials to access the DOOH console.</p>
+</div>
+<!-- Login Form -->
+<form class="flex flex-col gap-6">
+<!-- Email Input -->
+<div class="flex flex-col gap-2">
+<label class="text-xs font-label font-semibold text-on-surface-variant uppercase tracking-wider" for="email">Email</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-outline-variant text-lg">mail</span>
+<input class="w-full bg-surface-container-low border-none rounded-lg py-3 pl-11 pr-4 text-on-surface focus:ring-2 focus:ring-primary/30 transition-all font-body text-sm" id="email" placeholder="name@company.com" type="email"/>
+</div>
+</div>
+<!-- Password Input -->
+<div class="flex flex-col gap-2">
+<label class="text-xs font-label font-semibold text-on-surface-variant uppercase tracking-wider" for="password">Password</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-outline-variant text-lg">lock</span>
+<input class="w-full bg-surface-container-low border-none rounded-lg py-3 pl-11 pr-4 text-on-surface focus:ring-2 focus:ring-primary/30 transition-all font-body text-sm" id="password" placeholder="••••••••" type="password"/>
+</div>
+</div>
+<!-- Primary Action -->
+<button class="signature-gradient text-on-primary font-headline font-bold py-4 rounded-lg hover:scale-[1.02] active:scale-95 transition-all duration-150 mt-2 flex items-center justify-center gap-2" type="submit">
+                    Login
+                    <span class="material-symbols-outlined text-lg">arrow_forward</span>
+</button>
+</form>
+<!-- Atmospheric Accent -->
+<div class="mt-4 flex flex-col items-center gap-4">
+<div class="w-12 h-1 signature-gradient rounded-full opacity-30"></div>
+<p class="text-xs text-on-surface-variant/60 font-label text-center">Precision Atmosphere DOOH Management Platform</p>
+</div>
+</div>
+</main>
+<!-- Footer (Shared Component Logic Applied) -->
+<footer class="flex flex-col md:flex-row justify-between items-center px-8 py-8 w-full gap-4 bg-surface-container-low">
+<div class="text-xs font-label text-on-surface-variant tracking-wide">
+            © 2024 Precision Atmosphere DOOH. All rights reserved.
+        </div>
+<div class="flex gap-6">
+<a class="text-xs font-label text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="text-xs font-label text-on-surface-variant hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="text-xs font-label text-on-surface-variant hover:text-primary transition-colors" href="#">Help Center</a>
+</div>
+</footer>
+</body></html>
