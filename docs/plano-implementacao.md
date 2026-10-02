@@ -133,45 +133,76 @@ Validadas com o cliente em 2026-10-02.
 | # | Decisão | Consequência técnica |
 |---|---|---|
 | 1 | **Quem anuncia são parceiros.** Criar conta já torna a pessoa parceira. | Sem fila de aprovação de cadastro. `ad_advertisers` nasce `active`. A conta é a do ecossistema (`public.users`), não uma conta nova. |
-| 2 | **Cobrança preferencialmente fora do app**, para evitar taxa de loja; se não for viável, aplicar a estrutura exigida. | Ver §2.1 — tem uma restrição de App Store que não é contornável só omitindo o checkout. |
+| 2 | **Cobrança por in-app purchase.** Decidido em 2026-10-02 após avaliar o risco de revisão do caminho B2B. | Muda o modelo comercial: SKU fixo em vez de valor livre. Ver §2.1. |
 | 3 | **Moderação humana existe**, com papel novo de **moderador**. | Role nova, fila de moderação, estados `pending_review`/`rejected`, auditoria de quem decidiu. |
-| 4 | **O motorista recebe por veiculação, e o parceiro define quanto.** | Campo de repasse na campanha + repasse via cashback do hub. Ver §2.2 — precisa de piso e de consequência no leilão. |
+| 4 | **O motorista recebe por veiculação, e o parceiro define quanto**, com piso de plataforma e peso no leilão. | Campo de repasse na campanha + crédito via cashback do hub. Desenho fechado na §2.2. |
 | 5 | **App do anunciante é um terceiro app**, integrado ao ecossistema. | Novo projeto Expo/React Native, irmão de `hub-mobile` e `opendriver/mobile`. |
 
-### 2.1 Cobrança e as regras de loja — decisão pendente
+### 2.1 Cobrança por in-app purchase
 
-Tirar o checkout do app resolve a taxa, mas **na App Store não basta omitir o pagamento**:
-sem o entitlement de link externo, o app também não pode *direcionar* o usuário para pagar
-fora. Dois caminhos:
+Decidido: IAP nas duas lojas. Elimina o risco de revisão do enquadramento B2B, ao custo de
+15% (programa de pequenos negócios, até US$ 1 M/ano) a 30% da receita comprada pelo app.
 
-**Caminho A — enquadrar como serviço B2B (recomendado).** Venda de veiculação publicitária
-para uma pessoa jurídica parceira é serviço empresarial consumido fora do app, não bem
-digital consumido dentro dele. O app mostra campanha, criativo e relatório; a contratação e
-o pagamento acontecem no painel web do hub, onde o Asaas já está integrado. O app não exibe
-preço de compra nem botão de pagar — exibe "contratar no painel" como informação, sem link
-de pagamento. Risco: interpretação do revisor. Mitigação: conta de teste com parceiro já
-contratado, para a revisão nunca passar por um fluxo de compra.
+Isso **não é só uma taxa** — muda três coisas no produto, e as três precisam estar no
+desenho desde a Fase 5:
 
-**Caminho B — in-app purchase.** Elimina o risco de revisão e custa 15–30% em toda
-veiculação comprada pelo iOS. Dado que o ticket de mídia é alto e recorrente, é o pior
-negócio dos dois.
+**a) Valor livre deixa de existir; o modelo passa a ser pacote de crédito.** Produto de IAP
+é SKU fixo, cadastrado em App Store Connect e Play Console. Não é possível cobrar
+"R$ 1.247,30, que é o custo desta campanha". O anunciante compra **crédito de veiculação**
+em pacotes (ex.: 50 / 100 / 500 / 2.000), do tipo *consumable*, e a campanha consome desse
+saldo conforme as veiculações viram faturáveis. O pacing diário que já existe
+(`campaign_daily_spend`) passa a ser o mecanismo que impede gastar crédito que não há.
 
-**Recomendação:** A, com o checkout no `hub` (web) e o app do anunciante em modo
-gerenciamento + relatório. Decidir antes da Fase 6, porque muda o escopo de telas.
+**b) O crédito não pode ser conversível em dinheiro.** Se o saldo comprado via IAP virasse
+`users.cashback_balance` — que é sacável no hub — a loja interpretaria como valor armazenado
+equivalente a dinheiro, e isso é recusado. Portanto o crédito de veiculação é um **ledger
+separado**, só gastável em veiculação, sem resgate e sem transferência. Essa é a razão de
+`ad_credit_ledger` existir na §4.1 em vez de reaproveitar a carteira do hub.
 
-### 2.2 Repasse ao motorista definido pelo parceiro — risco a tratar
+**c) O repasse ao motorista ganha defasagem de caixa.** A receita de IAP não chega na hora:
+Apple e Google repassam ao redor de 30 a 45 dias após o fechamento do mês, já descontada a
+comissão. O motorista veicula hoje e a plataforma só tem o dinheiro depois. Duas saídas, e
+**esta ainda é decisão do cliente**:
 
-Se o parceiro define livremente quanto o motorista recebe, o equilíbrio natural é todo
-parceiro definir zero. Para o modelo funcionar precisa de duas coisas:
+- *A plataforma antecipa*: o motorista recebe no ciclo normal e a empresa financia o
+  capital de giro. Melhor para retenção do motorista, exige caixa.
+- *O repasse acompanha o ciclo da loja*: `ad_payouts` liquida junto com o repasse da loja,
+  com a defasagem explicada no app do motorista. Sem risco de caixa, pior para retenção.
 
-1. **Piso de plataforma**: percentual ou valor mínimo por veiculação, configurável em
-   `platform_config` (que já existe e já é editável no admin, sem redeploy).
-2. **Consequência no leilão**: repasse maior deve ganhar mais inventário. O mecanismo já
-   existe e é reaproveitável — `geo_zones.bindings.arbitrationWeights` e `pacingFactor` já
-   alimentam a arbitragem espacial. Basta o repasse entrar como termo no score.
+**Implementação.** `react-native-purchases` (RevenueCat) tem config plugin para Expo, cobre
+as duas lojas e entrega webhook — é o caminho mais curto. Alternativa sem dependência de
+terceiro: `react-native-iap` com validação própria. Em qualquer uma delas, **validação de
+recibo é no servidor**, nunca no app, com App Store Server API e Google Play Developer API;
+e as notificações de servidor (App Store Server Notifications V2, Real-time Developer
+Notifications) são obrigatórias, porque reembolso tem de ser capaz de suspender campanha e
+estornar crédito não consumido.
 
-Sem o item 2, o item 1 vira só um custo fixo e o parceiro nunca tem incentivo para pagar
-mais que o mínimo. **Precisa de validação do cliente** antes da Fase 5.
+### 2.2 Repasse ao motorista — desenho aprovado
+
+O parceiro define quanto o motorista recebe por veiculação, com dois freios aprovados:
+
+**1. Piso de plataforma.** Percentual mínimo do valor faturável, em `platform_config` —
+que já existe, já é Mongo-backed e já é editável em Admin → Plataforma sem redeploy.
+Campanha com repasse abaixo do piso é recusada na criação, não na moderação: erro de
+validação é mais barato que fila humana.
+
+**2. Peso no leilão.** Repasse maior ganha mais inventário. Sem isso o piso vira só custo
+fixo e ninguém paga acima do mínimo. O mecanismo já existe e é reaproveitável: a arbitragem
+espacial já combina `tier`, `priorityScore`, `arbitrationWeights { wp, wd, wh }` e
+`pacingFactor` em `SpatialManifestBuilderService`. O repasse entra como termo adicional do
+score, normalizado contra o piso:
+
+```
+boostRepasse = 1 + k * ((repasseOfertado / pisoPlataforma) - 1)
+```
+
+com `k` em `platform_config` para calibrar quanto o repasse pesa sem permitir que dinheiro
+atropele relevância geográfica. `k = 0` desliga o leilão e mantém só o piso, o que dá uma
+saída segura se o comportamento em produção surpreender.
+
+Toda supressão continua registrada em `lost_opportunity_events` com `reason`, que já tem o
+valor `pacing` e ganha `revenue_share`. Isso é o que permite explicar a um parceiro por que
+a campanha dele tocou menos — sem esse registro, leilão é caixa-preta e gera disputa.
 
 ---
 
@@ -237,15 +268,36 @@ lados; só acrescentar `ads:campaign:write`, `ads:payout:read`.
 ```
 ad_advertisers        id, user_id → users.id, legal_name, document_enc, document_hash,
                       status (active|suspended), created_at, updated_at
-ad_campaign_orders    id, advertiser_id → ad_advertisers.id, campaign_id (UUID no Mongo),
-                      amount_cents, currency, status, asaas_payment_id, paid_at
+
+ad_credit_purchases   id, advertiser_id → ad_advertisers.id, store (apple|google),
+                      product_sku, credit_cents, price_cents, store_fee_cents,
+                      transaction_id (unico por loja), receipt_status
+                      (pending|validated|refunded), validated_at, refunded_at
+
+ad_credit_ledger      id, advertiser_id, direction (credit|debit), amount_cents,
+                      reason (purchase|campaign_spend|refund|adjustment),
+                      purchase_id (nullable), campaign_id (nullable), created_at
+
 ad_payouts            id, driver_user_id → users.id, period_start, period_end,
                       billable_plays, gross_cents, net_cents, status, settled_at
 ```
 
-Nenhuma coluna existente muda. O saldo do motorista continua em `users.cashback_balance` +
-`cashback_entries`, creditado pelas regras de `hub/backend/src/domain/commissionRules.ts` —
-o openad **não** reimplementa conta de dinheiro.
+Nenhuma coluna existente muda.
+
+**Por que o crédito tem ledger próprio e não entra na carteira do hub:** o saldo comprado
+via IAP não pode ser conversível em dinheiro (§2.1b). `users.cashback_balance` é sacável,
+então misturar os dois transformaria crédito de veiculação em valor armazenado — o que as
+lojas recusam. `ad_credit_ledger` é append-only e só debita por veiculação.
+
+O **repasse ao motorista**, ao contrário, continua sendo cashback normal: entra em
+`users.cashback_balance` + `cashback_entries` pelas regras de
+`hub/backend/src/domain/commissionRules.ts`. O openad **não** reimplementa conta de
+dinheiro; ele reporta veiculações faturáveis e o hub credita. `ad_payouts` é só o
+fechamento por período.
+
+Índice único obrigatório em `ad_credit_purchases (store, transaction_id)` — é o que impede
+que o mesmo recibo credite duas vezes quando o app reenvia a compra (e ele reenvia, porque
+é assim que IAP se recupera de app fechado no meio da transação).
 
 ### 4.2 Mudanças no Mongo (dono: openad)
 
@@ -261,6 +313,7 @@ o openad **não** reimplementa conta de dinheiro.
 | `vehicles.driverId` | passa a referenciar `public.users.id` | Hoje é string livre; é a ponte do repasse |
 | `users.role` | `+ content_moderator` | Decisão 3 |
 | `users` | mantida, só para equipe interna | Anunciante autentica pelo Postgres |
+| `lost_opportunity_events.reason` | `+ revenue_share` | Explicar supressão por leilão de repasse (§2.2) |
 
 Índices novos: `campaigns { ownerUserId, status, updatedAt }`,
 `media_assets { ownerUserId, isActive }`, `campaigns { status, 'moderation.reviewedAt' }`.
@@ -357,7 +410,38 @@ produz `/api/v1/analytics/v1/campaigns`. Normalizar para `/api/v1/...` como nos 
 **P10 — Lint e format.** Unificar `.prettierrc` e a config flat do ESLint com os outros
 repositórios.
 
-### 5.3 Como aplicar
+### 5.3 O player continua Capacitor — e por quê
+
+Pergunta levantada em 2026-10-02: há Java no projeto, e o player deveria seguir o padrão
+dos outros apps?
+
+Há, em quatro arquivos (373 linhas), todos em
+`app/openad-ad-client/android/app/src/main/java/com/openad/`:
+
+| Arquivo | Função |
+|---|---|
+| `MainActivity.java` | Quando o app é Device Owner, configura allowlist de Lock Task e `LOCK_TASK_FEATURE_NONE` — kiosk sem nenhuma UI de sistema |
+| `OpenAdDeviceAdminReceiver.java` | Receiver DPC que torna possível `dpm set-device-owner` |
+| `OpenAdSilentInstallPlugin.java` | Autoatualização silenciosa de APK via `PackageInstaller`, sem confirmação do usuário |
+| `PowerStatePlugin.java` | Detecção de motor ligado/desligado |
+
+A distinção que resolve a questão: `hub-mobile` e `opendriver/mobile` são apps de
+consumidor, publicados em loja e instalados pela pessoa. **O player não é um app, é um
+appliance**: entra num tablet zerado via `dpm set-device-owner`, nunca vai para o Play
+Store, e se atualiza sozinho pelo MDM que vive neste repositório (`specs/009`).
+
+E o argumento técnico decisivo: Expo *suporta* código nativo, via config plugin e prebuild.
+Mas a migração terminaria com **os mesmos quatro arquivos Java**, apenas movidos para
+dentro de um config plugin — ganho nenhum — e custaria os 19 plugins Capacitor já
+integrados (kiosk, brilho, sensor de luz, bússola, acelerômetro, wifi, volume, privacy
+screen, keep-awake, MQTT nativo), que seriam reimplementados um por um.
+
+**Decisão:** o player fica em Capacitor. A consistência com os outros apps é buscada onde
+ela de fato reduz custo de manutenção — P1 a P10 acima, que são convenções de TypeScript,
+contratos e validação, não framework. O app do anunciante (Fase 6) nasce em Expo, igual aos
+outros dois.
+
+### 5.4 Como aplicar
 
 P1, P3 e P7 são **transversais**: aplicados módulo a módulo conforme cada um é tocado pelas
 fases seguintes, nunca como refatoração isolada. P2, P4, P6, P8 e P10 são pontuais e cabem
@@ -427,15 +511,32 @@ Role `content_moderator`, estados `pending_review`/`rejected`, fila, decisão co
 registrado, telas no portal (`designs/management-panel/` já tem o padrão visual), e bloqueio
 no `patchStatus` para que nada vá ao ar sem aprovação.
 
-### Fase 5 — Dinheiro
+### Fase 5 — Crédito, IAP e repasse
 
-Tabelas da §4.1, checkout no hub via Asaas, repasse ao motorista com o piso e o peso no
-leilão da §2.2, `GET /internal/ads/payouts` consumido pelo hub.
+- Tabelas da §4.1, com o índice único `(store, transaction_id)`.
+- Validação de recibo **no servidor** (App Store Server API, Google Play Developer API) e
+  consumo das notificações de servidor das duas lojas, para reembolso suspender campanha e
+  estornar crédito não consumido.
+- Débito de crédito amarrado ao pacing: `campaign_daily_spend` passa a ser o que impede
+  gastar saldo inexistente.
+- Repasse com piso em `platform_config` e `boostRepasse` entrando no score da arbitragem
+  (§2.2), com `k = 0` como desligamento seguro.
+- `reason: 'revenue_share'` em `lost_opportunity_events`.
+- `GET /internal/ads/payouts` consumido pelo hub, que credita via `commissionRules.ts`.
+
+*Entregável:* comprar um pacote no sandbox da loja credita saldo exatamente uma vez,
+inclusive com reenvio do mesmo recibo; estorno suspende a campanha.
 
 ### Fase 6 — App do anunciante
 
 Terceiro app, Expo + `expo-router`, camada `src/api` tipada espelhando `libs/api-contracts`,
-nas mesmas convenções de `hub-mobile`. Escopo conforme a decisão de §2.1.
+nas mesmas convenções de `hub-mobile`. Telas: cadastro de parceiro, criação de campanha com
+segmentação, upload de criativo, compra de pacote de crédito via IAP, acompanhamento de
+veiculação e proof-of-play.
+
+Nota de loja: SKUs cadastrados nos dois consoles antes da primeira build de review, e conta
+de teste com crédito e campanha ativa — revisão que esbarra em tela vazia costuma voltar
+como rejeição por "funcionalidade incompleta".
 
 ### Fase 7 — Robustez do player
 
@@ -462,13 +563,15 @@ Adapter de Redis no Socket.IO (D9), unificação do namespace MQTT (D11), métri
 
 | # | Item | Situação |
 |---|---|---|
-| R1 | Cobrança: Caminho A (B2B) vs B (IAP) | **Decisão do cliente**, antes da Fase 6 |
-| R2 | Piso de repasse e peso no leilão (§2.2) | **Decisão do cliente**, antes da Fase 5 |
-| R3 | Verificação de integridade após `downloadFile` | **Decisão técnica**, antes da Fase 7 |
-| R4 | APK não compilável neste ambiente: só há JDK 8, AGP moderno exige 17+ | Instalar JDK 17 antes da Fase 1 |
-| R5 | Nunca rodou em hardware real, pelo que o código indica | Conseguir um tablet alvo antes da Fase 1 |
-| R6 | Watchdog (`deep-sleep`, `safety-loop`, `player-restart`) não exercitado | Validar na Fase 1 |
-| R7 | Interpretação de "padronizar o código que está em nest" (§5) | **Confirmar com o cliente** |
+| R1 | Cobrança | **Resolvido**: IAP (§2.1). Consequências a e b já no desenho |
+| R2 | Piso de repasse e peso no leilão | **Resolvido**: aprovado, desenho na §2.2 |
+| R3 | Defasagem de caixa do repasse: plataforma antecipa ou acompanha o ciclo da loja (§2.1c) | **Decisão do cliente**, antes da Fase 5 |
+| R4 | Verificação de integridade após `downloadFile` | **Decisão técnica**, antes da Fase 7 |
+| R5 | APK não compilável neste ambiente | Confirmado: só há **JRE 1.8** (nem JDK), e o wrapper pede Gradle 8.14.3 com AGP que exige JDK 17+. Instalar JDK 17 antes de gerar APK |
+| R6 | Nunca rodou em hardware real, pelo que o código indica | Conseguir um tablet alvo antes de fechar a Fase 1 |
+| R7 | Watchdog (`deep-sleep`, `safety-loop`, `player-restart`) não exercitado | Validar na Fase 1 |
+| R8 | Framework do player | **Resolvido**: fica em Capacitor (§5.3) |
+| R9 | Codec `h265` aceito em `media_assets` tem suporte irregular em WebView | Validar na Fase 7 com o hardware alvo |
 
 Nada foi aplicado em produção, e o `hub` — que está no ar — não foi tocado. As migrations
 da §4.1 seguem o protocolo de backup descrito em `opendriver/docs/plano-producao-final.md`.
