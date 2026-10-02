@@ -63,7 +63,7 @@ export class ReportingAggregationService {
     const tierBuckets = new Map<string, { plays: number; amount: number }>();
 
     let revenueTotal = 0;
-    for (const p of plays) {
+    for (const _p of plays) {
       const tier = 'T4';
       const zoneMult = tierZoneMultiplier(tier);
       const lineAmount = rate * zoneMult;

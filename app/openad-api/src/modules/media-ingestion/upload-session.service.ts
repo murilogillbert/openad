@@ -63,7 +63,7 @@ export class UploadSessionService {
   }
 
   private safeFilename(name: string): string {
-    return name.replace(/[^\w.\-]/g, '_').slice(0, 200) || 'upload.bin';
+    return name.replace(/[^\w.-]/g, '_').slice(0, 200) || 'upload.bin';
   }
 
   async createSession(

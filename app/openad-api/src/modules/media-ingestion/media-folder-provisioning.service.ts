@@ -5,7 +5,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { FolderNode, FolderNodeDocument } from './schemas/folder-node.schema';
 
 function slugSegment(name: string): string {
-  const s = name.replace(/[^\w.\-]+/g, '_').replace(/^_+|_+$/g, '');
+  const s = name.replace(/[^\w.-]+/g, '_').replace(/^_+|_+$/g, '');
   return s.length > 0 ? s.slice(0, 120) : 'campaign';
 }
 

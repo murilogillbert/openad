@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { createHash } from 'crypto';
-import { Model, Types } from 'mongoose';
+import { Model } from 'mongoose';
 import { DevicesRepository } from '../../devices/devices.repository';
 import type { DeviceDocument } from '../../devices/devices.schema';
 import { AppRelease, AppReleaseDocument } from '../schemas/app-release.schema';
