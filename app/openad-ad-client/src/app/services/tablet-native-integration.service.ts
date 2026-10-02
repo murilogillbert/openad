@@ -43,7 +43,12 @@ export class TabletNativeIntegrationService {
   private latestAccel: { x: number; y: number; z: number } | null = null;
   private handles: PluginListenerHandle[] = [];
   private kioskReentryTimer: ReturnType<typeof setTimeout> | null = null;
-  private kioskBgTaskId: number | null = null;
+  /**
+   * `taskId` do @capawesome/capacitor-background-task e `string`; estava declarado como
+   * `number`, o que fazia o typecheck do ad-client falhar em tres pontos e, com isso,
+   * `nx run openad-ad-client:build` nao concluir.
+   */
+  private kioskBgTaskId: string | null = null;
 
   isCapacitorNative(): boolean {
     if (!isPlatformBrowser(this.platformId)) {
