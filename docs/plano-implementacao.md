@@ -434,7 +434,17 @@ produz `/api/v1/analytics/v1/campaigns`. Normalizar para `/api/v1/...` como nos 
 **P10 — Lint e format.** Unificar `.prettierrc` e a config flat do ESLint com os outros
 repositórios.
 
-### 5.3 O player continua Capacitor — e por quê
+### 5.3 O player continua Capacitor, com o nativo em Kotlin
+
+> **Atualizado em 2026-10-02, decisão executada.** O framework fica; a linguagem do código
+> nativo mudou. Os quatro arquivos foram reescritos em Kotlin (caminho A da §5 de
+> `estado-do-trabalho.md`), com `kotlin-gradle-plugin` 2.4.20 e `jvmTarget` 21. O módulo do
+> aplicativo não tem mais fonte Java — `:app:compileDebugJavaWithJavac` reporta `NO-SOURCE` —
+> e nenhum dos 18 plugins Capacitor foi perdido. A primeira compilação do código nativo
+> revelou três defeitos (D16 a D18), entre eles um erro que impedia o Java de compilar.
+>
+> O texto abaixo, que justificava manter Capacitor, segue valendo integralmente: a objeção
+> era à linguagem, e o framework nunca foi o problema.
 
 Pergunta levantada em 2026-10-02: há Java no projeto, e o player deveria seguir o padrão
 dos outros apps?
@@ -627,10 +637,10 @@ Adapter de Redis no Socket.IO (D9), unificação do namespace MQTT (D11), métri
 | R2 | Piso de repasse e peso no leilão | **Resolvido**: aprovado, desenho na §2.2 |
 | R3 | Defasagem de caixa do repasse: plataforma antecipa ou acompanha o ciclo da loja (§2.1c) | **Decisão do cliente**, antes da Fase 5 |
 | R4 | Verificação de integridade após `downloadFile` | **Decisão técnica**, antes da Fase 7 |
-| R5 | APK não compilável neste ambiente | Confirmado: só há **JRE 1.8** (nem JDK), e o wrapper pede Gradle 8.14.3 com AGP que exige JDK 17+. Instalar JDK 17 antes de gerar APK |
-| R6 | Nunca rodou em hardware real, pelo que o código indica | Conseguir um tablet alvo antes de fechar a Fase 1 |
+| R5 | APK não compilável neste ambiente | **Resolvido** em 2026-10-02 na máquina nova: JDK 21 (Temurin) + Android SDK 36. `assembleDebug` conclui e gera APK de 6,99 MB. Atenção: o Gradle 8.14.3 do wrapper **não** aceita JVM 25+, então não basta ter "um JDK recente" |
+| R6 | Nunca rodou em hardware real, pelo que o código indica | Conseguir um tablet alvo antes de fechar a Fase 1. É agora o **único** bloqueio da Fase 1 |
 | R7 | Watchdog (`deep-sleep`, `safety-loop`, `player-restart`) não exercitado | Validar na Fase 1 |
-| R8 | Framework do player | **Resolvido**: fica em Capacitor (§5.3) |
+| R8 | Framework e linguagem do player | **Resolvido**: Capacitor fica, nativo reescrito em Kotlin (§5.3) |
 | R9 | Codec `h265` aceito em `media_assets` tem suporte irregular em WebView | Validar na Fase 7 com o hardware alvo |
 
 Nada foi aplicado em produção, e o `hub` — que está no ar — não foi tocado. As migrations

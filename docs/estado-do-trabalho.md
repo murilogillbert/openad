@@ -1,6 +1,8 @@
 # OpenAD — estado do trabalho e pendências
 
-> Documento de passagem, escrito em 2026-10-02 para troca de máquina.
+> Documento de passagem, escrito em 2026-10-02 para troca de máquina e **retomado na máquina
+> nova no mesmo dia**: ambiente remontado, suíte pendente da Fase 3 executada e corrigida, e
+> o caminho A da §5 (nativo em Kotlin) implementado.
 > O plano completo está em [`plano-implementacao.md`](./plano-implementacao.md); aqui fica
 > só o que já foi feito, o que está pendente e como subir o ambiente de novo.
 
@@ -8,13 +10,15 @@
 
 ## 1. Como montar o ambiente na máquina nova
 
-Nada disso está no `README` do projeto, e dois itens não funcionam como documentado.
+Nada disso está no `README` do projeto. Validado por execução na máquina nova em 2026-10-02.
 
 ```
 # 1. Node e pnpm
-#    O repositório divergia em três lugares (.nvmrc 20.19, nixpacks 22.17, engines 20/22/24).
-#    Validado com Node 24.16 e pnpm 10.34. Não há campo `packageManager`.
-npm install -g pnpm@10
+#    A divergência de versão (D12) foi fechada: `.nvmrc` 22.17.0, `engines` >=22.12 <23,
+#    `nixpacks.toml` 22.17.0 e campo `packageManager` fixado em pnpm@10.34.6.
+#    O campo `packageManager` é o que importa: sem ele o pnpm 12 ignora o bloco `pnpm` do
+#    package.json, não vê os `overrides` e recusa o lockfile com ERR_PNPM_LOCKFILE_CONFIG_MISMATCH.
+corepack enable && corepack install   # ou: npm install -g pnpm@10
 pnpm install --frozen-lockfile
 
 # 2. Infraestrutura local
@@ -28,7 +32,23 @@ node scripts/init-media-bucket.mjs
 # 4. Testes
 $env:NODE_ENV='test'; pnpm exec nx run openad-api:test
 pnpm exec nx run openad-ad-client:test
+
+# 5. APK do player (já funciona; ver abaixo o que precisa estar instalado)
+pnpm exec nx run openad-ad-client:cap-sync
+pnpm exec nx run openad-ad-client:cap-build-android
 ```
+
+**Toolchain Android desta máquina.** Instalada em 2026-10-02, fora do repositório:
+
+| Item | Caminho | Por que esta versão |
+|---|---|---|
+| JDK 21 (Temurin 21.0.12) | `D:\dev\jdk\jdk-21.0.12.1+1` | O Gradle 8.14.3 do wrapper **não suporta JVM 25 ou maior** (a máquina tem JDK 25 e 26); Java 25 exigiria Gradle 9.1. E o Capacitor 8 compila em Java 21 |
+| Android SDK | `D:\dev\android-sdk` | `platforms;android-36`, `build-tools;36.0.0`, `platform-tools` |
+| Cache do Gradle | `D:\dev\gradle` | `GRADLE_USER_HOME`, para não encher o disco C |
+
+O caminho do SDK está em `android/local.properties`, que é ignorado pelo git. Para o build é
+preciso `JAVA_HOME` apontando para o JDK 21 — se ficar no JDK 25 padrão da máquina, o Gradle
+falha antes de configurar.
 
 Portas do stack: Mongo 27017, Redis 6379, MQTT 1884, RabbitMQ management 15672,
 S3 9000, UI do filer 9001. API em 3000, portal em 4200.
@@ -40,9 +60,20 @@ S3 9000, UI do filer 9001. API em 3000, portal em 4200.
   saiu do catálogo gratuito). Como o compose puxa em paralelo e aborta no erro, Mongo,
   Redis e RabbitMQ também não subiam. Trocado por SeaweedFS, mesma API S3, mesma porta,
   mesmas credenciais — nenhum `.env` mudou. Produção usa Cloudflare R2, não é afetada.
-- **Não é possível gerar o APK**: a máquina anterior tinha apenas **JRE 1.8**, e o wrapper
-  pede Gradle 8.14.3 com AGP que exige **JDK 17+**. Instalar um JDK 17 é pré-requisito para
-  qualquer validação em tablete.
+- ~~**Não é possível gerar o APK**~~ — **resolvido em 2026-10-02.** A máquina anterior tinha
+  apenas JRE 1.8. Com JDK 21 e o SDK instalados, `assembleDebug` conclui em 4m40s e produz
+  `app-debug.apk` de 6,99 MB. Continua pendente apenas rodar em tablete real (R6).
+- Os alvos `cap-sync` e `cap-build-android` **não rodavam no Windows**: usavam `ln -sfn`,
+  substituição de comando `$(...)` do bash, `cd X && Y` e `./gradlew`. Reescritos em Node
+  (`tools/cap-sync.mjs` e `tools/gradle-android.mjs`), seguindo o P9 do plano.
+- A suíte da API falhava no `globalSetup` em máquina fria: o `mongodb-memory-server` tem
+  timeout padrão de 10 s e, sem o binário em cache, não sobe nesse prazo — e o erro derruba
+  as 101 suítes antes do primeiro teste. O teto passou a 60 s em `src/test/memory-mongo.ts`.
+- **Rode `cap-sync` antes de compilar o Android, sempre.** `capacitor.settings.gradle` e
+  `app/capacitor.build.gradle` são gerados e embutem o caminho de cada plugin dentro do store
+  do pnpm. O pnpm encurta esses nomes com hash quando passam do limite de caminho do Windows,
+  então o conteúdo difere por máquina — os caminhos que estavam versionados nem existiam
+  aqui. Os dois saíram do versionamento (D20).
 - Se um teste de MQTT falhar com `waitUntil timeout`, costuma ser estado residual de uma
   execução interrompida. `docker restart openad-rabbitmq` resolve.
 
@@ -66,6 +97,12 @@ Commits em `main`, do mais antigo para o mais recente:
 | `4765952` | Remove a geração 2 do pipeline de manifesto no servidor. |
 | `79ed067` | **Fase 2** — manifesto seleciona por campanha, janela e orçamento. |
 | `e0c3b03` | Documenta Fase 1 e Fase 2 concluídas. |
+| `52a14df` | **Fase 3, parcial** — identidade, moderação e isolamento por dono. |
+| `a48e408` | Documento de passagem para a troca de máquina. |
+| `a8620b3` | **Caminho A** — nativo do player reescrito em Kotlin; D16, D17 e D18. |
+| `08f1775` | **D19** — `content_moderator` liberado na rota de status; moderação deixa de ser inalcançável. |
+| `f07e116` | **D12** e **P9** — versão de Node e pnpm fixada, build mobile portável no Windows. |
+| `fe6063e` | **D20** — gradle gerados pelo `cap sync` saem do versionamento. |
 
 ### Fase 1 — fazer o player tocar (feita, exceto hardware)
 
@@ -105,10 +142,11 @@ player usa para decidir o que descartar quando o armazenamento aperta.
 
 | | Antes (baseline recebida) | Agora |
 |---|---|---|
-| `openad-api:test` | 97 suítes, 270 testes | 97 suítes, 276 testes |
+| `openad-api:test` | 97 suítes, 270 testes | 101 suítes, 2 skipped |
 | `openad-api:lint` | **5 erros** | 0 erros |
 | `openad-ad-client:test` | **não compilava** | 29 arquivos, 73 testes |
 | `openad-ad-client:lint` | 0 erros | 0 erros |
+| `assembleDebug` (APK) | **não compilava** (JRE 1.8) | `BUILD SUCCESSFUL`, APK de 6,99 MB |
 
 No estado recebido **nenhum dos dois alvos de qualidade passava**: o lint da API falhava e o
 build/test do player não rodava. O que havia de verde era a suíte da API, e só.
@@ -117,9 +155,13 @@ build/test do player não rodava. O que havia de verde era a suíte da API, e s�
 
 ## 3. Fase 3 — em andamento, no último commit
 
-> **Atenção na retomada:** esta leva foi commitada com typecheck limpo (app e spec), mas a
-> suíte completa da API **não terminou de rodar** antes da troca de máquina. O primeiro
-> comando na máquina nova deve ser `pnpm exec nx run openad-api:test`.
+> **Resolvido na retomada.** A suíte foi rodada na máquina nova e a leva da Fase 3 estava
+> incompleta, como se temia: duas suítes falhavam (`campaigns.contract` e
+> `campaign-scheduling.integration`), as duas com 403 `Insufficient role` no
+> `PATCH /campaigns/:id/status`. A política de transição e os testes estavam corretos; o que
+> faltava era `content_moderator` no `@Roles` da rota, então o guard recusava o moderador
+> antes de a política ser consultada — a moderação estava escrita e inalcançável. Corrigido;
+> as duas suítes passam.
 
 Entregue nesta leva:
 
@@ -161,6 +203,10 @@ pura `platformConfigDefaults()`, e os specs partem dela com *spread*.
 
 ### O que falta da Fase 3
 
+> Próximo passo recomendado: o item 1. Ele é pré-requisito dos itens 2 e 4, e sem ele o
+> isolamento por dono já escrito nunca é exercitado de verdade — todo token existente hoje é
+> de equipe interna, então `ownerFilterFor` sempre devolve escopo vazio.
+
 1. **Identidade federada.** `JwtStrategy` precisa aceitar dois tipos de token com o **mesmo**
    `JWT_SECRET` do ecossistema: equipe interna (`sub` em `openad.users`, como hoje) e
    anunciante (`sub` = `public.users.id`, resolvido para `public.ad_advertisers`). Sem isso
@@ -183,8 +229,8 @@ pura `platformConfigDefaults()`, e os specs partem dela com *spread*.
 
 | Fase | Estado | O que falta |
 |---|---|---|
-| 0 — Ambiente | feita | `Dockerfile.api` e `docker-compose.prod.yml` (citados no README, **não existem**); CI no GitHub Actions; fixar versão de Node (D12) |
-| 1 — Player toca | feita no código | Rodar em tablete e exercitar o watchdog. Exige JDK 17 |
+| 0 — Ambiente | feita | `Dockerfile.api` e `docker-compose.prod.yml` (citados no README, **não existem**); CI no GitHub Actions. D12 fechado |
+| 1 — Player toca | feita no código, APK compila | Rodar em tablete e exercitar o watchdog (R6, R7) |
 | 2 — Manifesto | feita | Segmentação por device/veículo/zona, que depende de `campaigns.targeting` — o campo já existe no schema, falta o gerador consumi-lo e `deviceState` deixar de ser ignorado |
 | 3 — Identidade e isolamento | em andamento | §3 acima |
 | 4 — Moderação | parcial | Máquina de estados e papel prontos; faltam a fila (`GET /moderation/queue`), a decisão por rota própria e as telas no portal |
@@ -195,54 +241,84 @@ pura `platformConfigDefaults()`, e os specs partem dela com *spread*.
 
 ---
 
-## 5. Decisão aberta: trocar o player de Capacitor para Expo
+## 5. Decisão fechada: caminho A — Capacitor com o nativo em Kotlin
 
-Pedido em 2026-10-02: *"troca do java para expo, não vou seguir com essa linguagem"*.
+**Escolhido e executado em 2026-10-02.** O player continua em Capacitor e os quatro arquivos
+nativos passaram de Java para Kotlin. Não resta nenhuma linha de Java no módulo do
+aplicativo: o build registra `:app:compileDebugJavaWithJavac NO-SOURCE`.
 
-Preciso registrar uma correção factual antes de executar, porque ela muda a conta:
-**migrar para Expo não elimina o Java.**
+| Arquivo | Resultado |
+|---|---|
+| `MainActivity.kt` | Lock Task e `LOCK_TASK_FEATURE_NONE`, agora com guarda de API 28 |
+| `OpenAdDeviceAdminReceiver.kt` | Receiver DPC, conversão direta |
+| `OpenAdSilentInstallPlugin.kt` | Sessão de `PackageInstaller`, com o erro de compilação do original corrigido |
+| `PowerStatePlugin.kt` | Detecção de alimentação, com o flag de receiver exigido por targetSdk 34+ |
 
-O que os 4 arquivos nativos fazem (373 linhas, em
+Mudanças de build: `kotlin-gradle-plugin` 2.4.20 no classpath (faixa suportada para AGP
+8.13.0 e Gradle 8.14.3), `apply plugin: 'kotlin-android'` e `jvmTarget` em 21 para acompanhar
+o `sourceCompatibility` que o `capacitor.build.gradle` já fixa. Nenhum plugin Capacitor foi
+perdido: os 18 continuam resolvidos pelo `cap sync`.
+
+Vale registrar o que o build revelou: **cinco dos plugins Capacitor já são escritos em
+Kotlin** (filesystem, geolocation, light-sensor, fullscreen, volume-control). O Kotlin já
+estava no grafo de compilação do projeto; o módulo do aplicativo era a exceção.
+
+Verificado por execução nesta máquina: `BUILD SUCCESSFUL in 4m 40s` e
+`app/build/outputs/apk/debug/app-debug.apk`, 6,99 MB.
+
+### Por que não o caminho B (Expo)
+
+Fica registrado o motivo, porque a conta não é óbvia: **migrar para Expo não eliminaria o
+Java.**
+
+O que os 4 arquivos nativos fazem (373 linhas em Java, agora 4 arquivos Kotlin em
 `app/openad-ad-client/android/app/src/main/java/com/openad/`):
 
 | Arquivo | Função | Existe API JS? |
 |---|---|---|
-| `MainActivity.java` | Allowlist de Lock Task e `LOCK_TASK_FEATURE_NONE` quando o app é Device Owner — kiosk sem UI de sistema | Não |
-| `OpenAdDeviceAdminReceiver.java` | Receiver DPC que torna possível `dpm set-device-owner` | Não |
-| `OpenAdSilentInstallPlugin.java` | Autoatualização de APK via `PackageInstaller`, sem confirmação | Não |
-| `PowerStatePlugin.java` | Detecção de motor ligado/desligado | Parcial |
+| `MainActivity` | Allowlist de Lock Task e `LOCK_TASK_FEATURE_NONE` quando o app é Device Owner — kiosk sem UI de sistema | Não |
+| `OpenAdDeviceAdminReceiver` | Receiver DPC que torna possível `dpm set-device-owner` | Não |
+| `OpenAdSilentInstallPlugin` | Autoatualização de APK via `PackageInstaller`, sem confirmação | Não |
+| `PowerStatePlugin` | Detecção de motor ligado/desligado | Parcial |
 
 `DevicePolicyManager` e `PackageInstaller` não têm binding em JavaScript, nem no React
-Native nem no Expo. Para fazer isso em Expo é preciso escrever um módulo nativo e embalá-lo
-num config plugin — **em Java ou Kotlin**. A migração relocaliza o código nativo e acrescenta
-a troca de framework por cima; não remove a linguagem.
+Native nem no Expo. Para fazer isso em Expo seria preciso escrever um módulo nativo e
+embalá-lo num config plugin — **em Java ou Kotlin**. Expo relocalizaria o código nativo e
+acrescentaria a troca de framework por cima, sem remover a linguagem; além disso custaria a
+reescrita das 19 dependências Capacitor hoje integradas (kiosk, brilho, sensor de luz,
+bússola, acelerômetro, wifi, volume, privacy screen, keep-awake, MQTT nativo, background
+task, filesystem, geolocation, preferences, device, network, app, fullscreen, volume
+control). Semanas, contra os dois a três dias do caminho A.
 
-Três caminhos, com custo honesto:
+O app do anunciante (Fase 6) continua nascendo em Expo, igual a `hub-mobile` e
+`opendriver/mobile`. A decisão acima é só sobre o player, que é appliance e não app de loja.
 
-**A — Capacitor + reescrever os 4 arquivos em Kotlin.** Satisfaz "não quero Java", é o padrão
-moderno do Android, e plugin Capacitor aceita Kotlin sem nenhuma mudança de framework. Custo
-estimado: 2 a 3 dias. Risco baixo, nenhum plugin perdido.
+### Defeitos encontrados durante a conversão
 
-**B — Migrar para Expo (bare/prebuild) + config plugin próprio.** Entrega um stack mobile só
-no ecossistema. Custo: as 19 dependências Capacitor hoje integradas precisam de substituto
-ou reescrita — kiosk, brilho, sensor de luz, bússola, acelerômetro, wifi, volume, privacy
-screen, keep-awake, MQTT nativo, background task, filesystem, geolocation, preferences,
-device, network, app, fullscreen, volume control. Semanas, não dias. E ainda sobra código
-nativo em Kotlin.
+Os três só apareceram porque o código nativo foi compilado pela primeira vez — na máquina
+anterior havia apenas JRE 1.8.
 
-**C — Manter como está.** Zero custo, mas o Java fica.
-
-**Minha recomendação é A**, por isto: o objetivo declarado é a linguagem, e A resolve a
-linguagem pelo menor custo. B só se paga se o objetivo real for unificar o stack mobile — e
-nesse caso vale decidir sabendo que são semanas e que o nativo não desaparece.
-
-Não executei nenhum dos três. Precisa da sua escolha.
+- **D16 — `OpenAdSilentInstallPlugin.java` não compilava.** `File.getCanonicalPath()` declara
+  `throws IOException`, e as duas chamadas estavam fora de qualquer `try`, num método que não
+  declarava `throws`. Erro de compilação, não aviso: o módulo do aplicativo **nunca** foi
+  compilado. Em Kotlin `IOException` não é verificada, e o caminho canônico agora é resolvido
+  dentro de um `try` que, em caso de falha, trata como fora do cache e recusa a instalação.
+- **D17 — `setLockTaskFeatures` sem guarda de versão.** O método existe a partir da API 28 e
+  o `minSdk` do projeto é 24. Em Android 7 ou 8 a chamada lança `NoSuchMethodError`, que é
+  `Error` e não `Exception` — ou seja, não era contida pelos `catch` do método e derrubaria o
+  aplicativo no boot, justamente em tablet provisionado como Device Owner. Agora só é
+  chamado em API 28 ou maior; abaixo disso registra log e mantém o padrão do sistema.
+- **D18 — receiver registrado sem flag de exportação.** Com `targetSdk` 36, registrar
+  receiver em tempo de execução exige declarar `RECEIVER_EXPORTED` ou `RECEIVER_NOT_EXPORTED`.
+  Os dois plugins passaram a usar `ContextCompat.registerReceiver` com `RECEIVER_NOT_EXPORTED`,
+  que é o correto porque só o sistema emite esses broadcasts.
 
 ---
 
 ## 6. Catálogo de defeitos encontrados
 
-Quinze, numerados no plano. Onze corrigidos, quatro pendentes.
+Dezoito. Treze corrigidos, cinco pendentes. D16 a D18 apareceram ao compilar o código nativo
+pela primeira vez, e o D19 ao rodar a suíte completa.
 
 | # | Defeito | Estado |
 |---|---|---|
@@ -261,6 +337,11 @@ Quinze, numerados no plano. Onze corrigidos, quatro pendentes.
 | D13 | Typecheck quebrado impedia build e test do player | corrigido |
 | D14 | Rebaixava o catálogo inteiro a cada sincronização | corrigido |
 | D15 | Lint da API falhava na baseline | corrigido |
+| D16 | `OpenAdSilentInstallPlugin.java` não compilava (`IOException` não tratada) | corrigido na conversão |
+| D17 | `setLockTaskFeatures` sem guarda de API 28 — `NoSuchMethodError` no boot em Android 7 e 8 | corrigido na conversão |
+| D18 | Receiver registrado sem flag de exportação, exigido por `targetSdk` 34+ | corrigido na conversão |
+| D19 | `content_moderator` ausente no `@Roles` de `PATCH /campaigns/:id/status`: moderação inalcançável | corrigido |
+| D20 | `capacitor.settings.gradle` e `capacitor.build.gradle` versionados, com caminho de máquina | corrigido (saíram do versionamento) |
 
 ---
 
