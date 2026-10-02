@@ -126,6 +126,13 @@ vitest, **os alvos `build` e `test` do `openad-ad-client` falhavam por completo*
 testes verdes citados acima eram só do `openad-api`; o ad-client não executava nenhum.
 Corrigido; a suíte do player passou a rodar e revelou D14 e o D8 em ação.
 
+**D15 — O lint da API já falhava na baseline.** Cinco erros em arquivos sem relação entre
+si: variável de loop não usada em `reporting-aggregation.service.ts`, escape desnecessário
+de `-` em três regex de `media-ingestion`, e import `Types` sem uso em
+`rollout-eligibility.service.ts`. Corrigidos sem mudança de comportamento. Com D13, isso
+significa que **nenhum dos dois alvos de qualidade passava** no estado recebido: o lint da
+API falhava e o build/test do player não rodava.
+
 **D14 — O manifesto rebaixava o catálogo inteiro a cada sincronização.**
 `SyncOrchestratorService` iterava `doc.media` e baixava **todos** os itens, sem consultar o
 disco. Enquanto `syncNow()` não tinha chamador (D1) isso era inócuo; ligar o agendador sem
@@ -512,26 +519,43 @@ Sem isto não há produto para vender, e é o que mais rápido revela problema d
    loops, e `sync-scheduler.service.spec.ts` cobre serialização e tratamento de falha.
    29 arquivos, 73 testes passando; typecheck limpo; lint sem erro.
 
-**Pendente da Fase 1:**
+9. **feito** Geração 2 removida no **servidor**: a rota `GET /devices/:deviceId/manifest`,
+   `ManifestDeltaService`, `manifest-delta.util`, `ManifestVersionsRepository`,
+   `manifest-version.schema` e os tipos correspondentes em `libs/api-contracts`. A
+   collection `manifest_versions` fica órfã no banco; não vale migration para remover algo
+   que nunca recebeu escrita.
 
-- Remover a geração 2 no **servidor**: `GET /devices/:deviceId/manifest`,
-  `ManifestDeltaService`, `manifest-delta.util`, `ManifestVersionsRepository` e a collection
-  `manifest_versions`, que nenhum código de produção escreve.
-- Rodar em hardware real (R6) e exercitar o watchdog (R7). Nada disso foi validado, e o APK
-  não compila nesta máquina (R5).
+**Pendente da Fase 1:** rodar em hardware real (R6) e exercitar o watchdog (R7). Nada disso
+foi validado, e o APK não compila nesta máquina (R5).
 
 *Entregável:* tablet pareia, sincroniza, toca do disco e os play records chegam ao servidor.
-As três primeiras etapas estão feitas e cobertas por teste; a última só se confirma em
-hardware.
+Tudo que é verificável sem hardware está feito e coberto por teste.
 
-### Fase 2 — Seleção correta de manifesto
+### Fase 2 — Seleção correta de manifesto — **feita**
 
-Reescrever `ManifestGeneratorService.build()` (D4) para resolver campanhas `active` ∩ dentro
-da janela ∩ com orçamento (`campaign_daily_spend.pacingState != 'paused'`) ∩ compatíveis com
-o `targeting` versus device/veículo/zona. O `SpatialManifestBuilderService` já faz parte
-disso bem, inclusive aplicando multiplicador de pacing — serve de modelo.
+1. **feito** `CampaignEligibilityService` resolve as campanhas aptas: status `active`,
+   instante dentro de `scheduledStart`..`scheduledEnd`, e `campaign_daily_spend.pacingState`
+   diferente de `paused`. `near_cap` continua apto de propósito — desacelera, não para, que
+   é o que o multiplicador de entrega da arbitragem espacial já faz (D4).
+2. **feito** A prioridade do item passou a vir de `campaigns.priority`, invertendo a escala
+   (1 é a mais alta na campanha; maior é mais importante no manifesto, porque é essa
+   prioridade que o player usa para evicção de cache). Antes vinha da posição na lista
+   ordenada por `createdAt`: mídia mais recente ganhava prioridade maior, independente da
+   campanha.
+3. **feito** Piso em `filler + 10`, porque `campaigns.priority` só é validado como `@Min(1)`,
+   sem teto — sem o piso, campanha cadastrada com prioridade 90 empataria com o filler
+   institucional e seria descartada antes dele. Encontrado pelo próprio teste.
+4. **feito** Mídia sem `campaignId` (institucional, filler) continua entrando com prioridade
+   baixa: toca, mas é a primeira a sair sob pressão de armazenamento. Mídia excluída também
+   não gera mais URL presignada, o que economiza uma assinatura por item descartado em cada
+   manifesto pedido por qualquer tablet.
 
-*Entregável:* uma campanha pausada, vencida ou sem orçamento para de ser distribuída.
+**Pendente da Fase 2:** segmentação por device/veículo/zona, que depende de
+`campaigns.targeting` entrar no schema — vai junto com a Fase 3. O `void deviceState` segue
+no gerador, agora com `TODO` apontando a fase.
+
+*Entregável:* campanha pausada, vencida, em rascunho ou sem orçamento para de ser
+distribuída. Coberto por teste em isolamento e no gerador.
 
 ### Fase 3 — Identidade federada e isolamento
 
