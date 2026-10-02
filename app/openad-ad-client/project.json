@@ -89,20 +89,14 @@
       "executor": "nx:run-commands",
       "options": {
         "cwd": "{workspaceRoot}",
-        "parallel": false,
-        "commands": [
-          "ln -sfn ../../node_modules app/openad-ad-client/node_modules",
-          "pnpm exec nx run openad-ad-client:build --configuration=$(node -p \"process.env.NODE_ENV === 'production' ? 'production' : 'development'\")",
-          "node tools/copy-capacitor-web-index.cjs",
-          "cd app/openad-ad-client && ../../node_modules/.bin/cap sync android"
-        ]
+        "command": "node tools/cap-sync.mjs"
       }
     },
     "cap-build-android": {
       "executor": "nx:run-commands",
       "options": {
-        "cwd": "{workspaceRoot}/app/openad-ad-client/android",
-        "command": "./gradlew assembleDebug"
+        "cwd": "{workspaceRoot}",
+        "command": "node tools/gradle-android.mjs assembleDebug"
       }
     }
   }

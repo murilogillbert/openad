@@ -7,6 +7,15 @@ let memoryServer: MongoMemoryServer | null = null;
 
 const MONGO_URI_CACHE_PATH = path.join(process.cwd(), '.cache', 'openad', 'mongo-test-uri.txt');
 
+/**
+ * O padrao de `mongodb-memory-server` e 10s, e ele nao e configuravel por variavel de
+ * ambiente. Em maquina fria isso derruba a suite inteira no `globalSetup`, antes de qualquer
+ * teste rodar: na primeira execucao o binario ainda esta sendo baixado e, mesmo depois,
+ * medimos 7s so na criacao do storage engine do WiredTiger. O custo de um teto mais alto e
+ * zero quando a instancia sobe rapido, porque o timer e cancelado na hora.
+ */
+const MONGOD_LAUNCH_TIMEOUT_MS = 60_000;
+
 async function isMongoReachable(baseUri: string): Promise<boolean> {
   const uri = baseUri.replace(/\/$/, '');
   // Parse `mongodb://[user:pass@]host[:port]` best-effort (sufficient for memory server URIs).
@@ -84,7 +93,9 @@ export async function getMongoTestBaseUri(): Promise<string> {
   }
 
   if (!memoryServer) {
-    memoryServer = await MongoMemoryServer.create();
+    memoryServer = await MongoMemoryServer.create({
+      instance: { launchTimeout: MONGOD_LAUNCH_TIMEOUT_MS },
+    });
     try {
       fs.mkdirSync(path.dirname(MONGO_URI_CACHE_PATH), { recursive: true });
       fs.writeFileSync(MONGO_URI_CACHE_PATH, memoryServer.getUri().replace(/\/$/, ''), 'utf8');

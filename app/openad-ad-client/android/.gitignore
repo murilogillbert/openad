@@ -99,3 +99,9 @@ app/src/main/assets/public
 app/src/main/assets/capacitor.config.json
 app/src/main/assets/capacitor.plugins.json
 app/src/main/res/xml/config.xml
+# Gerados pelo `cap sync` e especificos da maquina: embutem o caminho de cada plugin dentro
+# do store do pnpm, que o pnpm encurta com hash quando o nome passa do limite de caminho do
+# Windows. Versionar isso faz o build falhar em qualquer maquina com layout diferente.
+# Rode `nx run openad-ad-client:cap-sync` antes de compilar.
+capacitor.settings.gradle
+app/capacitor.build.gradle

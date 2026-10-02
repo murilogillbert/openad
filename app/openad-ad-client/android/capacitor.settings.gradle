@@ -3,13 +3,13 @@ include ':capacitor-android'
 project(':capacitor-android').projectDir = new File('../../../node_modules/.pnpm/@capacitor+android@8.3.0_@capacitor+core@8.3.0/node_modules/@capacitor/android/capacitor')
 
 include ':boengli-capacitor-fullscreen'
-project(':boengli-capacitor-fullscreen').projectDir = new File('../../../node_modules/.pnpm/@boengli+capacitor-fullscreen@0.0.20-beta.1_@capacitor+core@8.3.0/node_modules/@boengli/capacitor-fullscreen/android')
+project(':boengli-capacitor-fullscreen').projectDir = new File('../../../node_modules/.pnpm/@boengli+capacitor-fullscre_0d80e9c71699af6ce6d85c5a19854c0d/node_modules/@boengli/capacitor-fullscreen/android')
 
 include ':capacitor-community-keep-awake'
 project(':capacitor-community-keep-awake').projectDir = new File('../../../node_modules/.pnpm/@capacitor-community+keep-awake@8.0.0_@capacitor+core@8.3.0/node_modules/@capacitor-community/keep-awake/android')
 
 include ':capacitor-community-privacy-screen'
-project(':capacitor-community-privacy-screen').projectDir = new File('../../../node_modules/.pnpm/@capacitor-community+privacy-screen@6.0.0_@capacitor+core@8.3.0/node_modules/@capacitor-community/privacy-screen/android')
+project(':capacitor-community-privacy-screen').projectDir = new File('../../../node_modules/.pnpm/@capacitor-community+privac_f4e1d54ca8552a48c5eaa3415cfe8712/node_modules/@capacitor-community/privacy-screen/android')
 
 include ':capacitor-app'
 project(':capacitor-app').projectDir = new File('../../../node_modules/.pnpm/@capacitor+app@8.1.0_@capacitor+core@8.3.0/node_modules/@capacitor/app/android')
@@ -30,7 +30,7 @@ include ':capacitor-preferences'
 project(':capacitor-preferences').projectDir = new File('../../../node_modules/.pnpm/@capacitor+preferences@8.0.1_@capacitor+core@8.3.0/node_modules/@capacitor/preferences/android')
 
 include ':capawesome-capacitor-background-task'
-project(':capawesome-capacitor-background-task').projectDir = new File('../../../node_modules/.pnpm/@capawesome+capacitor-background-task@8.0.2_@capacitor+core@8.3.0/node_modules/@capawesome/capacitor-background-task/android')
+project(':capawesome-capacitor-background-task').projectDir = new File('../../../node_modules/.pnpm/@capawesome+capacitor-backg_cf711ed4224a6dfd7ea9d896c53fbd08/node_modules/@capawesome/capacitor-background-task/android')
 
 include ':capgo-capacitor-accelerometer'
 project(':capgo-capacitor-accelerometer').projectDir = new File('../../../node_modules/.pnpm/@capgo+capacitor-accelerometer@8.0.22_@capacitor+core@8.3.0/node_modules/@capgo/capacitor-accelerometer/android')
@@ -54,4 +54,4 @@ include ':capgo-capacitor-wifi'
 project(':capgo-capacitor-wifi').projectDir = new File('../../../node_modules/.pnpm/@capgo+capacitor-wifi@8.1.9_@capacitor+core@8.3.0/node_modules/@capgo/capacitor-wifi/android')
 
 include ':odion-cloud-capacitor-volume-control'
-project(':odion-cloud-capacitor-volume-control').projectDir = new File('../../../node_modules/.pnpm/@odion-cloud+capacitor-volume-control@2.0.3_@capacitor+core@8.3.0/node_modules/@odion-cloud/capacitor-volume-control/android')
+project(':odion-cloud-capacitor-volume-control').projectDir = new File('../../../node_modules/.pnpm/@odion-cloud+capacitor-volu_0ff15fe2fb0147a531c547a92aff761e/node_modules/@odion-cloud/capacitor-volume-control/android')
