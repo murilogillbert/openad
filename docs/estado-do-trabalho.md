@@ -213,9 +213,11 @@ pura `platformConfigDefaults()`, e os specs partem dela com *spread*.
    o isolamento por dono já existe mas nunca é exercitado, porque todo token atual é interno.
 2. **Rotas do anunciante** (`/api/v1/advertiser/*`) e **de moderação**
    (`/api/v1/moderation/*`) — listadas na §4.3 do plano.
-3. **Tabelas em `public`** (`ad_advertisers`, `ad_credit_purchases`, `ad_credit_ledger`,
-   `ad_payouts`): **são do repositório `hub`**, onde eu não tenho permissão para mexer.
-   Precisa ser feito lá, como migration aditiva, seguindo o protocolo de backup.
+3. ~~**Tabelas em `public`**, que seriam do repositório `hub`~~ — **deixou de ser bloqueio em
+   2026-10-02.** O padrão do ecossistema é schema próprio por serviço, não tabela nova em
+   `public`: o openad ganha um schema `openad` no mesmo banco e espelha de `public` só as
+   colunas de `users` que usa. Nada a fazer no repositório `hub` para isso. E `ad_payouts` não
+   precisa existir — ver `plano-ecossistema-e-mobile.md` §1.1 e §1.3.
 4. **Escopo por dono nas rotas de mídia** (`/media`, `/media/vfs/*`): a função pura está
    pronta, falta aplicá-la nos controllers de mídia.
 5. **Dinheiro em centavos inteiros** (P2 da padronização). `campaigns.budget.totalAmount` é

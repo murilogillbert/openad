@@ -289,6 +289,15 @@ lados; só acrescentar `ads:campaign:write`, `ads:payout:read`.
 
 ### 4.1 Novas tabelas em `public` (dono: hub, migration aditiva)
 
+> **Corrigido em 2026-10-02 — esta seção está superada.** Ao ler o `opendriver` no código,
+> ficou claro que o padrão do ecossistema não é acrescentar tabelas em `public`: cada serviço
+> tem **schema próprio no mesmo banco** e espelha de `public` só as colunas que usa
+> (`schemas = ["opendriver", "public"]`, 11 colunas de `users`, FKs cruzando schema com
+> `onDelete: Restrict`). O openad ganha um schema `openad`, e com isso deixa de depender de
+> permissão no repositório `hub`. Além disso `ad_payouts` não precisa existir: o
+> `opendriver` já tem `driver_earnings` + `payout_requests` + telas de saque. Ver
+> [`plano-ecossistema-e-mobile.md`](./plano-ecossistema-e-mobile.md) §1.1 e §1.3.
+
 ```
 ad_advertisers        id, user_id → users.id, legal_name, document_enc, document_hash,
                       status (active|suspended), created_at, updated_at
@@ -400,6 +409,12 @@ mobile**, como `libs/api-contracts` já faz.
 **P2 — Dinheiro em inteiro de centavos.** `campaigns.budget` em float contra `decimal.js` +
 centavos nos outros dois. `campaign_daily_spend` já conta em `billableCostCents`, então o
 openad já é inconsistente internamente. Converter na migration da §4.2.
+
+> **Correção de 2026-10-02:** a premissa "centavos nos outros dois" está errada. O hub usa
+> `Decimal(12,2)` **em reais** (`users.cashback_balance`, `cashback_entries.amount`) e
+> `commissionRules.ts` opera em reais com `decimal.js`. A regra correta é: centavos inteiros
+> dentro do openad, conversão para `Decimal` de 2 casas na fronteira com `public`. Ver
+> `plano-ecossistema-e-mobile.md` §1.2.
 
 **P3 — Envelope de resposta e erros.** O openad é inconsistente consigo mesmo: parte das
 rotas devolve `{ success, data }`, parte devolve o objeto cru. Unificar no formato do hub, e
