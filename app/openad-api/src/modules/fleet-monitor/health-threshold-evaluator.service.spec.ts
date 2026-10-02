@@ -1,6 +1,5 @@
 import type { HealthMetrics } from '@openad/domain';
 import { HealthThresholdEvaluatorService } from './health-threshold-evaluator.service';
-import type { PlatformConfig } from '@openad/api-contracts';
 import type { PlatformConfigRuntimeService } from '../platform-config/platform-config-runtime.service';
 import { platformConfigDefaults } from '../platform-config/platform-config.service';
 

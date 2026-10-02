@@ -130,9 +130,16 @@ export class CampaignsController {
     return this.rules.create(campaignId, dto, extractFleetAuditFromRequest(req));
   }
 
+  /**
+   * `content_moderator` entra aqui porque aprovar e recusar sao transicoes de status, e a
+   * decisao de quem pode faze-las fica na politica, nao no guard: o guard libera o papel e
+   * `CampaignLifecycleService.patchStatus` barra com 403 quem nao for moderador na
+   * transicao `pending_review -> active|rejected`. Sem o papel no guard, o moderador levava
+   * 403 de `Insufficient role` antes de a politica ser consultada.
+   */
   @Patch(':campaignId/status')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('campaign_manager', 'fleet_admin', 'super_admin')
+  @Roles('campaign_manager', 'fleet_admin', 'super_admin', 'content_moderator')
   patchStatus(
     @Param('campaignId') campaignId: string,
     @Body() dto: PatchCampaignStatusDto,
