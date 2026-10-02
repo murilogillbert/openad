@@ -266,7 +266,33 @@ Kotlin** (filesystem, geolocation, light-sensor, fullscreen, volume-control). O 
 estava no grafo de compilação do projeto; o módulo do aplicativo era a exceção.
 
 Verificado por execução nesta máquina: `BUILD SUCCESSFUL in 4m 40s` e
-`app/build/outputs/apk/debug/app-debug.apk`, 6,99 MB.
+`app/build/outputs/apk/debug/app-debug.apk`.
+
+O tamanho do APK varia com a configuração do bundle web, não com o nativo: 6,99 MB quando o
+`build` do Angular roda em `production` e 8,97 MB em `development`, que é o que o `cap-sync`
+escolhe quando `NODE_ENV` não é `production`. Mesmo código nativo nos dois.
+
+**Não existe keystore de release.** O `app/build.gradle` já lê `OPENAD_RELEASE_STORE_FILE` e
+as variáveis irmãs, mas a chave nunca foi criada, então só há APK de debug. Isso é
+pré-requisito do primeiro tablete em campo, e merece processo: a autoatualização silenciosa
+por `PackageInstaller` **exige que o APK novo tenha a mesma assinatura do instalado**. Perder
+essa chave significa reprovisionar a frota inteira à mão, tablete por tablete — não existe
+recuperação.
+
+### iOS: o player é appliance Android, por desenho
+
+Não existe projeto iOS no repositório e não deve existir. O `capacitor.config.ts` declara só
+`android`, e `@capacitor/ios` estava no `package.json` sem nunca ter sido usado — removido.
+
+Não é descuido. Nenhuma das quatro funções nativas tem contraparte no iOS: não há Device
+Owner (o análogo é Autonomous Single App Mode, que exige aparelho supervisionado e perfil de
+MDM), não há receiver DPC, e **instalação silenciosa é impossível** no iOS em qualquer
+circunstância. O MDM da `specs/009` inteiro — subir APK, rollout faseado, QR de instalação —
+não tem equivalente. A escolha de Kotlin não tem relação com isso: o impedimento é a
+plataforma.
+
+Quem precisa de iOS é o app do anunciante (Fase 6), que é Expo e TypeScript, sem nenhuma
+linha de Kotlin.
 
 ### Por que não o caminho B (Expo)
 

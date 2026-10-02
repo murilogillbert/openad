@@ -87,7 +87,6 @@
     "@capacitor/device": "^8.0.2",
     "@capacitor/filesystem": "^8.1.2",
     "@capacitor/geolocation": "^8.2.0",
-    "@capacitor/ios": "^8.3.0",
     "@capacitor/network": "^8.0.1",
     "@capacitor/preferences": "^8.0.1",
     "@capawesome/capacitor-background-task": "^8.0.2",
