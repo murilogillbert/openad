@@ -119,10 +119,27 @@ complica ACL e observabilidade.
 **D12 — Versão de Node divergente em três lugares.** `.nvmrc` diz 20.19, `nixpacks.toml`
 diz 22.17.0, `engines` aceita 20/22/24. Não há campo `packageManager`.
 
-> Por que a suíte de testes não pega nada disso: ela está **verde** — 97 suítes, 270 testes
-> passando, 2 skipped, confirmado por execução. Os defeitos D1–D3 são de *fiação entre
-> componentes*, exatamente o que teste unitário com provider mockado não alcança. O
-> `command-handler.service.spec.ts`, por exemplo, mocka o `ManifestSyncService`.
+**D13 — O player não compilava.** `kioskBgTaskId` em `tablet-native-integration.service.ts`
+estava declarado `number`, mas o `taskId` do `@capawesome/capacitor-background-task` é
+`string` (`CallbackID`). Três erros de tipo e, como o compilador do Angular roda antes do
+vitest, **os alvos `build` e `test` do `openad-ad-client` falhavam por completo**. Os 270
+testes verdes citados acima eram só do `openad-api`; o ad-client não executava nenhum.
+Corrigido; a suíte do player passou a rodar e revelou D14 e o D8 em ação.
+
+**D14 — O manifesto rebaixava o catálogo inteiro a cada sincronização.**
+`SyncOrchestratorService` iterava `doc.media` e baixava **todos** os itens, sem consultar o
+disco. Enquanto `syncNow()` não tinha chamador (D1) isso era inócuo; ligar o agendador sem
+corrigir teria custado da ordem de dezenas de GB por dia por tablet em link móvel.
+Corrigido: pula quando o hash não mudou desde a sincronização anterior **e** o arquivo local
+tem o tamanho esperado — hash sozinho não enxerga evicção, tamanho sozinho não enxerga troca
+de conteúdo.
+
+> Por que a suíte de testes não pegava nada disso: a do `openad-api` está **verde** — 97
+> suítes, 270 testes passando, 2 skipped, confirmado por execução — e a do `openad-ad-client`
+> **não rodava** (D13). Mesmo rodando, D1–D3 são de *fiação entre componentes*, exatamente o
+> que teste unitário com provider mockado não alcança: os dois serviços desligados tinham
+> spec própria passando, e o `command-handler.service.spec.ts` mockava o `ManifestSyncService`.
+> A guarda que fecha essa lacuna é `app-wiring.spec.ts`, que afirma a ligação em si.
 
 ---
 
@@ -470,23 +487,42 @@ Ordenadas por dependência e por risco de descobrir tarde que algo não funciona
 - P6 (versão de Node), P10 (lint/format), `Dockerfile.api` e `docker-compose.prod.yml` (D10).
 - CI no GitHub Actions espelhando o dos outros repositórios.
 
-### Fase 1 — Fazer o player tocar
+### Fase 1 — Fazer o player tocar — **feita no cliente**
 
 Sem isto não há produto para vender, e é o que mais rápido revela problema de hardware.
 
-1. Montar o `PlaybackControllerComponent` como shell do app, com pareamento como estado
-   condicional e não como rota de entrada (D2).
-2. Disparar `SyncOrchestratorService.syncNow()`: no boot após pareamento, periodicamente, e
-   nos comandos `SYNC_SCHEDULE` e `EMERGENCY_SYNC` — hoje `SYNC_SCHEDULE` só responde ack e
-   não faz nada (D1).
-3. Injetar `PlayBatchUploaderService` em algo instanciado no boot (D3).
-4. Remover gerações 1 e 2: `MediaSyncService`, `ManifestSyncService`, a rota de manifesto
-   delta, `manifest_versions` e o `registerDownload()` que mente sobre arquivos inexistentes
-   e corrompe a contabilidade usada pela geração 3 (D1, D7).
-5. **Teste de integração que a suíte atual não tem**: manifesto → download → arquivo em
-   disco → play record no servidor, sem mock no meio. É o teste que teria pego D1–D3.
+1. **feito** `PlayerShellComponent` decide por estado — pareamento enquanto não há
+   `deviceId`, player depois. `pairing` e `playback` seguem como redirecionamento (D2).
+2. **feito** `SyncSchedulerService` dispara `syncNow()` no boot, no fim do pareamento, a
+   cada 15 min, na volta da rede (só quando a última tentativa falhou) e por comando MQTT,
+   com retry de 1 min e serialização num único *in-flight* (D1).
+3. **feito** `PlayBatchUploaderService.start()` explícito, chamado por `APP_INITIALIZER` (D3).
+4. **feito** `SYNC_SCHEDULE` passou a sincronizar de fato — antes só respondia ack de
+   sucesso e não fazia nada.
+5. **feito** Telemetria deixou de ser ficção: o bloco `playback` vem do
+   `PlaybackEngineService`, não da regra de maior prioridade do schedule retido com
+   `currentCampaignId: "rule:{ruleId}"`. O reinício diário das 3h também passou a consultar
+   o engine.
+6. **feito** D13 (typecheck), D14 (rebaixa de catálogo) e D8 (buffer NDJSON com append,
+   `markUploaded` removendo as linhas enviadas) corrigidos — os três apareceram ao ligar o
+   pipeline e bloqueariam a entrega.
+7. **feito** Gerações 1 e 2 removidas no cliente: `MediaSyncService`, `ManifestSyncService`,
+   o download morto e a publicação de impressão falsa em `AdPlaybackService` (D1, D7).
+8. **feito** Guardas de regressão: `app-wiring.spec.ts` afirma que o bootstrap liga os dois
+   loops, e `sync-scheduler.service.spec.ts` cobre serialização e tratamento de falha.
+   29 arquivos, 73 testes passando; typecheck limpo; lint sem erro.
+
+**Pendente da Fase 1:**
+
+- Remover a geração 2 no **servidor**: `GET /devices/:deviceId/manifest`,
+  `ManifestDeltaService`, `manifest-delta.util`, `ManifestVersionsRepository` e a collection
+  `manifest_versions`, que nenhum código de produção escreve.
+- Rodar em hardware real (R6) e exercitar o watchdog (R7). Nada disso foi validado, e o APK
+  não compila nesta máquina (R5).
 
 *Entregável:* tablet pareia, sincroniza, toca do disco e os play records chegam ao servidor.
+As três primeiras etapas estão feitas e cobertas por teste; a última só se confirma em
+hardware.
 
 ### Fase 2 — Seleção correta de manifesto
 
