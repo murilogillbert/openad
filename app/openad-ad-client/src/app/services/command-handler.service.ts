@@ -9,7 +9,7 @@ import {
 import { ApiClientService } from './api-client.service';
 import { MqttClientService } from '../features/mqtt/services/mqtt-client.service';
 import { StorageManagerService } from './storage-manager.service';
-import { ManifestSyncService } from './sync/manifest-sync.service';
+import { SyncSchedulerService } from '../features/sync/services/sync-scheduler.service';
 import { AppUpdateService } from './app-update.service';
 import { TabletNativeIntegrationService } from './tablet-native-integration.service';
 
@@ -25,7 +25,7 @@ export class CommandHandlerService {
   private readonly mqtt = inject(MqttClientService);
   private readonly storage = inject(StorageManagerService);
   private readonly api = inject(ApiClientService);
-  private readonly manifestSync = inject(ManifestSyncService);
+  private readonly sync = inject(SyncSchedulerService);
   private readonly appUpdate = inject(AppUpdateService);
   private readonly native = inject(TabletNativeIntegrationService);
 
@@ -50,13 +50,17 @@ export class CommandHandlerService {
         }
         break;
       case 'SYNC_SCHEDULE':
+        // Antes isto so respondia ack e nao fazia nada: o comando existia no painel, o
+        // operador o disparava, o tablet confirmava sucesso e nenhuma sincronizacao ocorria.
+        void this.sync.syncNow();
         await ack({ status: 'success', completedAt: new Date().toISOString(), details: null });
         break;
       case 'CLEAR_CACHE':
         try {
           await this.storage.clearMediaCache();
-          this.manifestSync.onCacheCleared();
-          void this.manifestSync.runManifestSync();
+          // Full obrigatorio: o cache de manifesto em IndexedDB sobrevive ao clear, e sem
+          // forcar full o delta nao traria de volta midia cujos arquivos acabaram de sair.
+          void this.sync.syncNow({ forceFull: true });
           await ack({ status: 'success', completedAt: new Date().toISOString(), details: null });
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
@@ -83,8 +87,7 @@ export class CommandHandlerService {
         await this.applyBrightness(cmd.payload.level, ack);
         break;
       case 'EMERGENCY_SYNC':
-        this.manifestSync.requestEmergencySync();
-        void this.manifestSync.runManifestSync({ forceFullSync: true });
+        void this.sync.syncNow({ forceFull: true });
         await ack({
           status: 'success',
           completedAt: new Date().toISOString(),

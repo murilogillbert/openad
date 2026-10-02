@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { signal } from '@angular/core';
 import { PlayerRestartScheduler } from './player-restart.scheduler';
 import { AdPlaybackService } from '../ad-playback.service';
+import { PlaybackEngineService } from '../../features/playback/services/playback-engine.service';
 import { DeepSleepService } from './deep-sleep.service';
 
 describe('PlayerRestartScheduler', () => {
@@ -15,7 +16,12 @@ describe('PlayerRestartScheduler', () => {
           provide: AdPlaybackService,
           useValue: {
             playbackPaused: signal(true),
-            activeRule: signal(null),
+          },
+        },
+        {
+          provide: PlaybackEngineService,
+          useValue: {
+            adLoopActive: () => false,
           },
         },
         {

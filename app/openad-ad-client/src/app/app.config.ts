@@ -30,6 +30,8 @@ import { TabletNativeIntegrationService } from './services/tablet-native-integra
 import { AppUpdateSchedulerService } from './services/app-update-scheduler.service';
 import { GEO_FEATURE_PROVIDERS } from './features/geo/geo.providers';
 import { SpatialRuntimeService } from './features/geo/services/spatial-runtime.service';
+import { SyncSchedulerService } from './features/sync/services/sync-scheduler.service';
+import { PlayBatchUploaderService } from './features/analytics/services/play-batch-uploader.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -109,9 +111,32 @@ export const appConfig: ApplicationConfig = {
           playback: AdPlaybackService
         ) =>
         async () => {
+          // `AdPlaybackService` esta nas deps porque e ele quem assina os topicos MQTT de
+          // config, schedule e comando no construtor. Nada o injeta no caminho de
+          // reproducao, entao sem esta linha o tablet pareado nao receberia comando remoto.
           void playback;
           health.wireStorageFullFlag();
           await power.start();
+        },
+    },
+    {
+      // Sincronizacao de midia e envio de analytics. Os dois loops precisam de start()
+      // explicito: antes dependiam de alguem injetar o servico, e ninguem injetava.
+      provide: APP_INITIALIZER,
+      multi: true,
+      deps: [PLATFORM_ID, SyncSchedulerService, PlayBatchUploaderService],
+      useFactory:
+        (
+          platformId: object,
+          sync: SyncSchedulerService,
+          uploader: PlayBatchUploaderService
+        ) =>
+        () => {
+          if (!isPlatformBrowser(platformId)) {
+            return;
+          }
+          sync.start();
+          uploader.start();
         },
     },
     {

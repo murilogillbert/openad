@@ -3,6 +3,7 @@ import { DestroyRef, inject, Injectable, PLATFORM_ID } from '@angular/core';
 import { Device } from '@capacitor/device';
 import type { TelemetryPayload } from '@openad/mqtt-contracts';
 import { AdPlaybackService } from './ad-playback.service';
+import { PlaybackEngineService } from '../features/playback/services/playback-engine.service';
 import { MqttClientService } from '../features/mqtt/services/mqtt-client.service';
 import { StorageManagerService } from './storage-manager.service';
 import { TabletNativeIntegrationService } from './tablet-native-integration.service';
@@ -18,6 +19,7 @@ export class HealthReportingService {
   private readonly storage = inject(StorageManagerService);
   private readonly mqtt = inject(MqttClientService);
   private readonly playback = inject(AdPlaybackService);
+  private readonly engine = inject(PlaybackEngineService);
   private readonly nativeIntegration = inject(TabletNativeIntegrationService);
   private readonly deviceInfo = inject(DeviceInfoService);
   private readonly platformId = inject(PLATFORM_ID);
@@ -88,7 +90,16 @@ export class HealthReportingService {
     const batteryPercent = Math.round((battery.batteryLevel ?? 0.5) * 100);
     const freeBytes = await this.storage.getAvailableBytes();
     const storageFreeGb = Math.max(0, freeBytes / 1024 ** 3);
-    const playback = this.playback.getTelemetryPlayback();
+    // Motor desligado tem precedencia: o player pode ter clipe carregado, mas nada esta
+    // sendo exibido. O resto vem do engine, que sabe o que esta na tela de verdade.
+    const playback = this.playback.playbackPaused()
+      ? {
+          status: 'idle' as const,
+          currentAssetId: null,
+          currentCampaignId: null,
+          errorCode: null,
+        }
+      : this.engine.getTelemetryPlayback();
     const alertFlags: TelemetryPayload['alertFlags'] = [];
     if (this.storageFullFlagged) {
       alertFlags.push('LOW_STORAGE');

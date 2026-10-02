@@ -8,6 +8,7 @@ import { SYNC_LAST_MANIFEST_VERSION_KEY } from '../models/sync-state.model';
 import type {
   CachedManifestDocument,
   DownloadedMediaEntry,
+  ManifestMediaItem,
   ManifestSuccessResponse,
 } from '../models/manifest-api.model';
 import { DownloadProgressIdbService } from './download-progress-idb.service';
@@ -131,9 +132,25 @@ export class SyncOrchestratorService {
       }
     }
 
+    /**
+     * Hash conhecido por midia na sincronizacao anterior. `mediaId` e estavel quando o
+     * conteudo e substituido, entao o hash e o que diz se o arquivo local ainda serve.
+     */
+    const previousHashById = new Map(
+      (prevDoc?.media ?? []).map((m) => [m.mediaId, m.hash] as const)
+    );
+
     const downloaded: DownloadedMediaEntry[] = [];
 
     for (const item of doc.media) {
+      if (await this.isAlreadyOnDisk(item, previousHashById)) {
+        downloaded.push({
+          mediaId: item.mediaId,
+          hash: item.hash,
+          verified: true,
+        });
+        continue;
+      }
       await this.ensureSpaceWithPriorityEviction(doc, item.fileSize);
       const buf = await this.downloads.downloadVerifiedMedia({
         url: item.downloadUrl,
@@ -165,6 +182,28 @@ export class SyncOrchestratorService {
     });
 
     this.manifestEvents.notifyManifestSynced();
+  }
+
+  /**
+   * `true` quando a midia ja esta em disco com o mesmo conteudo da ultima sincronizacao.
+   *
+   * Dois criterios juntos: o hash do manifesto nao mudou desde a sincronizacao anterior
+   * **e** o arquivo local tem exatamente o tamanho esperado. O hash sozinho nao basta
+   * (o arquivo pode ter sido removido por evicao ou por `CLEAR_CACHE`); o tamanho sozinho
+   * tambem nao (conteudo trocado pode ter o mesmo tamanho).
+   *
+   * Nao reverificamos o SHA-256 aqui de proposito: ele foi conferido no download, e
+   * recalcular exigiria ler o arquivo inteiro a cada ciclo de sincronizacao.
+   */
+  private async isAlreadyOnDisk(
+    item: ManifestMediaItem,
+    previousHashById: ReadonlyMap<string, string>
+  ): Promise<boolean> {
+    if (previousHashById.get(item.mediaId) !== item.hash) {
+      return false;
+    }
+    const localSize = await this.syncStorage.getMediaFileSize(item.mediaId);
+    return localSize !== null && localSize === item.fileSize;
   }
 
   private async ensureSpaceWithPriorityEviction(

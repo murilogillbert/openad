@@ -37,10 +37,23 @@ export class PlayBatchUploaderService {
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
 
-  constructor() {
-    if (!isPlatformBrowser(this.platformId)) {
+  private started = false;
+
+  /**
+   * Liga o envio periodico. Precisa ser chamado explicitamente (`APP_INITIALIZER`).
+   *
+   * Antes isso acontecia no construtor, e o servico nao era injetado por ninguem: estava
+   * declarado em `AnalyticsModule` e nada o referenciava, entao nunca era instanciado e o
+   * flush nunca comecava — os play records acumulavam no buffer em disco e nada de
+   * analytics saía do tablet. Depender de efeito colateral de construtor para ligar um
+   * loop e o que esconde esse tipo de falha; daí o `start()` explicito.
+   */
+  start(): void {
+    if (!isPlatformBrowser(this.platformId) || this.started) {
       return;
     }
+    this.started = true;
+
     interval(FLUSH_MS)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -49,10 +62,14 @@ export class PlayBatchUploaderService {
       .subscribe();
 
     if (Capacitor.isPluginAvailable('Network')) {
-      void Network.addListener('networkStatusChange', () => {
-        void this.tryFlush();
+      void Network.addListener('networkStatusChange', (status) => {
+        if (status.connected) {
+          void this.tryFlush();
+        }
       });
     }
+
+    void this.tryFlush();
   }
 
   /** Manual flush (e.g. app resume). */

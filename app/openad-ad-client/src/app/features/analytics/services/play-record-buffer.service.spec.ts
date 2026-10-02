@@ -67,6 +67,11 @@ describe('PlayRecordBufferService', () => {
     expect(pending).toHaveLength(0);
   });
 
+  /**
+   * Afere pela API publica, e nao pelo conteudo do localStorage: o formato de persistencia
+   * mudou de documento JSON unico para NDJSON com append, porque reescrever a lista inteira
+   * a cada registro era quadratico e fazia justamente este teste estourar o timeout.
+   */
   it('caps store at 2000 plays (oldest dropped)', async () => {
     const svc = TestBed.inject(PlayRecordBufferService);
     for (let i = 0; i < 2001; i += 1) {
@@ -75,9 +80,33 @@ describe('PlayRecordBufferService', () => {
         uniqueEventId: `00000000-0000-4000-8000-${i.toString(16).padStart(12, '0')}`,
       });
     }
-    const raw = globalThis.localStorage?.getItem('openad_analytics_pending_plays_v1');
-    expect(raw).toBeTruthy();
-    const parsed = JSON.parse(raw!) as { plays: unknown[] };
-    expect(parsed.plays.length).toBe(2000);
+    expect(await svc.count()).toBe(2000);
+
+    const pending = await svc.peekPendingNotUploaded(5000);
+    // O descartado foi o primeiro, nao o ultimo.
+    expect(pending[0]?.uniqueEventId).toBe(
+      `00000000-0000-4000-8000-${(1).toString(16).padStart(12, '0')}`
+    );
+  });
+
+  /**
+   * Regressao: `markUploaded` apenas virava a flag e mantinha a linha. As enviadas
+   * continuavam ocupando o teto, e o corte descartava os registros mais antigos ainda
+   * **nao** enviados — perda silenciosa de veiculacao faturavel.
+   */
+  it('markUploaded remove as linhas enviadas, liberando o teto', async () => {
+    const svc = TestBed.inject(PlayRecordBufferService);
+    await svc.enqueuePlay(basePlay());
+    await svc.enqueuePlay({
+      ...basePlay(),
+      uniqueEventId: 'eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee',
+    });
+
+    await svc.markUploaded(['aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa']);
+
+    expect(await svc.count()).toBe(1);
+    const pending = await svc.peekPendingNotUploaded(10);
+    expect(pending).toHaveLength(1);
+    expect(pending[0]?.uniqueEventId).toBe('eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee');
   });
 });

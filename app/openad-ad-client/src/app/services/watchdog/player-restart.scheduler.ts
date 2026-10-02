@@ -1,6 +1,7 @@
 import { isPlatformBrowser } from '@angular/common';
 import { Injectable, inject, PLATFORM_ID } from '@angular/core';
 import { AdPlaybackService } from '../ad-playback.service';
+import { PlaybackEngineService } from '../../features/playback/services/playback-engine.service';
 import { DeepSleepService } from './deep-sleep.service';
 
 /**
@@ -9,6 +10,7 @@ import { DeepSleepService } from './deep-sleep.service';
 @Injectable({ providedIn: 'root' })
 export class PlayerRestartScheduler {
   private readonly playback = inject(AdPlaybackService);
+  private readonly engine = inject(PlaybackEngineService);
   private readonly deepSleep = inject(DeepSleepService);
   private readonly platformId = inject(PLATFORM_ID);
 
@@ -35,7 +37,9 @@ export class PlayerRestartScheduler {
     if (this.deepSleep.inDeepSleep()) {
       return;
     }
-    if (!this.playback.playbackPaused() && this.playback.activeRule()) {
+    // Adia o reinicio quando ha veiculacao em curso. A condicao olhava `activeRule()`, que
+    // era a regra do schedule retido e nao dizia nada sobre o que estava na tela.
+    if (!this.playback.playbackPaused() && this.engine.adLoopActive()) {
       return;
     }
     // eslint-disable-next-line no-console -- tablet structured log

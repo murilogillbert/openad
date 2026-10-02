@@ -30,6 +30,25 @@ export class SyncStorageManagerService {
     this.cacheIndex.registerDownload(mediaId, buffer.byteLength);
   }
 
+  /**
+   * Tamanho do arquivo local, ou `null` quando nao existe.
+   *
+   * Usado para nao rebaixar midia que ja esta em disco. Sem isso, cada sincronizacao
+   * rebaixa o catalogo inteiro — num tablet com 500 MB de midia e sincronizacao de 15 em
+   * 15 minutos, isso e da ordem de dezenas de GB por dia em link movel.
+   */
+  async getMediaFileSize(mediaId: string): Promise<number | null> {
+    try {
+      const stat = await Filesystem.stat({
+        path: `media/${mediaId}`,
+        directory: Directory.Data,
+      });
+      return typeof stat.size === 'number' ? stat.size : null;
+    } catch {
+      return null;
+    }
+  }
+
   async deleteMediaFile(mediaId: string): Promise<void> {
     try {
       await Filesystem.deleteFile({

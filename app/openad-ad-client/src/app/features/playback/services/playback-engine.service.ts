@@ -205,6 +205,44 @@ export class PlaybackEngineService {
   }
 
   /**
+   * Bloco `playback` da telemetria MQTT, a partir do que esta de fato na tela.
+   *
+   * Antes a telemetria era montada em `AdPlaybackService` a partir da regra de maior
+   * prioridade do schedule retido no MQTT, com `currentCampaignId: "rule:{ruleId}"` — um
+   * identificador sintetico que nao corresponde a campanha nenhuma. O mapa de frota
+   * mostrava o que o servidor havia mandado tocar, nao o que estava tocando.
+   */
+  getTelemetryPlayback(): {
+    status: PlaybackStatus;
+    currentAssetId: string | null;
+    currentCampaignId: string | null;
+    errorCode: string | null;
+  } {
+    const cur = this.currentAd();
+    if (!cur) {
+      return {
+        status: 'idle',
+        currentAssetId: null,
+        currentCampaignId: null,
+        errorCode: this.lastError(),
+      };
+    }
+    return {
+      status: this.playbackStatus(),
+      currentAssetId:
+        cur.kind === 'factory' ? cur.mediaId : cur.item.mediaId,
+      currentCampaignId:
+        cur.kind === 'factory' ? null : (cur.item.campaignId ?? null),
+      errorCode: this.lastError(),
+    };
+  }
+
+  /** Ha anuncio tocando agora. Usado pelo reinicio diario para nao cortar veiculacao. */
+  adLoopActive(): boolean {
+    return this.currentAd() !== null && this.playbackStatus() === 'playing';
+  }
+
+  /**
    * Snapshot for spatial arbitration (loop lock vs Tier-1 interrupt) — 005 US5.
    */
   getSpatialArbitrationSnapshot(): {
