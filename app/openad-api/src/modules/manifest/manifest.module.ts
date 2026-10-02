@@ -2,10 +2,12 @@ import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AnalyticsModule } from '../analytics/analytics.module';
 import { AuthModule } from '../auth/auth.module';
+import { CampaignsModule } from '../campaigns/campaigns.module';
 import { DevicesModule } from '../devices/devices.module';
 import { GeoZonesModule } from '../geo-zones/geo-zones.module';
 import { AssetStorageModule } from '../../infrastructure/storage/storage.module';
 import { MediaIngestionModule } from '../media-ingestion/media-ingestion.module';
+import { CampaignEligibilityService } from './generators/campaign-eligibility.service';
 import { DeltaCalculatorService } from './generators/delta-calculator.service';
 import { ManifestGeneratorService } from './generators/manifest-generator.service';
 import { SpatialManifestBuilderService } from './generators/spatial-manifest-builder.service';
@@ -28,11 +30,13 @@ import {
     MediaIngestionModule,
     GeoZonesModule,
     forwardRef(() => AnalyticsModule),
+    forwardRef(() => CampaignsModule),
   ],
   controllers: [ManifestController],
   providers: [
     ManifestService,
     ManifestGeneratorService,
+    CampaignEligibilityService,
     SpatialManifestBuilderService,
     DeltaCalculatorService,
     ManifestDeviceJwtGuard,

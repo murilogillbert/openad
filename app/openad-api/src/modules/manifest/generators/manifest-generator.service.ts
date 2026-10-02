@@ -12,6 +12,11 @@ import {
 import { AssetStorageService } from '../../../infrastructure/storage/asset-storage.service';
 import type { SpatialEntryContract } from '@openad/api-contracts';
 import { SpatialManifestBuilderService } from './spatial-manifest-builder.service';
+import {
+  CampaignEligibilityService,
+  FILLER_MANIFEST_PRIORITY,
+  manifestPriorityFor,
+} from './campaign-eligibility.service';
 
 export interface GeneratedManifestPayload {
   deviceId: string;
@@ -27,17 +32,36 @@ export class ManifestGeneratorService {
     private readonly mediaModel: Model<MediaAssetDocument>,
     private readonly storage: AssetStorageService,
     private readonly spatialManifest: SpatialManifestBuilderService,
+    private readonly eligibility: CampaignEligibilityService,
     private readonly metrics: MetricsService,
     private readonly logger: PinoLogger
   ) {
     this.logger.setContext(ManifestGeneratorService.name);
   }
 
+  /**
+   * Monta o manifesto do dispositivo.
+   *
+   * Antes devolvia **toda** a midia com `isActive: true` da plataforma, ordenada por data de
+   * criacao, com a prioridade derivada da posicao na lista (`1000 - i * 10`). Campanha em
+   * `draft` ou `completed` continuava sendo distribuida, campanha fora da janela contratada
+   * tambem, e orcamento esgotado nao parava nada — ou seja, nao havia como garantir entrega
+   * nem faturar com confianca.
+   *
+   * Agora: midia de campanha entra so se a campanha estiver apta (ver
+   * {@link CampaignEligibilityService}), e a prioridade vem da campanha. Midia sem
+   * `campaignId` — institucional, filler — continua entrando, com prioridade baixa.
+   */
   async build(
     deviceId: string,
     deviceState: DeviceStateDto | undefined
   ): Promise<GeneratedManifestPayload> {
+    // TODO(Fase 3): segmentacao por device/veiculo/zona usa `deviceState` e
+    // `campaigns.targeting`, que ainda nao existe no schema.
     void deviceState;
+
+    const eligible = await this.eligibility.resolveEligible();
+
     const rows = await this.mediaModel
       .find({ isActive: true })
       .sort({ createdAt: -1 })
@@ -45,8 +69,23 @@ export class ManifestGeneratorService {
       .exec();
 
     const media: ManifestMediaItemDto[] = [];
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i]!;
+    let skippedIneligible = 0;
+
+    for (const row of rows) {
+      const campaignId = row.campaignId;
+
+      let priority: number;
+      if (campaignId) {
+        const campaign = eligible.get(campaignId);
+        if (!campaign) {
+          skippedIneligible += 1;
+          continue;
+        }
+        priority = manifestPriorityFor(campaign.campaignPriority);
+      } else {
+        priority = FILLER_MANIFEST_PRIORITY;
+      }
+
       const downloadUrl = await this.storage.getPresignedGetUrl(
         row.storageUrl,
         3600
@@ -54,19 +93,30 @@ export class ManifestGeneratorService {
       const item: ManifestMediaItemDto = {
         mediaId: row.mediaId,
         hash: row.hash,
-        priority: 1000 - i * 10,
+        priority,
         downloadUrl,
         fileSize: row.fileSize,
         duration: row.duration,
       };
-      if (row.campaignId) {
-        item.campaignId = row.campaignId;
+      if (campaignId) {
+        item.campaignId = campaignId;
       }
       media.push(item);
     }
 
+    // Maior prioridade primeiro: o player usa a ordem para evicao de cache.
+    media.sort((a, b) => b.priority - a.priority);
+
     const version = new Date().toISOString();
-    void this.logger.debug({ deviceId, count: media.length }, 'manifest generated');
+    void this.logger.debug(
+      {
+        event: 'manifest.generated',
+        deviceId,
+        count: media.length,
+        skippedIneligible,
+      },
+      'manifest generated'
+    );
 
     const spatialBuildStarted = process.hrtime.bigint();
     const spatial = await this.spatialManifest.build();
