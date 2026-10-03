@@ -3,14 +3,15 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 
+/** Valores monetarios em centavos inteiros, como o resto da API. */
 export interface CampaignReportingSummaryDto {
   campaignId: string;
   window: { from: string; to: string };
   impressions: number;
   reach: number;
-  revenueTotal: number;
+  revenueTotalCents: number;
   currency: string;
-  revenueLines: Array<{ label: string; plays: number; amount: number }>;
+  revenueLines: Array<{ label: string; plays: number; amountCents: number }>;
 }
 
 @Injectable({ providedIn: 'root' })

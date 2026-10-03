@@ -27,7 +27,7 @@ describe('ReportGenerationWorker', () => {
         filePath: null,
         downloadPath: null,
         impressionCount: null,
-        totalBillableValue: null,
+        totalBillableValueCents: null,
         errorMessage: null,
       }),
       updateOne: jest.fn().mockResolvedValue(undefined),
@@ -37,7 +37,11 @@ describe('ReportGenerationWorker', () => {
       findByCampaignId: jest.fn().mockResolvedValue({
         name: 'Test campaign',
         advertiserName: 'Adv',
-        budget: { currency: 'USD', ratePerImpression: 0.05 },
+        budget: {
+          currency: 'USD',
+          totalAmountCents: 100_000,
+          ratePerImpressionCents: 5,
+        },
       }),
     };
 
@@ -50,7 +54,7 @@ describe('ReportGenerationWorker', () => {
           eventId: 'ev-1',
           vehicleId: 'veh-1',
           playedAt: new Date('2026-01-01T12:00:00Z'),
-          billingValue: 0.05,
+          billingValueCents: 5,
           currency: 'USD',
           locationVerified: true,
         },
@@ -88,12 +92,14 @@ describe('ReportGenerationWorker', () => {
             status?: string;
             impressionCount?: number;
             filePath?: string;
+            totalBillableValueCents?: number;
           };
         }
     );
     const ready = updates.find((u) => u.$set?.status === 'ready');
     expect(ready?.$set?.status).toBe('ready');
     expect(ready?.$set?.impressionCount).toBe(1);
+    expect(ready?.$set?.totalBillableValueCents).toBe(5);
     expect(ready?.$set?.filePath).toBe('r2:reports/job-test-1.json');
     expect(storage.putObjectAtKey).toHaveBeenCalledWith(
       'reports/job-test-1.json',

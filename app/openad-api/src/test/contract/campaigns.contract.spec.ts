@@ -36,9 +36,9 @@ describe('Campaigns REST (contract)', () => {
         scheduledStart: new Date().toISOString(),
         scheduledEnd: new Date(Date.now() + 86400000).toISOString(),
         budget: {
-          totalAmount: 10000,
+          totalAmountCents: 1_000_000,
           currency: 'USD',
-          ratePerImpression: 0.05,
+          ratePerImpressionCents: 5,
         },
       });
     expect(res.status).toBe(201);
@@ -81,9 +81,9 @@ describe('Campaigns REST (contract)', () => {
         scheduledStart: new Date().toISOString(),
         scheduledEnd: new Date(Date.now() + 86400000 * 7).toISOString(),
         budget: {
-          totalAmount: 1,
+          totalAmountCents: 100,
           currency: 'USD',
-          ratePerImpression: 0.01,
+          ratePerImpressionCents: 1,
         },
       });
     expect(c.status).toBe(201);
@@ -161,9 +161,9 @@ describe('Campaigns REST (contract)', () => {
         scheduledStart: new Date().toISOString(),
         scheduledEnd: new Date(Date.now() + 86_400_000).toISOString(),
         budget: {
-          totalAmount: 1000,
+          totalAmountCents: 100_000,
           currency: 'BRL',
-          ratePerImpression: 1,
+          ratePerImpressionCents: 100,
         },
       });
     expect(created.status).toBe(201);
@@ -175,5 +175,27 @@ describe('Campaigns REST (contract)', () => {
       .send({ status: 'active' });
     // Nem o moderador publica de `draft`: a transicao em si e invalida.
     expect(direto.status).toBe(400);
+  });
+
+  it('recusa fracao de centavo no orcamento', async () => {
+    const token = await loginAsCampaignManager(ctx.app);
+    const res = await request(ctx.app.getHttpServer())
+      .post('/api/v1/campaigns')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: 'Fracao',
+        advertiserName: 'Acme',
+        priority: 1,
+        scheduledStart: new Date().toISOString(),
+        scheduledEnd: new Date(Date.now() + 86_400_000).toISOString(),
+        budget: {
+          totalAmountCents: 1000,
+          currency: 'BRL',
+          // Isto era aceito antes, e o pacing arredondava em silencio. Com `@IsInt` a
+          // requisicao e recusada na borda, onde o anunciante ainda pode corrigir.
+          ratePerImpressionCents: 0.5,
+        },
+      });
+    expect(res.status).toBe(400);
   });
 });

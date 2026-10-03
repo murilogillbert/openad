@@ -120,12 +120,28 @@ export class PacingSignalService {
     return 'normal';
   }
 
+  /**
+   * Teto diario em centavos.
+   *
+   * **Isto estava errado por um fator de 100.** A versao anterior dividia
+   * `budget.totalAmount`, que era float em unidade maior (reais), e comparava o resultado com
+   * `billableCostCents`, que sempre contou centavos. Um orcamento de 1.000 virava 33 "centavos"
+   * por dia, e a campanha era pausada praticamente na primeira veiculacao. Com o orcamento em
+   * centavos, a divisao e homogenea.
+   *
+   * `dailyBudgetCents` explicito tem precedencia: anunciante que quer gastar devagar define o
+   * teto, em vez de depender da divisao pelos dias contratados.
+   */
   private dailyBudgetCents(c: CampaignDocument): number {
-    const total = c.budget?.totalAmount ?? 0;
+    const tetoExplicito = c.budget?.dailyBudgetCents ?? null;
+    if (tetoExplicito !== null && tetoExplicito > 0) {
+      return Math.floor(tetoExplicito);
+    }
+    const totalCents = c.budget?.totalAmountCents ?? 0;
     const start = c.scheduledStart?.getTime?.() ?? Date.now();
     const end = c.scheduledEnd?.getTime?.() ?? Date.now() + 86400000;
     const days = Math.max(1, Math.ceil((end - start) / 86400000));
-    return Math.max(1, Math.floor(total / days));
+    return Math.max(1, Math.floor(totalCents / days));
   }
 
   private async findTodayRow(

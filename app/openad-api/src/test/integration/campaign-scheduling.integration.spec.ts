@@ -84,7 +84,11 @@ describe('Campaign scheduling (integration)', () => {
         priority: 1,
         scheduledStart: new Date().toISOString(),
         scheduledEnd: new Date(Date.now() + 86400000 * 30).toISOString(),
-        budget: { totalAmount: 1, currency: 'USD', ratePerImpression: 0.01 },
+        budget: {
+          totalAmountCents: 100,
+          currency: 'USD',
+          ratePerImpressionCents: 1,
+        },
       });
     const campaignId = c.body.campaignId as string;
 

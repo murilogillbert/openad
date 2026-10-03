@@ -10,6 +10,13 @@ export class BillingReportService {
     private readonly campaigns: CampaignsRepository
   ) {}
 
+  /**
+   * Fatura o periodo somando **centavos inteiros**.
+   *
+   * O `$sum` do Mongo preserva o tipo do campo somado: com `billingValue` em double, o total de
+   * um mes de veiculacao acumulava erro de ponto flutuante justamente no numero que vai para a
+   * fatura. Somando `billingValueCents`, que e inteiro, o total e exato por construcao.
+   */
   async getBilling(from: Date, to: Date): Promise<BillingReportResponse> {
     const byCampaignAgg = (await this.impressions.aggregate([
       {
@@ -21,14 +28,14 @@ export class BillingReportService {
         $group: {
           _id: '$campaignId',
           impressions: { $sum: 1 },
-          billableValue: { $sum: '$billingValue' },
+          billableValueCents: { $sum: '$billingValueCents' },
           currency: { $first: '$currency' },
         },
       },
     ])) as {
       _id: string;
       impressions: number;
-      billableValue: number;
+      billableValueCents: number;
       currency: string;
     }[];
 
@@ -39,7 +46,7 @@ export class BillingReportService {
         campaignId: row._id,
         campaignName: c?.name ?? row._id,
         impressions: row.impressions,
-        billableValue: row.billableValue,
+        billableValueCents: row.billableValueCents,
         currency: row.currency,
       });
     }
@@ -63,14 +70,14 @@ export class BillingReportService {
         $group: {
           _id: '$vehicle.operatorId',
           impressions: { $sum: 1 },
-          payableAmount: { $sum: '$billingValue' },
+          payableAmountCents: { $sum: '$billingValueCents' },
           vehicles: { $addToSet: '$vehicleId' },
         },
       },
     ])) as {
       _id: string;
       impressions: number;
-      payableAmount: number;
+      payableAmountCents: number;
       vehicles: string[];
     }[];
 
@@ -79,7 +86,7 @@ export class BillingReportService {
         operatorId: r._id,
         vehicleCount: r.vehicles.length,
         impressions: r.impressions,
-        payableAmount: r.payableAmount,
+        payableAmountCents: r.payableAmountCents,
       })
     );
 

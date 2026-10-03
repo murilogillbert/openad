@@ -8,7 +8,7 @@ import { DevicesRepository } from '../devices/devices.repository';
 import { ImpressionEventsRepository } from './impression-events.repository';
 import {
   impressionLocationVerified,
-  snapshotBillingValue,
+  snapshotBillingValueCents,
 } from './impression-mapping';
 import { IMPRESSIONS_STREAM } from './impression-ingestion.service';
 
@@ -110,7 +110,9 @@ export class ImpressionStreamConsumer implements OnModuleInit {
       return;
     }
 
-    const billingValue = snapshotBillingValue(campaign.budget.ratePerImpression);
+    const billingValueCents = snapshotBillingValueCents(
+      campaign.budget.ratePerImpressionCents
+    );
     const currency = campaign.budget.currency;
     const locationVerified = impressionLocationVerified(
       impression.location.gpsLocked
@@ -137,7 +139,7 @@ export class ImpressionStreamConsumer implements OnModuleInit {
         location: { type: 'Point', coordinates: coords },
         accuracyMeters: impression.location.accuracyMeters,
         locationVerified,
-        billingValue,
+        billingValueCents,
         currency,
         mqttDeliveryId: null,
       });
@@ -148,7 +150,7 @@ export class ImpressionStreamConsumer implements OnModuleInit {
           deviceId,
           campaignId: impression.campaignId,
           locationVerified,
-          billingValue,
+          billingValueCents,
           event: 'impression.persisted',
         },
         'impression stored'

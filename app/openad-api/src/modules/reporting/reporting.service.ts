@@ -45,7 +45,7 @@ export class ReportingService {
       filePath: null,
       downloadPath: null,
       impressionCount: null,
-      totalBillableValue: null,
+      totalBillableValueCents: null,
       errorMessage: null,
       requestedByUserId,
     });
@@ -89,7 +89,7 @@ export class ReportingService {
         totalImpressions: job.impressionCount ?? 0,
         uniqueZonesReached: 0,
         estimatedUniquePassengersReached: 0,
-        totalBillableValue: job.totalBillableValue ?? 0,
+        totalBillableValueCents: job.totalBillableValueCents ?? 0,
         currency,
       },
     };

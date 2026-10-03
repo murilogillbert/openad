@@ -18,14 +18,14 @@ export interface CampaignReportingSummary {
   impressions: number;
   /** Distinct vehicles with ≥1 billable play (SC-003). */
   reach: number;
-  /** Sum of per-play cost lines in budget currency minor units. */
-  revenueTotal: number;
+  /** Soma das linhas de custo por veiculacao, em centavos inteiros. */
+  revenueTotalCents: number;
   currency: string;
   /** One line per distinct zone tier observed (optional breakdown). */
   revenueLines: Array<{
     label: string;
     plays: number;
-    amount: number;
+    amountCents: number;
   }>;
 }
 
@@ -58,28 +58,36 @@ export class ReportingAggregationService {
       .exec();
 
     const distinctVehicles = new Set(plays.map((p) => p.vehicleId));
-    const rate = campaign.budget.ratePerImpression;
+    const rateCents = campaign.budget.ratePerImpressionCents;
 
-    const tierBuckets = new Map<string, { plays: number; amount: number }>();
+    const tierBuckets = new Map<string, { plays: number; amountCents: number }>();
 
-    let revenueTotal = 0;
+    /**
+     * Acumulacao em inteiro.
+     *
+     * A versao anterior somava `rate * zoneMult` em float sobre N veiculacoes: erro de
+     * arredondamento que **cresce com o volume**, justamente num numero que vai para a fatura
+     * do anunciante. O multiplicador de tier continua fracionario, entao o arredondamento
+     * acontece uma vez por linha, com `Math.round`, e o total e soma de inteiros.
+     */
+    let revenueTotalCents = 0;
     for (const _p of plays) {
       const tier = 'T4';
       const zoneMult = tierZoneMultiplier(tier);
-      const lineAmount = rate * zoneMult;
-      revenueTotal += lineAmount;
+      const lineAmountCents = Math.round(rateCents * zoneMult);
+      revenueTotalCents += lineAmountCents;
 
-      const prev = tierBuckets.get(tier) ?? { plays: 0, amount: 0 };
+      const prev = tierBuckets.get(tier) ?? { plays: 0, amountCents: 0 };
       tierBuckets.set(tier, {
         plays: prev.plays + 1,
-        amount: prev.amount + lineAmount,
+        amountCents: prev.amountCents + lineAmountCents,
       });
     }
 
     const revenueLines = [...tierBuckets.entries()].map(([tier, v]) => ({
       label: `zone_tier_${tier}`,
       plays: v.plays,
-      amount: v.amount,
+      amountCents: v.amountCents,
     }));
 
     return {
@@ -87,7 +95,7 @@ export class ReportingAggregationService {
       window: { from: from.toISOString(), to: to.toISOString() },
       impressions: plays.length,
       reach: distinctVehicles.size,
-      revenueTotal,
+      revenueTotalCents,
       currency: campaign.budget.currency,
       revenueLines,
     };

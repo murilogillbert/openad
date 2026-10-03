@@ -233,10 +233,18 @@ export class DashboardService {
 
     const items: DashboardCampaignPacingItem[] = [];
     for (const c of active) {
-      const rate = c.budget?.ratePerImpression ?? 0;
-      const totalAmt = c.budget?.totalAmount ?? 0;
+      /**
+       * Meta de veiculacoes = orcamento / tarifa, as duas em centavos.
+       *
+       * A divisao e homogenea de novo: antes eram dois floats na mesma unidade, o que por sorte
+       * dava o numero certo, mas qualquer um dos dois virar centavos sozinho quebraria a conta
+       * por um fator de 100. Com os dois em centavos o quociente e adimensional por
+       * construcao.
+       */
+      const rateCents = c.budget?.ratePerImpressionCents ?? 0;
+      const totalCents = c.budget?.totalAmountCents ?? 0;
       const targetImpressions =
-        rate > 0 ? Math.max(0, Math.floor(totalAmt / rate)) : 0;
+        rateCents > 0 ? Math.max(0, Math.floor(totalCents / rateCents)) : 0;
       const actual = countMap.get(c.campaignId) ?? 0;
       const pctOfTarget =
         targetImpressions > 0

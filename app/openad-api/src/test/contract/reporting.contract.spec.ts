@@ -34,7 +34,11 @@ describe('Reporting REST (contract)', () => {
         priority: 1,
         scheduledStart: new Date().toISOString(),
         scheduledEnd: new Date(Date.now() + 86400000 * 30).toISOString(),
-        budget: { totalAmount: 1, currency: 'USD', ratePerImpression: 0.05 },
+        budget: {
+          totalAmountCents: 100,
+          currency: 'USD',
+          ratePerImpressionCents: 5,
+        },
       });
     expect(c.status).toBe(201);
     const campaignId = c.body.campaignId as string;
@@ -72,7 +76,7 @@ describe('Reporting REST (contract)', () => {
       location: { type: 'Point', coordinates: [-46.6, -23.5] },
       accuracyMeters: 10,
       locationVerified: true,
-      billingValue: 0.05,
+      billingValueCents: 5,
       currency: 'USD',
       mqttDeliveryId: null,
     });
@@ -82,6 +86,7 @@ describe('Reporting REST (contract)', () => {
       .set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
     expect(res.body.eventId).toBe(eventId);
+    expect(res.body.billingValueCents).toBe(5);
   });
 
   it('GET billing requires from/to', async () => {

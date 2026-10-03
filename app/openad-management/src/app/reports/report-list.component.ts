@@ -1,4 +1,4 @@
-import { DecimalPipe } from '@angular/common';
+import { CentsPipe } from '../shared/cents.pipe';
 import { Component, input } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
@@ -20,7 +20,7 @@ export interface ReportSessionRow {
   selector: 'app-report-list',
   standalone: true,
   imports: [
-    DecimalPipe,
+    CentsPipe,
     TableModule,
     TagModule,
     ButtonModule,
@@ -76,7 +76,7 @@ export interface ReportSessionRow {
               @if (row.summary) {
                 <span
                   >{{ row.summary.totalImpressions }} imps ·
-                  {{ row.summary.totalBillableValue | number: '1.2-2' }}
+                  {{ row.summary.totalBillableValueCents | cents }}
                   {{ row.summary.currency }}</span
                 >
               } @else {

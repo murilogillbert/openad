@@ -20,7 +20,7 @@
         <div>
           <div class="text-sm text-surface-500">Revenue total</div>
           <div class="text-2xl font-mono">
-            {{ s.revenueTotal | number: '1.0-2' }} {{ s.currency }}
+            {{ s.revenueTotalCents | cents }} {{ s.currency }}
           </div>
         </div>
       </div>
@@ -42,7 +42,7 @@
           <tr>
             <td>{{ row.label }}</td>
             <td>{{ row.plays }}</td>
-            <td>{{ row.amount | number: '1.0-2' }} {{ s.currency }}</td>
+            <td>{{ row.amountCents | cents }} {{ s.currency }}</td>
           </tr>
         </ng-template>
       </p-table>

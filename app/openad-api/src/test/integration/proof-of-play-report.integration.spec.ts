@@ -51,7 +51,11 @@ describe('Proof-of-Play report (integration)', () => {
         priority: 1,
         scheduledStart: new Date().toISOString(),
         scheduledEnd: new Date(Date.now() + 86400000 * 60).toISOString(),
-        budget: { totalAmount: 1000, currency: 'USD', ratePerImpression: 0.01 },
+        budget: {
+          totalAmountCents: 100_000,
+          currency: 'USD',
+          ratePerImpressionCents: 1,
+        },
       });
     expect(c.status).toBe(201);
     const campaignId = c.body.campaignId as string;
@@ -71,7 +75,7 @@ describe('Proof-of-Play report (integration)', () => {
       location: { type: 'Point' as const, coordinates: [0, 0] as [number, number] },
       accuracyMeters: 1,
       locationVerified: true,
-      billingValue: 0.01,
+      billingValueCents: 1,
       currency: 'USD',
       mqttDeliveryId: null,
     }));
@@ -102,6 +106,8 @@ describe('Proof-of-Play report (integration)', () => {
       .get(`/api/v1/reports/${jobId}`)
       .set('Authorization', `Bearer ${token}`);
     expect(st.body.summary.totalImpressions).toBe(100);
-    expect(st.body.summary.totalBillableValue).toBeCloseTo(1.0);
+    // 100 veiculacoes a 1 centavo. Em float, somar 0.01 cem vezes da 1.0000000000000007 —
+    // razao pela qual a assercao anterior precisava de `toBeCloseTo`. Em inteiro, 100 e 100.
+    expect(st.body.summary.totalBillableValueCents).toBe(100);
   });
 });

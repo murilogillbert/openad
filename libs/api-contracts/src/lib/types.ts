@@ -202,7 +202,7 @@ export interface DeviceListQuery {
   search?: string;
 }
 
-/** POST /api/v1/campaigns */
+/** POST /api/v1/campaigns — valores monetarios em centavos inteiros. */
 export interface CreateCampaignRequest {
   name: string;
   advertiserName: string;
@@ -210,9 +210,10 @@ export interface CreateCampaignRequest {
   scheduledStart: string;
   scheduledEnd: string;
   budget: {
-    totalAmount: number;
+    totalAmountCents: number;
     currency: string;
-    ratePerImpression: number;
+    ratePerImpressionCents: number;
+    dailyBudgetCents?: number | null;
   };
 }
 
@@ -418,7 +419,8 @@ export interface ImpressionEventDetail {
     accuracyMeters: number | null;
   };
   locationVerified: boolean;
-  billingValue: number;
+  /** Valor faturavel congelado no momento da veiculacao, em centavos inteiros. */
+  billingValueCents: number;
   currency: string;
 }
 
@@ -442,26 +444,32 @@ export interface ReportJobStatus {
     totalImpressions: number;
     uniqueZonesReached: number;
     estimatedUniquePassengersReached: number;
-    totalBillableValue: number;
+    totalBillableValueCents: number;
     currency: string;
   };
 }
 
-/** GET /api/v1/reports/billing */
+/**
+ * GET /api/v1/reports/billing — valores monetarios em **centavos inteiros**.
+ *
+ * O sufixo `Cents` e parte do contrato, nao detalhe de implementacao: `billableValue` sem
+ * unidade no nome foi o que permitiu o pacing comparar reais com centavos por 100 veiculacoes
+ * sem ninguem notar.
+ */
 export interface BillingReportResponse {
   period: { start: string; end: string };
   byCampaign: {
     campaignId: string;
     campaignName: string;
     impressions: number;
-    billableValue: number;
+    billableValueCents: number;
     currency: string;
   }[];
   byOperator: {
     operatorId: string;
     vehicleCount: number;
     impressions: number;
-    payableAmount: number;
+    payableAmountCents: number;
   }[];
 }
 

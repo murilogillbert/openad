@@ -97,7 +97,7 @@ export class ReportingController {
         accuracyMeters: doc.accuracyMeters,
       },
       locationVerified: doc.locationVerified,
-      billingValue: doc.billingValue,
+      billingValueCents: doc.billingValueCents,
       currency: doc.currency,
     };
   }

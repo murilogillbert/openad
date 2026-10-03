@@ -49,8 +49,15 @@ export class ImpressionEventRecord {
   @Prop({ type: Boolean, required: true })
   locationVerified!: boolean;
 
-  @Prop({ type: Number, required: true })
-  billingValue!: number;
+  /**
+   * Valor faturavel desta veiculacao, em **centavos inteiros**, congelado no momento do
+   * evento.
+   *
+   * E instantaneo de propósito: a tarifa da campanha pode mudar depois, e a fatura ja emitida
+   * nao pode mudar com ela.
+   */
+  @Prop({ type: Number, required: true, min: 0 })
+  billingValueCents!: number;
 
   @Prop({ type: String, required: true })
   currency!: string;

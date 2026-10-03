@@ -200,10 +200,18 @@ export interface GeoZone {
 
 export type CampaignStatus = 'draft' | 'active' | 'paused' | 'completed';
 
+/**
+ * Orcamento da campanha, em **centavos inteiros**.
+ *
+ * Dentro do openad dinheiro e sempre inteiro. A conversao para `Decimal` de duas casas
+ * acontece apenas na fronteira com o Postgres do hub, que conta em reais — nunca aqui.
+ */
 export interface CampaignBudget {
-  totalAmount: number;
+  totalAmountCents: number;
   currency: string;
-  ratePerImpression: number;
+  ratePerImpressionCents: number;
+  /** Teto diario opcional; ausente significa derivar do total pelos dias contratados. */
+  dailyBudgetCents?: number | null;
 }
 
 export interface Campaign {
@@ -261,7 +269,8 @@ export interface ImpressionEvent {
   durationPlayedSeconds: number;
   location: ImpressionLocation;
   locationVerified: boolean;
-  billingValue: number;
+  /** Valor faturavel congelado no momento da veiculacao, em centavos inteiros. */
+  billingValueCents: number;
   currency: string;
 }
 

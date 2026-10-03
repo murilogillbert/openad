@@ -34,8 +34,9 @@ export class ReportJobRecord {
   @Prop({ type: Number, default: null })
   impressionCount!: number | null;
 
+  /** Total faturavel do relatorio, em centavos inteiros. */
   @Prop({ type: Number, default: null })
-  totalBillableValue!: number | null;
+  totalBillableValueCents!: number | null;
 
   @Prop({ type: String, default: null })
   errorMessage!: string | null;

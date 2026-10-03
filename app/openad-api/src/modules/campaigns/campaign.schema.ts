@@ -3,17 +3,39 @@ import { HydratedDocument } from 'mongoose';
 
 export type CampaignDocument = HydratedDocument<Campaign>;
 
+/**
+ * Orcamento da campanha, em **centavos inteiros**.
+ *
+ * Era float (`totalAmount`, `ratePerImpression`) e isso produzia um defeito real, nao apenas
+ * divida tecnica: `PacingSignalService.dailyBudgetCents` dividia `totalAmount` pelos dias e
+ * comparava o resultado com `campaign_daily_spend.billableCostCents`, que sempre contou em
+ * centavos. Um orcamento de 1.000 virava 33 "centavos" por dia e a campanha era pausada
+ * praticamente na primeira veiculacao — cem vezes mais cedo do que devia.
+ *
+ * O ecossistema guarda dinheiro em `Decimal(12,2)` **em reais** no Postgres do hub; a conversao
+ * para duas casas acontece so na fronteira, nunca aqui.
+ */
 @Schema({ _id: false })
 export class CampaignBudgetSubdoc {
-  @Prop({ type: Number, required: true })
-  totalAmount!: number;
+  /** Orcamento total da campanha, em centavos inteiros. */
+  @Prop({ type: Number, required: true, min: 0 })
+  totalAmountCents!: number;
 
   @Prop({ type: String, required: true })
   currency!: string;
 
-  @Prop({ type: Number, required: true })
-  ratePerImpression!: number;
+  /** Tarifa por veiculacao faturavel, em centavos inteiros. */
+  @Prop({ type: Number, required: true, min: 0 })
+  ratePerImpressionCents!: number;
+
+  /**
+   * Teto diario, em centavos. Opcional: quando ausente, o pacing deriva do total dividido
+   * pelos dias contratados, que e o comportamento anterior.
+   */
+  @Prop({ type: Number, default: null })
+  dailyBudgetCents!: number | null;
 }
+const CampaignBudgetSchema = SchemaFactory.createForClass(CampaignBudgetSubdoc);
 
 export const CAMPAIGN_STATUSES = [
   'draft',
@@ -143,7 +165,12 @@ export class Campaign {
   @Prop({ type: Number, required: true })
   priority!: number;
 
-  @Prop({ type: Object, required: true })
+  /**
+   * Era `type: Object`, o que fazia o Mongoose **nao validar nem converter** nada aqui dentro:
+   * um `totalAmountCents` em texto, ou negativo, entrava no banco sem reclamar. Agora usa o
+   * schema do subdocumento, com os `min: 0` valendo.
+   */
+  @Prop({ type: CampaignBudgetSchema, required: true })
   budget!: CampaignBudgetSubdoc;
 
   @Prop({ type: Date, required: true })

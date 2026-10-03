@@ -15,11 +15,12 @@ import { CardModule } from 'primeng/card';
 import { TagModule } from 'primeng/tag';
 import { EMPTY, map, switchMap } from 'rxjs';
 import { ReportsApiService } from '../reports-api.service';
+import { CentsPipe } from '../../shared/cents.pipe';
 
 @Component({
   selector: 'app-impression-detail',
   standalone: true,
-  imports: [RouterLink, CardModule, TagModule],
+  imports: [RouterLink, CardModule, TagModule, CentsPipe],
   template: `
     <div class="space-y-6 p-4 md:p-6">
       <div class="flex flex-wrap items-center gap-3">
@@ -82,7 +83,7 @@ import { ReportsApiService } from '../reports-api.service';
               </div>
               <div class="flex justify-between gap-4">
                 <dt class="text-slate-500">Billing value</dt>
-                <dd>{{ d.billingValue }} {{ d.currency }}</dd>
+                <dd>{{ d.billingValueCents | cents }} {{ d.currency }}</dd>
               </div>
             </dl>
           </p-card>

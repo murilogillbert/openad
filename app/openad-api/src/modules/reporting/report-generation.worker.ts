@@ -11,7 +11,11 @@ import { CampaignsRepository } from '../campaigns/campaigns.repository';
 import { ImpressionEventsRepository } from '../impressions/impression-events.repository';
 import { NotificationService } from '../fleet-monitor/notification.service';
 import { ReportJobsRepository } from './report-jobs.repository';
-import { aggregateByVehicle } from './report-aggregation.util';
+import {
+  aggregateByVehicle,
+  formatCentsAsAmount,
+  sumBillableCents,
+} from './report-aggregation.util';
 
 @Processor('report-generation')
 export class ReportGenerationWorker extends WorkerHost {
@@ -49,11 +53,16 @@ export class ReportGenerationWorker extends WorkerHost {
 
       const rows = await this.impressions.findByCampaignId(rec.campaignId);
       const totalImpressions = rows.length;
-      const totalBillable = rows.reduce((s, r) => s + r.billingValue, 0);
+      const totalBillableCents = sumBillableCents(
+        rows.map((r) => r.billingValueCents)
+      );
       const currency = campaign.budget.currency;
 
       const byVehicle = aggregateByVehicle(
-        rows.map((r) => ({ vehicleId: r.vehicleId, billingValue: r.billingValue }))
+        rows.map((r) => ({
+          vehicleId: r.vehicleId,
+          billingValueCents: r.billingValueCents,
+        }))
       );
 
       const summary = {
@@ -61,7 +70,7 @@ export class ReportGenerationWorker extends WorkerHost {
         campaignName: campaign.name,
         advertiserName: campaign.advertiserName,
         totalImpressions,
-        totalBillableValue: totalBillable,
+        totalBillableValueCents: totalBillableCents,
         currency,
         uniqueZonesReached: 0,
         byVehicle,
@@ -80,12 +89,18 @@ export class ReportGenerationWorker extends WorkerHost {
         body = Buffer.from(JSON.stringify(summary, null, 2), 'utf8');
       } else if (rec.format === 'csv') {
         contentType = 'text/csv; charset=utf-8';
+        /**
+         * Duas colunas de dinheiro de proposito: `billingValueCents` e o dado exato, para
+         * conferencia e importacao em planilha; `billingValue` e a mesma coisa na unidade
+         * maior, porque e o que um financeiro espera ler. Remover a primeira reintroduziria
+         * ambiguidade de unidade, que foi a origem do defeito de fator 100 no pacing.
+         */
         const header =
-          'eventId,vehicleId,playedAt,billingValue,currency,locationVerified\n';
+          'eventId,vehicleId,playedAt,billingValueCents,billingValue,currency,locationVerified\n';
         const lines = rows
           .map(
             (r) =>
-              `${r.eventId},${r.vehicleId},${r.playedAt.toISOString()},${r.billingValue},${r.currency},${r.locationVerified}`
+              `${r.eventId},${r.vehicleId},${r.playedAt.toISOString()},${r.billingValueCents},${formatCentsAsAmount(r.billingValueCents)},${r.currency},${r.locationVerified}`
           )
           .join('\n');
         body = Buffer.from(header + lines, 'utf8');
@@ -106,12 +121,14 @@ export class ReportGenerationWorker extends WorkerHost {
             doc.text(`Campaign ID: ${rec.campaignId}`);
             doc.text(`Advertiser: ${campaign.advertiserName}`);
             doc.text(`Total impressions: ${totalImpressions}`);
-            doc.text(`Total billable value: ${totalBillable} ${currency}`);
+            doc.text(
+              `Total billable value: ${formatCentsAsAmount(totalBillableCents)} ${currency}`
+            );
             doc.moveDown();
             doc.text('Per-vehicle summary:', { underline: true });
             for (const [vid, v] of Object.entries(byVehicle)) {
               doc.text(
-                `  ${vid}: ${v.impressions} plays, ${v.billableValue.toFixed(4)} ${currency}`
+                `  ${vid}: ${v.impressions} plays, ${formatCentsAsAmount(v.billableValueCents)} ${currency}`
               );
             }
             doc.end();
@@ -138,7 +155,7 @@ export class ReportGenerationWorker extends WorkerHost {
             filePath: storageUrl,
             downloadPath: objectKey,
             impressionCount: totalImpressions,
-            totalBillableValue: totalBillable,
+            totalBillableValueCents: totalBillableCents,
           },
         }
       );

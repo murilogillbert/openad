@@ -38,7 +38,11 @@ describe('Impression pipeline (integration)', () => {
       advertiserName: 'Y',
       status: 'active',
       priority: 1,
-      budget: { totalAmount: 100, currency: 'USD', ratePerImpression: 0.07 },
+      budget: {
+        totalAmountCents: 10_000,
+        currency: 'USD',
+        ratePerImpressionCents: 7,
+      },
       scheduledStart: new Date(),
       scheduledEnd: new Date(Date.now() + 86400000 * 30),
       createdBy: null,
@@ -73,7 +77,8 @@ describe('Impression pipeline (integration)', () => {
     const impModel = ctx.app.get(getModelToken(ImpressionEventRecord.name));
     const one = await impModel.findOne({ eventId }).exec();
     expect(one).not.toBeNull();
-    expect(one?.billingValue).toBeCloseTo(0.07);
+    // Igualdade exata: o valor gravado e inteiro e e a tarifa da campanha, congelada.
+    expect(one?.billingValueCents).toBe(7);
 
     await redis.xadd(IMPRESSIONS_STREAM, '*', 'payload', body);
     await consumer.drainStream();

@@ -7,6 +7,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { switchMap } from 'rxjs';
+import { toCents } from '@openad/domain';
 import { CampaignsApiService, type GeoZoneRow } from './campaigns-api.service';
 
 export type LayoutTemplateId = 'full' | 'split70' | 'ticker' | 'split50';
@@ -51,6 +52,11 @@ export class CampaignWizardComponent {
   protected file: File | null = null;
   protected selectedZoneId: string | null = null;
 
+  /**
+   * O formulario continua na unidade maior porque e o que o operador digita: `1000` querendo
+   * mil, nao dez. A conversao para centavos acontece uma vez, na chamada da API, com
+   * `toCents` — que arredonda, porque `0.05 * 100` em float nao e exatamente 5.
+   */
   protected totalAmount = 1000;
   protected ratePerImpression = 0.05;
   protected readonly currency = 'USD';
@@ -248,9 +254,9 @@ export class CampaignWizardComponent {
         scheduledStart: start.toISOString(),
         scheduledEnd: end.toISOString(),
         budget: {
-          totalAmount: this.totalAmount,
+          totalAmountCents: toCents(this.totalAmount),
           currency: this.currency,
-          ratePerImpression: this.ratePerImpression,
+          ratePerImpressionCents: toCents(this.ratePerImpression),
         },
       })
       .pipe(

@@ -34,7 +34,11 @@ describe('Analytics reporting API (integration)', () => {
       advertiserName: 'Z',
       status: 'active',
       priority: 1,
-      budget: { totalAmount: 1000, currency: 'USD', ratePerImpression: 10 },
+      budget: {
+        totalAmountCents: 1000,
+        currency: 'USD',
+        ratePerImpressionCents: 10,
+      },
       scheduledStart: new Date('2026-04-01'),
       scheduledEnd: new Date('2026-06-01'),
       createdBy: null,

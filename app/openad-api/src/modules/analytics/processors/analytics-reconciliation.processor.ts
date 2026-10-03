@@ -95,8 +95,16 @@ export class AnalyticsReconciliationProcessor extends WorkerHost {
           const campaign = await this.campaigns.findByCampaignId(
             updated.campaignId
           );
-          const rate = campaign?.budget?.ratePerImpression ?? 0;
-          const costCents = Math.max(1, Math.round(rate * 100));
+          /**
+           * A tarifa ja esta em centavos inteiros, entao nao ha conversao nem arredondamento
+           * aqui. A versao anterior fazia `Math.max(1, Math.round(rate * 100))`: o `round`
+           * escondia fracao de centavo e o piso em 1 fazia **qualquer** tarifa abaixo de um
+           * centavo faturar um centavo — campanha configurada com tarifa zero cobrava.
+           *
+           * Tarifa zero agora custa zero, e e a resposta correta: ha inventario institucional
+           * e filler, que toca sem faturar.
+           */
+          const costCents = campaign?.budget?.ratePerImpressionCents ?? 0;
           await this.pacing.recordBillablePlayCost({
             campaignId: updated.campaignId,
             costCents,

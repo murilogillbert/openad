@@ -84,7 +84,15 @@ export class CampaignLifecycleService {
       // federada.
       ownerUserId: null,
       priority: dto.priority,
-      budget: dto.budget,
+      // `dailyBudgetCents` e opcional no DTO e sempre presente no documento: normalizar aqui
+      // evita que `undefined` chegue ao Mongoose, que grava o campo ausente em vez do `null`
+      // que o pacing espera ler.
+      budget: {
+        totalAmountCents: dto.budget.totalAmountCents,
+        currency: dto.budget.currency,
+        ratePerImpressionCents: dto.budget.ratePerImpressionCents,
+        dailyBudgetCents: dto.budget.dailyBudgetCents ?? null,
+      },
       scheduledStart: new Date(dto.scheduledStart),
       scheduledEnd: new Date(dto.scheduledEnd),
       createdBy,
@@ -207,7 +215,12 @@ export class CampaignLifecycleService {
     advertiserName: string;
     status: string;
     priority: number;
-    budget: { totalAmount: number; currency: string; ratePerImpression: number };
+    budget: {
+      totalAmountCents: number;
+      currency: string;
+      ratePerImpressionCents: number;
+      dailyBudgetCents?: number | null;
+    };
     scheduledStart: Date;
     scheduledEnd: Date;
     createdAt?: Date;

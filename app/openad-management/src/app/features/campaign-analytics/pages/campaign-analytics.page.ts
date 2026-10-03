@@ -1,4 +1,4 @@
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { MessageService } from 'primeng/api';
@@ -10,6 +10,7 @@ import {
   CampaignAnalyticsApiService,
   type CampaignReportingSummaryDto,
 } from '../services/campaign-analytics-api.service';
+import { CentsPipe } from '../../../shared/cents.pipe';
 
 @Component({
   selector: 'app-campaign-analytics-page',
@@ -20,7 +21,7 @@ import {
     ButtonModule,
     ProgressSpinnerModule,
     DatePipe,
-    DecimalPipe,
+    CentsPipe,
   ],
   templateUrl: './campaign-analytics.page.html',
 })

@@ -52,9 +52,10 @@ describe('ReportingAggregationService', () => {
             findByCampaignId: jest.fn().mockResolvedValue({
               campaignId,
               budget: {
-                totalAmount: 1000,
+                totalAmountCents: 1000,
                 currency: 'USD',
-                ratePerImpression: 100,
+                ratePerImpressionCents: 100,
+                dailyBudgetCents: null,
               },
             }),
           },
@@ -70,7 +71,12 @@ describe('ReportingAggregationService', () => {
     expect(summary.impressions).toBe(3);
     expect(summary.reach).toBe(2);
     expect(summary.currency).toBe('USD');
-    expect(summary.revenueTotal).toBeCloseTo(300);
+    // Tres veiculacoes a 100 centavos, tier T4 (multiplicador 1,0). Igualdade exata, nao
+    // `toBeCloseTo`: o total e soma de inteiros e nao ha casa para divergir.
+    expect(summary.revenueTotalCents).toBe(300);
+    expect(summary.revenueLines).toEqual([
+      { label: 'zone_tier_T4', plays: 3, amountCents: 300 },
+    ]);
     expect(findMock).toHaveBeenCalled();
   });
 });
