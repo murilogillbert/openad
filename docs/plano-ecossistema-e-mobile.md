@@ -136,17 +136,23 @@ mínimo de `public.users`, bootstrap do `_prisma_migrations`, módulo Nest globa
 validação de ambiente — que hoje valida **6 chaves** com `.passthrough()` e não cobre nem
 `MONGO_URI` nem `JWT_SECRET`.
 
-### 2.2 Isolamento por dono — escrito, aplicado em uma rota só
+### 2.2 Isolamento por dono — feito nas rotas de mídia
 
-`ownerFilterFor` existe e está correta. Está ligada em **exatamente uma** rota: `GET /campaigns`.
+> **Atualizado em 2026-10-02.** `GET /media`, `GET /media/:mediaId` e `DELETE /media/:mediaId`
+> passaram a escopar por dono, o upload grava `ownerUserId`, e o `MediaScopeService` morto foi
+> removido. Cinco asserções de integração provam o isolamento contra o banco, incluindo que o
+> total da paginação acompanha o escopo e que ativo alheio responde **404, não 403** — "existe,
+> mas não é seu" revelaria o ativo e permitiria enumerar o catálogo alheio.
+>
+> **Correção de fato:** eu havia escrito que `media/vfs/*` estava sem escopo e exposto. Lendo
+> os `@Roles` de cada rota, **todas as rotas do VFS são internas** — `fleet_admin`,
+> `super_admin`, `campaign_manager`, `fleet_operator`. Nenhuma aceita `advertiser`, então o
+> anunciante não as alcança: recebe 403 no guard. Acrescentar escopo lá hoje seria código morto,
+> porque papel interno recebe filtro vazio. O caminho de mídia do anunciante é
+> `/advertiser/campaigns/:id/media`, que nasce escopado.
 
-Sem escopo de dono: `GET /media`, `GET /media/:mediaId`, `DELETE /media/:mediaId`, e todo
-`media/vfs/*` (`assets`, `folders`, upload) — que aceitam `mediaId` direto do caminho com
-verificação de papel apenas. O armazenamento já está pronto: `media_assets.ownerUserId` existe
-e tem índice `owner_active`.
-
-E `MediaScopeService` continua declarado como provider em `media-ingestion.module.ts:46` sem
-ninguém injetá-lo. É código morto; a função pura o substituiu.
+`ownerFilterFor` continua sendo a única fonte da regra, e agora tem três consumidores:
+`GET /campaigns` e as três rotas de mídia acima.
 
 ### 2.3 Rotas de anunciante e de moderação — não existem
 

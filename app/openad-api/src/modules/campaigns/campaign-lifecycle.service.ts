@@ -37,7 +37,7 @@ export class CampaignLifecycleService {
   /**
    * Lista campanhas, **sempre** escopada.
    *
-   * `scope` vem de `MediaScopeService.ownerFilter`: `{}` para equipe interna e
+   * `scope` vem de `ownerFilterFor` (`auth/access-scope`): `{}` para equipe interna e
    * `{ ownerUserId }` para anunciante. Antes era `findMany({})` — toda campanha de todo
    * mundo — e o filtro precisa estar na consulta, nao depois: escopar em memoria faria a
    * primeira pagina de um parceiro vir vazia porque foi preenchida com registros de outro

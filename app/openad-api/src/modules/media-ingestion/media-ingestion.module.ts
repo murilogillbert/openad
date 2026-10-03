@@ -12,7 +12,7 @@ import { MediaAsset, MediaAssetSchema } from './schemas/media-asset.schema';
 import { FolderNode, FolderNodeSchema } from './schemas/folder-node.schema';
 import { UploadSession, UploadSessionSchema } from './schemas/upload-session.schema';
 import { UploadSessionService } from './upload-session.service';
-import { MediaScopeService } from './media-scope.service';
+
 import { MediaGcService } from './media-gc.service';
 import { DoohRulesService } from './dooh-rules.service';
 import { FolderService } from './folder.service';
@@ -43,7 +43,7 @@ import { PlatformConfigModule } from '../platform-config/platform-config.module'
     VideoValidatorService,
     HashGeneratorService,
     UploadSessionService,
-    MediaScopeService,
+
     MediaGcService,
     DoohRulesService,
     FolderService,

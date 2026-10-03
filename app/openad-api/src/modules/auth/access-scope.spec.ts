@@ -18,9 +18,9 @@ describe('access-scope', () => {
   });
 
   /**
-   * O defeito que isto fecha: `GET /campaigns` fazia `findMany({})` e `MediaScopeService`
-   * devolvia `true` sempre — e nem era chamado. Abrir para parceiros assim faria cada
-   * anunciante ver e baixar a midia dos outros.
+   * O defeito que isto fecha: `GET /campaigns` fazia `findMany({})` e o antigo
+   * `MediaScopeService` devolvia `true` sempre — e nem era chamado; foi removido. Abrir para
+   * parceiros assim faria cada anunciante ver e baixar a midia dos outros.
    */
   it('anunciante consulta escopado pelo proprio id', () => {
     expect(ownerFilterFor({ userId: 'u-9', role: 'advertiser' })).toEqual({

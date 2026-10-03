@@ -538,6 +538,15 @@ export class MediaIngestionService {
     byteLength: number;
     dto: UploadMediaDto;
     uploadedBy?: string;
+    /**
+     * Dono do ativo — `public.users.id` quando quem sobe e anunciante, e `null` quando e a
+     * equipe interna.
+     *
+     * Separado de `uploadedBy` de proposito: `uploadedBy` e auditoria de quem executou a acao,
+     * `ownerUserId` e a regra de visibilidade. Um operador pode subir midia **por** um
+     * anunciante, e nesse caso os dois valores diferem.
+     */
+    ownerUserId?: string | null;
   }): Promise<MediaAssetDocument> {
     const meta = await this.videoValidator.validateFile({
       filePath: params.tempPath,
@@ -584,6 +593,7 @@ export class MediaIngestionService {
       categorization: 'universal',
       storageUrl,
       uploadedBy: params.uploadedBy,
+      ownerUserId: params.ownerUserId ?? null,
       isActive: true,
     });
 
@@ -595,17 +605,30 @@ export class MediaIngestionService {
     return c === VideoCodec.H265 ? 'h265' : 'h264';
   }
 
-  async listCatalog(params: { page: number; limit: number }) {
+  /**
+   * Catalogo de midia, **sempre** escopado.
+   *
+   * `scope` vem de `ownerFilterFor`: `{}` para equipe interna e `{ ownerUserId }` para
+   * anunciante. O filtro entra na consulta e na contagem, nao depois: escopar em memoria faria
+   * a primeira pagina de um parceiro vir vazia porque foi preenchida com registros de outro e
+   * descartada, e o total seria o de todo mundo.
+   */
+  async listCatalog(params: {
+    page: number;
+    limit: number;
+    scope?: Record<string, unknown>;
+  }) {
     const skip = (params.page - 1) * params.limit;
+    const filtro = { isActive: true, ...(params.scope ?? {}) };
     const [rows, total] = await Promise.all([
       this.mediaModel
-        .find({ isActive: true })
+        .find(filtro)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(params.limit)
         .lean()
         .exec(),
-      this.mediaModel.countDocuments({ isActive: true }).exec(),
+      this.mediaModel.countDocuments(filtro).exec(),
     ]);
     return {
       data: rows,
@@ -613,17 +636,31 @@ export class MediaIngestionService {
     };
   }
 
-  async getById(mediaId: string) {
-    const row = await this.mediaModel.findOne({ mediaId }).lean().exec();
+  /**
+   * Detalhe de um ativo, escopado pelo dono.
+   *
+   * Ativo de outro parceiro responde **404, nao 403**, e isso e deliberado: "existe, mas nao e
+   * seu" revela que o ativo existe, e com um identificador em maos daria para enumerar o
+   * catalogo alheio. Para quem nao e dono, o recurso simplesmente nao existe.
+   */
+  async getById(mediaId: string, scope: Record<string, unknown> = {}) {
+    const row = await this.mediaModel
+      .findOne({ mediaId, ...scope })
+      .lean()
+      .exec();
     if (!row) {
       throw new NotFoundException({ error: { code: 'NOT_FOUND', message: mediaId } });
     }
     return row;
   }
 
-  async softDelete(mediaId: string): Promise<void> {
+  /** Exclusao logica, escopada pelo dono. Mesma regra de 404 do `getById`. */
+  async softDelete(
+    mediaId: string,
+    scope: Record<string, unknown> = {}
+  ): Promise<void> {
     const res = await this.mediaModel
-      .updateOne({ mediaId }, { $set: { isActive: false } })
+      .updateOne({ mediaId, ...scope }, { $set: { isActive: false } })
       .exec();
     if (res.matchedCount === 0) {
       throw new NotFoundException({ error: { code: 'NOT_FOUND', message: mediaId } });
