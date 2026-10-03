@@ -70,12 +70,20 @@ export class Vehicle {
 export const VehicleSchema = SchemaFactory.createForClass(Vehicle);
 
 VehicleSchema.index({ vehicleId: 1 }, { unique: true, name: 'vehicleId_1' });
+// Placa única entre os veículos que ainda estão em operação — um veículo desativado não deve
+// bloquear o recadastro da mesma placa.
+//
+// O filtro é `$in` e não `$ne`: o MongoDB **recusa** `$not`/`$ne` em
+// `partialFilterExpression` ("Expression not supported in partial index"), e a recusa derruba
+// o `syncIndexes()` inteiro — ou seja, a placa ficava sem nenhuma restrição de unicidade, em
+// silêncio, porque `IndexEnsureService` só registra aviso. Como `status` é um enum fechado de
+// três valores, enumerar os dois que interessam é equivalente e é aceito.
 VehicleSchema.index(
   { registrationPlate: 1 },
   {
     unique: true,
     name: 'registrationPlate_active_unique',
-    partialFilterExpression: { status: { $ne: 'decommissioned' } },
+    partialFilterExpression: { status: { $in: ['active', 'inactive'] } },
   }
 );
 

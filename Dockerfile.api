@@ -133,12 +133,19 @@ USER node
 
 EXPOSE 3000
 
-# `/health` é servido por `HealthModule` (`@nestjs/terminus`) e checa Mongo, Redis e MQTT. O
-# `start-period` é generoso porque a primeira conexão com o Mongo e a subida do consumidor do
-# RabbitMQ levam alguns segundos — sem isso, o orquestrador mataria o contêiner durante um
+# `/api/health` é servido por `HealthModule` (`@nestjs/terminus`) e checa Mongo, Redis e o
+# painel do RabbitMQ.
+#
+# O caminho é `/api/health`, **não** `/health`: `main.ts` aplica o prefixo global `api/v1` e
+# lista `api/health` entre as exclusões, então o controlador responde exatamente aí. Apontar
+# para `/health` deixava o contêiner eternamente `health: starting` com um 404 a cada 5 s no
+# log, enquanto a aplicação estava de pé.
+#
+# O `start-period` é generoso porque a primeira conexão com o Mongo e a subida do consumidor
+# do RabbitMQ levam alguns segundos — sem isso, o orquestrador mataria o contêiner durante um
 # boot que estava indo bem.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=45s --retries=3 \
-  CMD curl -fsS http://127.0.0.1:3000/health || exit 1
+  CMD curl -fsS http://127.0.0.1:3000/api/health || exit 1
 
 ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["node", "main.js"]

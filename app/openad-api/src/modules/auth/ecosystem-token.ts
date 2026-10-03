@@ -17,6 +17,19 @@ export const ESTRATEGIA_INTERNA = 'jwt-internal';
 export const ESTRATEGIA_FEDERADA = 'jwt-federated';
 
 /**
+ * Estrategia que valida token do ecossistema **sem** exigir que a conta ja seja anunciante.
+ *
+ * Existe porque `jwt-federated` resolve o `sub` em `openad.ad_advertisers` e devolve `null`
+ * quando nao acha — o que significa 401 para quem ainda nao aderiu. Sem uma estrategia que
+ * autentique antes da adesao, nao haveria como aderir: a unica rota capaz de criar a linha
+ * exigiria a linha que ela cria.
+ *
+ * O principal que ela resolve e o usuario do hub (`public.users`), e so a adesao
+ * (`/advertiser/onboarding`) a usa. Nenhuma rota de dado de campanha deve aceita-la.
+ */
+export const ESTRATEGIA_ECOSSISTEMA = 'jwt-ecosystem';
+
+/**
  * Payload que o **hub** emite (`hub/backend/src/infra/auth/jwt.ts`, `AccessTokenClaims`).
  *
  * `role` aqui e papel do hub (`Passenger`, `Driver`, `Partner`, `Admin`, ...), **nao** papel

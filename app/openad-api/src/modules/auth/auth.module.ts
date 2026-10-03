@@ -12,6 +12,7 @@ import {
 import { FederatedIdentityService } from './federated-identity.service';
 import { InternalJwtStrategy } from './strategies/internal-jwt.strategy';
 import { FederatedJwtStrategy } from './strategies/federated-jwt.strategy';
+import { EcosystemJwtStrategy } from './strategies/ecosystem-jwt.strategy';
 import { User, UserSchema } from './schemas/user.schema';
 import { UsersService } from './users.service';
 import { AdminProfileController } from './admin-profile.controller';
@@ -72,6 +73,7 @@ import { AssetStorageModule } from '../../infrastructure/storage/storage.module'
     FederatedIdentityService,
     InternalJwtStrategy,
     FederatedJwtStrategy,
+    EcosystemJwtStrategy,
   ],
   exports: [
     AuthService,

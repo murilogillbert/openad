@@ -133,13 +133,14 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:?defina RABBITMQ_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?defina RABBITMQ_PASSWORD}
-      # A marca d'água padrão é 40% da RAM do **host** (~3,1 GB aqui), bem acima do limite do
-      # cgroup. Em valor absoluto, o RabbitMQ aplica contrapressão aos publicadores antes de
-      # o cgroup matá-lo — degrada em vez de morrer.
-      RABBITMQ_VM_MEMORY_HIGH_WATERMARK: 384MiB
     volumes:
       - openad-rabbitmq-data:/var/lib/rabbitmq
       - ./docker/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
+      # A marca d'água de memória vem de arquivo, **não** de variável de ambiente: o
+      # RabbitMQ 4 recusa subir com `RABBITMQ_VM_MEMORY_HIGH_WATERMARK` definida
+      # ("deprecated environment variables detected") e entra em laço de reinício. Ver a nota
+      # no próprio `rabbitmq.conf`.
+      - ./docker/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
     deploy:
       resources:
         limits:
@@ -196,9 +197,18 @@ services:
       MONGO_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@openad-mongo:27017/openad?authSource=admin
       REDIS_URL: redis://:${REDIS_PASSWORD}@openad-redis:6379
       MQTT_URL: mqtt://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@openad-rabbitmq:1883
-      RABBITMQ_MANAGEMENT_URL: http://openad-rabbitmq:15672
-      RABBITMQ_USER: ${RABBITMQ_USER}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+
+      # Os nomes são `MQTT_MANAGEMENT_*`, não `RABBITMQ_MANAGEMENT_*`: é o que
+      # `MqttBrokerHealthIndicator` lê. Com os nomes errados, ele caía no padrão
+      # `http://127.0.0.1:15672` — o próprio contêiner da API, onde não há broker — e
+      # `/api/health` respondia 503 para sempre.
+      # As mesmas três também são o que `RabbitmqManagementService` usa para criar o usuário
+      # MQTT de cada tablete com ACL por tópico. `RABBITMQ_MANAGEMENT_URL`, `RABBITMQ_USER` e
+      # `RABBITMQ_PASSWORD` estavam aqui antes e **nenhuma delas é lida pela aplicação** — não
+      # existe um único `process.env.RABBITMQ_USER` no código da API.
+      MQTT_MANAGEMENT_URL: http://openad-rabbitmq:15672
+      MQTT_MANAGEMENT_USER: ${RABBITMQ_USER}
+      MQTT_MANAGEMENT_PASSWORD: ${RABBITMQ_PASSWORD}
 
       # O `brokerUrl` entregue ao tablete no pareamento. É WSS porque o Cloudflare não
       # encaminha TCP bruto — ver a nota no serviço `rabbitmq`.
@@ -222,9 +232,25 @@ services:
       # Repasse ao motorista: o openad credita `opendriver.driver_earnings` por HTTP, porque
       # aquele schema não é propriedade dele.
       OPENDRIVER_API_URL: ${OPENDRIVER_API_URL:-http://cag0pegfzuz1zfhkxgjsfzf2-000753239468:5100}
-      ECOSYSTEM_SERVICE_API_KEY: ${ECOSYSTEM_SERVICE_API_KEY:?defina a chave de servico}
+      # Sem `:?` de propósito: a ausência desta chave **não** deve impedir o boot.
+      #
+      # `DriverEarningClient.creditar` já trata a falta de configuração como "desligado",
+      # registra em log e devolve `false` — e o repasse perdido é recuperável pela conferência
+      # em `/internal/ads/payouts`. Exigir a chave aqui trocaria uma degradação visível e
+      # reversível por um serviço que não sobe, o que é estritamente pior.
+      ECOSYSTEM_SERVICE_API_KEY: ${ECOSYSTEM_SERVICE_API_KEY:-}
 
       RABBITMQ_PROVISION_DEVICE_MQTT_USERS: 'true'
+
+      # Primeiro `super_admin` do portal. `UsersService.seedAdminUser` só age quando a coleção
+      # de usuários está **vazia**, então isto não é um backdoor permanente: depois do primeiro
+      # boot bem-sucedido, mudar estas variáveis não cria nem altera ninguém.
+      #
+      # Sem elas o portal sobe sem ninguém para entrar — não há tela de cadastro de operador,
+      # por desenho. Os valores vêm do `.env`, gerados por `infra/server/20-admin-inicial.sh`.
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+
       LOG_LEVEL: ${LOG_LEVEL:-info}
     deploy:
       resources:

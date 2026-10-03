@@ -47,7 +47,13 @@ export class IndexEnsureService implements OnApplicationBootstrap {
 
     const checks: { collection: string; expectNames: string[] }[] = [
       { collection: 'devices', expectNames: ['deviceId_1', 'serialNumber_1'] },
-      { collection: 'vehicles', expectNames: ['vehicleId_1', 'registrationPlate_1'] },
+      // `registrationPlate_active_unique` é o nome que `vehicles.schema.ts` declara. A lista
+      // pedia `registrationPlate_1`, que nunca existiu: o aviso aparecia em todo boot mesmo
+      // com o índice criado corretamente, o que treina quem opera a ignorar este log.
+      {
+        collection: 'vehicles',
+        expectNames: ['vehicleId_1', 'registrationPlate_active_unique'],
+      },
       { collection: 'campaigns', expectNames: ['campaignId_1'] },
       { collection: 'impression_events', expectNames: ['eventId_1'] },
       { collection: 'report_jobs', expectNames: ['jobId_1'] },

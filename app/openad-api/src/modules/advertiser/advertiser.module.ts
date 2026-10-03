@@ -14,6 +14,8 @@ import {
 import { AdvertiserController } from './advertiser.controller';
 import { AdvertiserCampaignsService } from './advertiser-campaigns.service';
 import { AdvertiserInventoryService } from './advertiser-inventory.service';
+import { AdvertiserOnboardingController } from './advertiser-onboarding.controller';
+import { AdvertiserOnboardingService } from './advertiser-onboarding.service';
 
 /**
  * Superficie do app do anunciante (`/api/v1/advertiser/*`).
@@ -40,7 +42,21 @@ import { AdvertiserInventoryService } from './advertiser-inventory.service';
     AnalyticsModule,
     PlatformConfigModule,
   ],
-  controllers: [AdvertiserController],
-  providers: [AdvertiserCampaignsService, AdvertiserInventoryService],
+  /**
+   * `AdvertiserOnboardingController` vem **antes** do `AdvertiserController`.
+   *
+   * Nao e preferencia de ordenacao: o Nest registra rotas na ordem dos controladores, e
+   * `advertiser/onboarding` precisa ser avaliado antes de qualquer rota com parametro no
+   * mesmo nivel. Hoje nao ha conflito (`AdvertiserController` so tem `campaigns/...` e
+   * `inventory/...`), mas um `@Get(':algo')` acrescentado ali no futuro capturaria
+   * `/advertiser/onboarding` e a adesao passaria a responder 401 sem nenhuma alteracao neste
+   * arquivo.
+   */
+  controllers: [AdvertiserOnboardingController, AdvertiserController],
+  providers: [
+    AdvertiserCampaignsService,
+    AdvertiserInventoryService,
+    AdvertiserOnboardingService,
+  ],
 })
 export class AdvertiserModule {}

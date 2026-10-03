@@ -29,3 +29,7 @@ __screenshots__/
 *.keystore
 *.p12
 *.pfx
+
+# Tarballs de imagem Docker gerados por `docker save` para transferir para a VPS.
+# Sao artefatos de centenas de megabytes, reproduziveis a partir dos Dockerfiles.
+.imagens/
