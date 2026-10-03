@@ -22,7 +22,30 @@ export class MediaFolderProvisioningService {
     this.logger.setContext(MediaFolderProvisioningService.name);
   }
 
-  async ensureCampaignFolder(campaignId: string, campaignName: string): Promise<void> {
+  async ensureCampaignFolder(
+    campaignId: string,
+    campaignName: string
+  ): Promise<void> {
+    await this.ensureCampaignFolderId(campaignId, campaignName);
+  }
+
+  /**
+   * Mesma garantia de `ensureCampaignFolder`, mas devolve o identificador da pasta.
+   *
+   * Existe porque o upload do anunciante precisa colocar o criativo **na pasta da campanha**,
+   * e nao na `/Root/Defaults/Global_Ads` que o fluxo de VFS usa como destino padrao. Deixar o
+   * cliente informar o `folderId` nao serve: ele poderia apontar para a pasta de outro
+   * anunciante. Entao o servidor resolve a pasta a partir da campanha, que ele ja validou ser
+   * do solicitante.
+   *
+   * Devolve `null` quando o VFS nao foi inicializado — mesmo caso em que a versao anterior
+   * apenas registrava aviso e seguia. Quem chama decide se isso e fatal; para o upload do
+   * anunciante e, porque o criativo iria para a pasta errada.
+   */
+  async ensureCampaignFolderId(
+    campaignId: string,
+    campaignName: string
+  ): Promise<string | null> {
     const campaignsRoot = await this.folderModel
       .findOne({ materializedPath: '/Root/Campaigns' })
       .exec();
@@ -31,7 +54,7 @@ export class MediaFolderProvisioningService {
         { campaignId },
         'Campaigns root missing; skip media folder provisioning'
       );
-      return;
+      return null;
     }
     const seg = slugSegment(campaignName);
     const materializedPath = `/Root/Campaigns/${seg}`;
@@ -41,15 +64,12 @@ export class MediaFolderProvisioningService {
     if (existing) {
       if (existing.campaignId !== campaignId) {
         await this.folderModel
-          .updateOne(
-            { _id: existing._id },
-            { $set: { campaignId } }
-          )
+          .updateOne({ _id: existing._id }, { $set: { campaignId } })
           .exec();
       }
-      return;
+      return existing._id.toString();
     }
-    await this.folderModel.create({
+    const criada = await this.folderModel.create({
       name: seg,
       parentId: campaignsRoot._id.toString(),
       materializedPath,
@@ -60,5 +80,6 @@ export class MediaFolderProvisioningService {
       { campaignId, materializedPath },
       'campaign media folder provisioned'
     );
+    return criada._id.toString();
   }
 }

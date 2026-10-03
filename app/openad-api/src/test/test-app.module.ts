@@ -27,6 +27,7 @@ import { ManifestModule } from '../modules/manifest/manifest.module';
 import { PriorityCommandsModule } from '../modules/priority-commands/priority-commands.module';
 import { SpatialLedgerModule } from '../modules/spatial-ledger/spatial-ledger.module';
 import { AnalyticsModule } from '../modules/analytics/analytics.module';
+import { AdvertiserModule } from '../modules/advertiser/advertiser.module';
 import { ReleasesModule } from '../modules/releases/releases.module';
 import { PlatformConfigModule } from '../modules/platform-config/platform-config.module';
 
@@ -62,6 +63,7 @@ import { PlatformConfigModule } from '../modules/platform-config/platform-config
     PriorityCommandsModule,
     SpatialLedgerModule,
     AnalyticsModule,
+    AdvertiserModule,
     ReleasesModule,
     PlatformConfigModule,
   ],

@@ -28,6 +28,7 @@ import { ManifestModule } from '../modules/manifest/manifest.module';
 import { PriorityCommandsModule } from '../modules/priority-commands/priority-commands.module';
 import { SpatialLedgerModule } from '../modules/spatial-ledger/spatial-ledger.module';
 import { AnalyticsModule } from '../modules/analytics/analytics.module';
+import { AdvertiserModule } from '../modules/advertiser/advertiser.module';
 import { DashboardModule } from '../modules/dashboard/dashboard.module';
 import { ReleasesModule } from '../modules/releases/releases.module';
 import { AssetStorageModule } from '../infrastructure/storage/storage.module';
@@ -104,6 +105,7 @@ const testRun = process.env.NODE_ENV === 'test';
     PriorityCommandsModule,
     SpatialLedgerModule,
     AnalyticsModule,
+    AdvertiserModule,
     DashboardModule,
     ReleasesModule,
     PlatformConfigModule,

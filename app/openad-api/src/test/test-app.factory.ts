@@ -186,6 +186,33 @@ export async function loginAsFleetOperator(
   return res.body.accessToken as string;
 }
 
+/**
+ * Token na forma que o **hub** emite, para exercitar a identidade federada.
+ *
+ * O `JwtService` do openad ja assina com `issuer` e `audience` do ecossistema e com o mesmo
+ * `JWT_SECRET`, que e justamente o que torna o token de um servico valido no outro — e o que
+ * a `FederatedJwtStrategy` verifica. Entao assinar daqui produz um token indistinguivel de
+ * um emitido pelo hub, sem precisar subir o hub.
+ *
+ * O `role` e deliberadamente um papel **do hub** (`Partner`), nao do openad: a suite tem de
+ * provar que a autorizacao nao vem desse campo.
+ */
+export function signEcosystemToken(
+  app: INestApplication,
+  sub: string,
+  extras: { email?: string; role?: string } = {}
+): string {
+  const jwt = app.get(JwtService);
+  return jwt.sign(
+    {
+      sub,
+      email: extras.email ?? `${sub}@parceiro.test`,
+      role: extras.role ?? 'Partner',
+    },
+    { expiresIn: '1h' }
+  );
+}
+
 /** Device JWT (`typ: device`) for integration tests — optional `fp` when device has hardware fingerprint. */
 export function signDeviceAccessToken(
   app: INestApplication,

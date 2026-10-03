@@ -53,15 +53,26 @@ export class MediaIngestionService {
 
   /**
    * Presigned VFS flow: verify storage → catalog row → mark session completed.
+   *
+   * `ownerUserId` e `null` no caminho interno — midia enviada pelo operador e da plataforma,
+   * e `ownerFilterFor` devolve filtro vazio para papel interno, de modo que gravar o operador
+   * como dono nao mudaria visibilidade nenhuma e so confundiria a auditoria. No caminho do
+   * anunciante ele e obrigatorio: e o unico campo que separa a midia de um parceiro da do
+   * outro.
    */
   async completeVfsUpload(
     sessionId: string,
-    userId: string
+    userId: string,
+    ownerUserId: string | null = null
   ): Promise<UploadSessionCompleteResponse> {
     const { session, verifiedContentLength } =
       await this.uploadSessions.verifySessionForCatalog(sessionId, userId);
     try {
-      const row = await this.registerVfsCatalog(session, verifiedContentLength);
+      const row = await this.registerVfsCatalog(
+        session,
+        verifiedContentLength,
+        ownerUserId
+      );
       await this.uploadSessions.markSessionCompleted(sessionId);
       this.metrics.mediaVfsMutationsTotal.inc({ op: 'complete', outcome: 'ok' });
       return row;
@@ -107,7 +118,8 @@ export class MediaIngestionService {
 
   private async registerVfsCatalog(
     session: UploadSessionDocument,
-    verifiedContentLength: number
+    verifiedContentLength: number,
+    ownerUserId: string | null
   ): Promise<UploadSessionCompleteResponse> {
     const buffer = await this.assets.readBufferFromKey(session.storageKey);
     if (buffer.length !== verifiedContentLength) {
@@ -121,8 +133,21 @@ export class MediaIngestionService {
 
     const hash = this.hashGenerator.sha256Buffer(buffer);
     if (this.doohRules.dedupEnabled()) {
+      /**
+       * A deduplicacao e **escopada pelo dono**, e isso nao e detalhe.
+       *
+       * Antes o filtro era so `{ hash, isActive: true }`. No caminho interno isso esta certo:
+       * midia da plataforma nao precisa de duas copias do mesmo arquivo. No caminho do
+       * anunciante seria vazamento entre parceiros: dois anunciantes que subissem o mesmo
+       * video de estoque — ou, pior, um que soubesse o arquivo do outro — receberiam o
+       * `mediaId` alheio. A campanha ficaria apontando para midia de terceiro, e
+       * `ownerFilterFor` esconderia esse ativo do proprio anunciante que acabou de envia-lo.
+       *
+       * Com o escopo, cada dono tem no maximo uma copia, e o dono institucional (`null`)
+       * continua deduplicando entre si como antes.
+       */
       const existing = await this.mediaModel
-        .findOne({ hash, isActive: true })
+        .findOne({ hash, isActive: true, ownerUserId: ownerUserId ?? null })
         .exec();
       if (existing) {
         return {
@@ -186,6 +211,7 @@ export class MediaIngestionService {
       folderId: placement.folderId,
       campaignId: placement.campaignId,
       storageKey: session.storageKey,
+      ownerUserId,
       mimeType: mime,
       validationStatus: 'approved',
       probeStatus: 'complete',
