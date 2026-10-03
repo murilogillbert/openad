@@ -1,6 +1,15 @@
 /**
- * Parse broker URL for @capgo/capacitor-mqtt (Paho expects `tcp://host` + port, or `ssl://`).
- * For `mqtt.js` (web dev) the original `mqtt://` / `ws://` string is used as-is.
+ * Traduz a URL do broker para o formato que o `@capgo/capacitor-mqtt` (Paho) espera:
+ * `tcp://host` ou `ssl://host` para MQTT puro, `ws://host` ou `wss://host` para WebSocket,
+ * sempre com a porta separada.
+ *
+ * Para o `mqtt.js` (desenvolvimento no navegador) a string original e usada como esta.
+ *
+ * **O caminho e preservado.** Isso importa em producao atras do Cloudflare: o proxy dele
+ * encaminha HTTP e WebSocket na 443, mas nao TCP bruto na 1883/8883, entao o tablete fala
+ * MQTT sobre WebSocket. E o `rabbitmq_web_mqtt` serve em `/ws` por padrao — descartar o
+ * caminho faria o handshake bater na raiz e a conexao ser recusada. A versao anterior usava
+ * so `u.hostname` e perdia o `/ws`.
  */
 export function parseBrokerForCapgo(mqttUrl: string): {
   serverURI: string;
@@ -21,12 +30,15 @@ export function parseBrokerForCapgo(mqttUrl: string): {
   const host = u.hostname;
 
   if (u.protocol === 'mqtt:' || u.protocol === 'mqtts:') {
+    // MQTT puro nao tem caminho: um `/algo` aqui seria sempre erro de configuracao.
     const scheme = u.protocol === 'mqtts:' ? 'ssl' : 'tcp';
     return { serverURI: `${scheme}://${host}`, port };
   }
 
   if (u.protocol === 'ws:' || u.protocol === 'wss:') {
-    return { serverURI: `${u.protocol}//${host}`, port };
+    // `new URL('wss://host').pathname` e `/`, que nao acrescenta nada ao serverURI.
+    const caminho = u.pathname === '/' ? '' : u.pathname;
+    return { serverURI: `${u.protocol}//${host}${caminho}`, port };
   }
 
   throw new Error(`Unsupported MQTT broker URL for native client: ${mqttUrl}`);

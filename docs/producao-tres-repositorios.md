@@ -110,20 +110,113 @@ Credenciais de Asaas, Infosimples e afins vivem **só** em `public.integration_s
 Admin → Integrações do hub. Não em `.env`, não em código, não em commit. O `updateSetting`
 recusa chave fora do catálogo, o que é proteção e também limitação — ver §5.3.
 
-### 1.7 MQTT não atravessa o proxy do Cloudflare
+### 1.7 MQTT: o que configurar, e por que o Cloudflare sozinho não resolve
 
-O proxy do Cloudflare encaminha HTTP e WebSocket, **não** TCP bruto nas portas 1883/8883. O
-player depende de MQTT. Três saídas, em ordem de preferência:
+**O problema em uma frase:** o proxy do Cloudflare encaminha HTTP e WebSocket na porta 443,
+mas **não** encaminha TCP bruto nas portas 1883 e 8883. MQTT nativo é TCP bruto. Encaminhar TCP
+arbitrário é o Cloudflare Spectrum, que é plano Enterprise.
 
-1. **MQTT sobre WebSocket seguro** em subdomínio próprio (`mqtt.opendriver.com.br`), proxiado.
-   É o que convive melhor com o resto da infraestrutura. Exige habilitar o plugin
-   `rabbitmq_web_mqtt` e ajustar o cliente do tablete.
-2. Subdomínio **cinza** (sem proxy) com TLS próprio na porta 8883. Funciona, mas expõe o IP de
-   origem.
-3. Porta direta sem TLS. **Não faça**: credencial de tablete trafegaria em claro.
+**A boa notícia:** o caminho que funciona já está quase todo pronto no repositório.
 
-Isso precisa ser decidido **antes** de provisionar, porque muda a configuração do broker e do
-aplicativo.
+#### O desenho recomendado: MQTT sobre WebSocket seguro
+
+```
+Tablete  ──wss://mqtt.opendriver.com.br:443/ws──>  Cloudflare (proxy)
+                                                        │
+                                                        ↓ TLS
+                                              Traefik/Coolify no servidor
+                                                        │
+                                                        ↓ ws://openad-rabbitmq:15675/ws
+                                                  rabbitmq_web_mqtt
+```
+
+Três fatos verificados no código que tornam isso viável sem reescrever nada:
+
+1. **O plugin `rabbitmq_web_mqtt` já está habilitado.** O arquivo
+   `docker/rabbitmq/enabled_plugins` contém
+   `[rabbitmq_management, rabbitmq_mqtt, rabbitmq_web_mqtt]`. Em produção, basta montar o mesmo
+   arquivo.
+2. **O cliente do tablete já fala WebSocket.** `MqttClientService` usa
+   `@capgo/capacitor-mqtt` (Paho) no Android e `mqtt.js` no navegador, e `parseBrokerForCapgo`
+   trata `ws:` e `wss:` além de `mqtt:` e `mqtts:`.
+3. **O endereço do broker não está compilado no APK.** Cada tablete recebe
+   `mqtt.brokerUrl` na resposta do pareamento, junto com usuário e senha próprios. Então trocar
+   de `mqtt://` para `wss://` é **configuração de servidor, não build novo de aplicativo**.
+
+> Um detalhe que estava errado e foi corrigido em 2026-10-02: o `parseBrokerForCapgo`
+> descartava o caminho da URL, usando só o nome do host. Como o `rabbitmq_web_mqtt` atende em
+> **`/ws`** por padrão, `wss://mqtt.opendriver.com.br/ws` chegaria ao Paho como
+> `wss://mqtt.opendriver.com.br`, o handshake bateria na raiz e a conexão seria recusada —
+> provavelmente com horas de depuração pelo caminho. O caminho agora é preservado, com teste.
+
+#### Configuração, lado servidor
+
+```bash
+# Porta do plugin: 15675 (WebSocket), caminho padrao /ws.
+# Opcional, se preferir servir na raiz em vez de /ws:
+#   echo 'web_mqtt.ws_path = /' >> /etc/rabbitmq/rabbitmq.conf
+```
+
+No Coolify, publique `mqtt.opendriver.com.br` apontando para a porta **15675** do contêiner do
+RabbitMQ. **Não** exponha 1883 nem 15672 para a internet: a 1883 não é usada neste desenho e a
+15672 é o painel de administração.
+
+E no pareamento, o `brokerUrl` que a API devolve ao tablete passa a ser
+`wss://mqtt.opendriver.com.br/ws`.
+
+#### Respondendo direto: preciso de certificado digital?
+
+**Não precisa comprar nada.** Mas há duas pernas de TLS, e o Cloudflare cobre só uma:
+
+| Perna | Quem cobre | O que fazer |
+|---|---|---|
+| Tablete → borda do Cloudflare | **Cloudflare**, automático | Nada. O Universal SSL emite o certificado público de `mqtt.opendriver.com.br`, e o Android confia porque é CA pública. |
+| Borda → servidor de origem | **você** | Em modo Full (strict) o Cloudflare exige certificado válido na origem. O Coolify já emite Let's Encrypt via Traefik para os outros subdomínios; use o mesmo caminho. Alternativa igualmente gratuita: o **Cloudflare Origin Certificate**, válido por até 15 anos, confiado apenas pelo Cloudflare — que é exatamente o que se quer numa origem. |
+
+Ordem importa, e é a mesma dos outros subdomínios: deixe o registro **cinza** (sem proxy) até o
+certificado ser emitido, porque a validação do Let's Encrypt precisa alcançar a origem. Depois
+ligue o proxy em **Full (strict)**.
+
+**Não há certificado de cliente nem mTLS neste desenho.** A autenticação do tablete é usuário e
+senha, provisionados por dispositivo no pareamento
+(`RABBITMQ_PROVISION_DEVICE_MQTT_USERS=true`), com ACL por tópico. O TLS existe para proteger
+essa credencial em trânsito — e é por isso que a opção de porta aberta sem TLS está descartada
+abaixo.
+
+#### As alternativas, e por que não
+
+- **Subdomínio cinza na 8883 com `mqtts://`.** Funciona, e o cliente já suporta. Mas expõe o IP
+  de origem (perde-se a proteção de DDoS do Cloudflare) e exige gerenciar o certificado
+  diretamente no broker, em vez de deixar o Traefik cuidar. Só vale se o WebSocket der algum
+  problema que você não consiga diagnosticar.
+- **Porta 1883 aberta, sem TLS.** **Não faça.** A credencial de cada tablete trafegaria em
+  claro, e com ela um atacante publica comando remoto na frota — inclusive troca de conteúdo e
+  reinício.
+- **Cloudflare Spectrum.** Resolveria TCP bruto, mas é Enterprise. Não se justifica quando o
+  WebSocket resolve de graça.
+
+#### Como verificar que funcionou
+
+```bash
+# No servidor, direto no contêiner (sem passar pelo Cloudflare)
+curl -i -N -H 'Connection: Upgrade' -H 'Upgrade: websocket' \
+     -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' \
+     -H 'Sec-WebSocket-Protocol: mqtt' \
+     http://127.0.0.1:15675/ws
+# Esperado: HTTP/1.1 101 Switching Protocols
+
+# De fora, pelo dominio (depois de ligar o proxy)
+curl -i -N -H 'Connection: Upgrade' -H 'Upgrade: websocket' \
+     -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' \
+     -H 'Sec-WebSocket-Protocol: mqtt' \
+     https://mqtt.opendriver.com.br/ws
+```
+
+Um `101 Switching Protocols` nas duas confirma a ponta a ponta. Se a primeira funciona e a
+segunda não, o problema está no Cloudflare ou no roteamento do Traefik, não no broker.
+
+O teste que de fato importa vem depois: parear um tablete e confirmar que ele recebe o
+`schedule` retido e publica `heartbeat`.
 
 ### 1.8 O keystore de release do player é irreparável
 
@@ -439,6 +532,39 @@ validação de recibo das lojas quando a Fase D chegar.
 **Faça esta janela sozinha.** Não a misture com migration. Ela troca mock por cobrança real em
 **dois** serviços ao mesmo tempo, e o modo de falha é cobrar alguém errado.
 
+### 6.0 Atenção: a chave na tela de admin **não** ativa o Asaas
+
+Cadastrar `Asaas:ApiKey` em Admin → Integrações é necessário e **não é suficiente**. São dois
+mecanismos distintos, e o código do hub diz isso explicitamente em
+`backend/src/infra/paymentGateways/index.ts`:
+
+| O que | De onde vem | Precisa de redeploy? |
+|---|---|---|
+| **Credenciais** — `Asaas:ApiKey`, `Asaas:Environment`, `Asaas:WebhookToken` | `public.integration_settings`, pela tela de admin. Lidas por `getSetting()` **a cada requisição** | **Não** |
+| **Qual gateway está ativo** — `PAYMENT_PROVIDER` | variável de ambiente, lida **uma vez no boot** | **Sim** |
+
+A seleção do gateway é uma constante de módulo:
+
+```ts
+export let paymentGateway: IPaymentGateway =
+  config.paymentProvider === 'mercadopago' ? new MercadoPagoGateway()
+  : config.paymentProvider === 'asaas'     ? new AsaasGateway()
+  : new MockPaymentGateway();
+```
+
+Isso avalia uma vez, quando o módulo carrega. O comentário no próprio arquivo registra:
+*"Trocar o provider em produção exige mudar a env var e redeployar; não há troca em runtime
+pelo Admin → Integrações"*.
+
+**O modo de falha é silencioso e é o pior possível:** com a chave cadastrada e
+`PAYMENT_PROVIDER` ainda em `mock`, a tela mostra tudo configurado, nenhum erro aparece em log,
+e o `MockPaymentGateway` continua aprovando pagamento que **nunca foi cobrado**. Alguém anda de
+carro de graça e a corrida consta como paga.
+
+Então a sequência é: cadastrar as credenciais pela tela (passos 2 a 4), **depois** virar
+`PAYMENT_PROVIDER` no Coolify e redeployar (passos 6 a 8), e só então o teste real do fim desta
+seção.
+
 ### Checklist (9 itens do plano do opendriver)
 
 1. No painel do Asaas, **confirmar qual ambiente** você quer: produção ou sandbox. O plano
@@ -620,7 +746,7 @@ Você já vai criar no Cloudflare. A nomenclatura segue o padrão existente:
 |---|---|---|
 | `adsapi.opendriver.com.br` | API do openad | Full (strict), **depois** do certificado emitir |
 | `ads.opendriver.com.br` | portal do operador e do anunciante | idem |
-| a decidir (§1.7) | MQTT dos tabletes | depende da saída escolhida |
+| `mqtt.opendriver.com.br` | MQTT dos tabletes, sobre WebSocket na 443 (§1.7) | idem, apontando para a porta 15675 do RabbitMQ |
 
 A orientação do `infra/README.md` do opendriver vale aqui: deixe **cinza** (sem proxy) até o
 certificado ser emitido, depois ligue o proxy em Full (strict). Proxiar antes faz o Let's
@@ -717,6 +843,8 @@ Marque só o que você verificou por execução, não por leitura:
       confirmada nos dois lados (painel e webhook)
 - [ ] Veículo com placa real de MT ou MS validado pela Infosimples
 - [ ] Mongo, Redis e RabbitMQ respondendo, **com autenticação**, e nenhuma porta exposta
+- [ ] `wss://mqtt.opendriver.com.br/ws` devolvendo `101 Switching Protocols`
+- [ ] Um tablete pareado recebendo `schedule` retido e publicando `heartbeat` por WebSocket
 - [ ] Backup do Mongo configurado e testado com uma restauração
 - [ ] `https://adsapi.opendriver.com.br/api/health` responde
 - [ ] Primeiro administrador do openad criado e com senha trocada
@@ -753,6 +881,18 @@ exige contrato de telefonia.
 
 ---
 
+## 12.1 Decisões já fechadas
+
+Para não serem reabertas por engano no meio da execução:
+
+| Item | Decisão | Consequência |
+|---|---|---|
+| Carteira do repasse ao motorista | `opendriver.driver_earnings`, com valor novo em `EarningType` | Nenhuma tela nova: o motorista já vê "meus ganhos" e pede saque por PIX. Exige migration aditiva de enum **no repositório opendriver** e uma rota `/internal` lá. |
+| Defasagem de caixa do repasse (R3) | `store_cycle` — acompanha o ciclo da loja | Sem risco de caixa. Já é o padrão implementado, então não gera trabalho; ligar a antecipação é um clique no painel, não um deploy. |
+| Portal do operador e do anunciante | mesmo domínio, `ads.opendriver.com.br` | Simplifica CORS e certificado. |
+| Framework e linguagem do player | Capacitor, nativo em Kotlin | Fechado. iOS está fora por impossibilidade da plataforma, não por escolha de linguagem. |
+| Transporte do MQTT | WebSocket seguro na 443, atrás do Cloudflare (§1.7) | Nenhum build novo de aplicativo: o endereço do broker chega ao tablete no pareamento. |
+
 ## 13. Se algo der errado
 
 1. **Pare.** Não tente consertar schema em produção no improviso.
@@ -764,3 +904,8 @@ exige contrato de telefonia.
    (§1.10). A mensagem de erro diz isso, de propósito.
 5. Se o `migrate deploy` do openad falhar com "migration persistence is not initialized", o
    bootstrap da §5 não rodou.
+6. Se um pagamento "aprovar" sem cobrar nada, `PAYMENT_PROVIDER` ainda está em `mock` — ver
+   §6.0, que é a armadilha mais fácil de cair em toda esta operação.
+7. Se o tablete não conecta ao broker, teste o `101 Switching Protocols` de dentro do servidor
+   **antes** de olhar para o Cloudflare (§1.7). E confirme que o `brokerUrl` do pareamento
+   inclui o caminho `/ws`.
