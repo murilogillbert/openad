@@ -1,7 +1,12 @@
-# Guia de execução em produção — hub, opendriver e openad
+# Guia de execução em produção — ecossistema OpenDriver
 
 > Escrito em 2026-10-02 para ser executado **no servidor**, com Kiro conectado por conexão
-> remota. Cobre os três repositórios do ecossistema.
+> remota. Cobre os **quatro** repositórios: `hub`, `hub-mobile`, `opendriver` e `openad`.
+>
+> *Renomeado de `producao-tres-repositorios.md` depois que o `hub-mobile` entrou na análise.*
+> A publicação dos dois aplicativos nas lojas é trabalho separado e está em
+> [`publicacao-lojas-ecossistema.md`](./publicacao-lojas-ecossistema.md) — leia os dois antes
+> de começar, porque há uma dependência cruzada: o `hub-mobile` depende da migration da §3.
 >
 > Leia a §0 e a §1 inteiras antes de rodar qualquer comando. A §1 é a razão pela qual este
 > documento existe: o banco é **um só** e é compartilhado, e um comando errado em qualquer um
@@ -329,6 +334,13 @@ Aplicar as migrations do hub que estão commitadas e não foram para produção.
 As notificações push estão **inteiras no código** e inertes no ar: `infra/push.ts` lê
 `prisma.pushToken`, e as rotas `POST|DELETE /api/v1/me/push-tokens` existem. Sem a tabela,
 qualquer registro de token falha. É o item de maior retorno por menor risco do guia.
+
+E tem **dois** consumidores esperando, não um. O `hub-mobile` registra o token em
+`POST /me/push-tokens` logo após o login (`src/components/PushRegistrar.tsx`), e falha em
+silêncio de propósito — o `catch` em `services/push.ts` engole o erro para que push nunca
+derrube o aplicativo. Ou seja: **hoje, em produção, o push do aplicativo do hub não funciona e
+não reclama.** Se você publicar o `hub-mobile` antes desta migration, ele vai para a loja com
+notificação quebrada e sem nenhum sinal disso em log.
 
 ### Comandos
 

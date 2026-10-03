@@ -394,8 +394,9 @@ produção: contêiner gerenciado pelo Coolify no mesmo servidor, ou serviço ex
 >
 > A parte **de servidor** de tudo isso — migrations em produção, Asaas, Infosimples,
 > infraestrutura e deploy do openad — está separada em
-> [`producao-tres-repositorios.md`](./producao-tres-repositorios.md), que é o guia a seguir com
-> Kiro conectado ao servidor.
+> [`producao-ecossistema.md`](./producao-ecossistema.md), que é o guia a seguir com Kiro
+> conectado ao servidor. A publicação dos aplicativos nas lojas está em
+> [`publicacao-lojas-ecossistema.md`](./publicacao-lojas-ecossistema.md).
 
 ## 5. Soma e ordem recomendada
 

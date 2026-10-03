@@ -4,13 +4,15 @@
 > nova no mesmo dia**: ambiente remontado, suíte pendente da Fase 3 executada e corrigida, o
 > caminho A da §5 (nativo em Kotlin) implementado e a identidade federada concluída.
 >
-> Os outros três documentos desta pasta:
+> Os outros documentos desta pasta:
 > - [`plano-implementacao.md`](./plano-implementacao.md) — o plano original, com duas seções
 >   corrigidas depois de ler os repositórios irmãos no código.
 > - [`plano-ecossistema-e-mobile.md`](./plano-ecossistema-e-mobile.md) — o que falta para
 >   fechar o ecossistema e o mobile, em fases, com estimativa.
-> - [`producao-tres-repositorios.md`](./producao-tres-repositorios.md) — **guia de execução no
->   servidor**, cobrindo hub, opendriver e openad, com precauções e protocolo de migration.
+> - [`producao-ecossistema.md`](./producao-ecossistema.md) — **guia de execução no servidor**,
+>   cobrindo os quatro repositórios, com precauções e protocolo de migration.
+> - [`publicacao-lojas-ecossistema.md`](./publicacao-lojas-ecossistema.md) — publicação do
+>   `hub-mobile` e do `opendriver/mobile` nas lojas, com os bloqueadores encontrados.
 
 ---
 
