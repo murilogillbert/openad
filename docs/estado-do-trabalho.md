@@ -4,6 +4,10 @@
 > nova no mesmo dia**: ambiente remontado, suíte pendente da Fase 3 executada e corrigida, o
 > caminho A da §5 (nativo em Kotlin) implementado e a identidade federada concluída.
 >
+> **Atualizado em 2026-10-03.** Fase C (anunciante e moderação) e Fase D.1 (dinheiro em
+> centavos) concluídas. Se você só tem tempo para uma seção, leia a
+> **§8 — o que falta para implantar**: ela diz, item a item, o que impede subir hoje.
+>
 > Os outros documentos desta pasta:
 > - [`plano-implementacao.md`](./plano-implementacao.md) — o plano original, com duas seções
 >   corrigidas depois de ler os repositórios irmãos no código.
@@ -172,6 +176,70 @@ build/test do player não rodava. O que havia de verde era a suíte da API, e s�
 
 ---
 
+### Sessão de 2026-10-03 — Fase C e Fase D.1
+
+| Commit | O que é |
+|---|---|
+| `5c215c1` | **Fase D.1** — dinheiro em centavos inteiros; corrige o pacing errado por fator 100 |
+| `c81eaf0` | **Fase C.2** — rotas do anunciante, escopadas por dono |
+| `69982f2` | **Fase C.3** — fila e decisão de moderação; destrava a ativação (D25) |
+| `ba04f90` | **P8** e **D21** — um nível de versão de rota; Redis isolado por worker do Jest |
+| `076632d` | Tela de moderação no portal e conserto do assistente de campanha (D23) |
+
+**Dinheiro em centavos (D.1).** `campaigns.budget` era float na unidade maior enquanto
+`campaign_daily_spend` sempre contou centavos. O `PacingSignalService` dividia o primeiro
+pelos dias e comparava com o segundo: um orçamento de 1.000 virava 33 "centavos" por dia e a
+campanha era pausada praticamente na primeira veiculação — **cem vezes mais cedo do que o
+contratado**. Era defeito de produção, não dívida técnica. Junto: o piso em
+`Math.max(1, …)` fazia campanha com tarifa zero cobrar um centavo, a acumulação de receita era
+float sobre N veiculações, e `budget` era `type: Object`, de modo que o Mongoose não validava
+nada ali dentro.
+
+`scripts/migrate-money-to-cents.mjs` converte o dado gravado. Verificado contra Mongo 7: 0.07
+vira 7 (não 6), orçamento em texto vira 0 sem abortar o lote, linha de pacing órfã fica
+intocada, segunda execução não altera nada. A quinta etapa **recalcula**
+`campaign_daily_spend` em vez de converter, porque `budgetCents` foi derivado do orçamento
+errado e o serviço só o escreve em `$setOnInsert` — linha existente nunca seria corrigida.
+
+**Fase C.** `/api/v1/advertiser/*` e `/api/v1/moderation/*` existem e são exercitadas contra
+o banco. O caminho completo fecha: anunciante cria, sobe criativo, submete; moderador vê na
+fila e decide; a campanha vai ao ar e o manifesto a distribui.
+
+### Defeitos novos desta sessão
+
+- **D23 — o assistente de campanha do portal falhava no último passo.** Chamava
+  `status: 'active'` partindo de `draft`, o que deixou de ser transição válida quando a
+  moderação entrou (`52a14df`). 400 no fim do fluxo, sem nada na tela explicando. Corrigido:
+  envia para revisão.
+- **D25 — nenhuma campanha de anunciante poderia ser aprovada.** A verificação de ativação
+  exigia regra de agendamento com criativo verificado, que descreve apenas a geração 1 do
+  pipeline. A campanha de anunciante entrega pelo outro caminho (`media_assets` →
+  `POST /manifest`). Extraído para `CampaignReadinessService`, agora por disjunção.
+- **Vazamento entre parceiros na deduplicação de mídia.** O filtro era `{ hash, isActive }`:
+  dois anunciantes com o mesmo arquivo receberiam o mesmo `mediaId`, e `ownerFilterFor`
+  esconderia o ativo do próprio anunciante que acabou de enviá-lo. Agora escopado por dono.
+- **D21 fechado.** `shutdownTestApp` fazia `flushall`, apagando o Redis de suítes em outros
+  workers. Era "intermitência à espera de acontecer" e aconteceu nesta sessão. Agora um banco
+  lógico por `JEST_WORKER_ID` e `flushdb`.
+- **D26 — `openad-management:test` falha na baseline**, em `device-inventory.page.spec.ts`.
+  Confirmado rodando a suíte na árvore limpa em `ba04f90`. **Pendente.**
+- **D24 — `openad-management:lint` falha na baseline**, 29 erros (acessibilidade de template,
+  `eqeqeq`, `no-empty-function`, `no-unused-vars`). Nenhum em arquivo tocado nesta sessão.
+  **Pendente.** Mesma classe do D15, que foi corrigido para a API.
+
+### Estado de qualidade, verificado por execução em 2026-10-03
+
+| Alvo | Resultado |
+|---|---|
+| `openad-api:test` | 109 suítes, 2 skipped — duas execuções completas seguidas |
+| `openad-api:lint` | 0 erros |
+| `openad-management:build` | sem erro |
+| `openad-management:test` | **1 falha preexistente** (D26) |
+| `openad-management:lint` | **29 erros preexistentes** (D24) |
+| `openad-ad-client:test` | não reexecutado nesta sessão |
+
+---
+
 ## 3. Fase 3 — em andamento, no último commit
 
 > **Resolvido na retomada.** A suíte foi rodada na máquina nova e a leva da Fase 3 estava
@@ -268,14 +336,16 @@ pura `platformConfigDefaults()`, e os specs partem dela com *spread*.
 | Fase | Estado | O que falta |
 |---|---|---|
 | 0 — Ambiente | feita | `Dockerfile.api` e `docker-compose.prod.yml` (citados no README, **não existem**); CI no GitHub Actions. D12 fechado |
-| 1 — Player toca | feita no código, APK compila | Rodar em tablete e exercitar o watchdog (R6, R7) |
-| 2 — Manifesto | feita | Segmentação por device/veículo/zona, que depende de `campaigns.targeting` — o campo já existe no schema, falta o gerador consumi-lo e `deviceState` deixar de ser ignorado |
-| 3 — Identidade e isolamento | em andamento | §3 acima |
-| 4 — Moderação | parcial | Máquina de estados e papel prontos; faltam a fila (`GET /moderation/queue`), a decisão por rota própria e as telas no portal |
+| 1 — Player toca | feita no código, APK compila | Rodar em tablete e exercitar o watchdog (R6, R7). **Sem keystore de release** |
+| 2 — Manifesto | feita | Segmentação por device/veículo/zona: `campaigns.targeting` existe e as rotas do anunciante o gravam, mas o gerador ainda tem `void deviceState` — a campanha é distribuída para **toda** a frota |
+| 3 — Identidade e isolamento | feita | — |
+| 4 — Moderação | feita | — |
 | 5 — Crédito, IAP e repasse | não iniciada | Validação de recibo no servidor (App Store Server API, Google Play Developer API), notificações de servidor das duas lojas, débito amarrado ao pacing, `boostRepasse` no score da arbitragem, `GET /internal/ads/payouts` |
 | 6 — App do anunciante | não iniciada | Projeto Expo novo. SKUs de IAP cadastrados nos dois consoles antes da primeira build de review |
 | 7 — Robustez do player | não iniciada | `Filesystem.downloadFile` em vez de buffer em memória + base64 (D6); um gerenciador de cache só, com espaço livre real (D7); religar janelas de sincronização; validar H.265 em WebView |
 | 8 — Escala | não iniciada | Adapter de Redis no Socket.IO (D9); unificar namespace MQTT (D11) |
+| — Exclusão de conta a três | não iniciada | `GET/POST /internal/accounts/:id/{deletion-blockers,purge}` no openad; `accountSync.ts` e `accountPurgeService.ts` no **hub**. É LGPD |
+| — Repasse ao motorista | não iniciada | Depende da decisão 4.1 (`driver_earnings` do opendriver vs cashback do hub). Nada foi escrito nem aqui nem no `opendriver` |
 
 ---
 
@@ -381,10 +451,16 @@ anterior havia apenas JRE 1.8.
 
 ## 6. Catálogo de defeitos encontrados
 
-Vinte e dois. Quinze corrigidos, seis pendentes. D16 a D18 apareceram ao compilar o código
-nativo pela primeira vez, D19 ao rodar a suíte completa, e D21 e D22 ao federar a identidade.
-O D22 é o mais grave do conjunto: era um caminho de escalonamento de privilégio entre
-serviços, latente porque dependia de os nomes de papéis não coincidirem.
+Vinte e sete. Vinte corrigidos, sete pendentes. D16 a D18 apareceram ao compilar o código
+nativo pela primeira vez, D19 ao rodar a suíte completa, D21 e D22 ao federar a identidade, e
+D23 a D27 na sessão de 2026-10-03.
+
+Os dois mais graves do conjunto são de isolamento entre serviços e entre parceiros. O **D22**
+era um caminho de escalonamento de privilégio entre serviços, latente porque dependia de os
+nomes de papéis não coincidirem. O **D27** era vazamento de mídia entre anunciantes pela
+deduplicação por hash — e tinha um segundo efeito, pior de diagnosticar: o anunciante não via
+o próprio criativo, porque o `mediaId` devolvido pertencia a outro dono e `ownerFilterFor` o
+escondia.
 
 | # | Defeito | Estado |
 |---|---|---|
@@ -408,13 +484,86 @@ serviços, latente porque dependia de os nomes de papéis não coincidirem.
 | D18 | Receiver registrado sem flag de exportação, exigido por `targetSdk` 34+ | corrigido na conversão |
 | D19 | `content_moderator` ausente no `@Roles` de `PATCH /campaigns/:id/status`: moderação inalcançável | corrigido |
 | D20 | `capacitor.settings.gradle` e `capacitor.build.gradle` versionados, com caminho de máquina | corrigido (saíram do versionamento) |
-| D21 | `shutdownTestApp` faz `flushall` no Redis compartilhado entre workers | **pendente** — escopar por prefixo de chave |
+| D21 | `shutdownTestApp` faz `flushall` no Redis compartilhado entre workers | corrigido (banco lógico por worker + `flushdb`) |
 | D22 | `JwtStrategy` confiava no `role` do token com `JWT_SECRET` compartilhado entre três serviços | corrigido (papel vem do banco) |
+| D23 | Assistente de campanha do portal ia de `draft` direto a `active`: 400 no último passo desde `52a14df` | corrigido |
+| D24 | `openad-management:lint` falha na baseline, 29 erros | **pendente** |
+| D25 | Ativação exigia regra de agendamento: nenhuma campanha de anunciante poderia ser aprovada | corrigido (`CampaignReadinessService`) |
+| D26 | `openad-management:test` falha na baseline (`device-inventory.page.spec.ts`) | **pendente** |
+| D27 | Deduplicação de mídia por hash não era escopada pelo dono — vazamento entre parceiros | corrigido |
 
 ---
 
 ## 7. Nada foi aplicado em produção
 
-O `hub` está no ar e **não foi tocado**. Nenhuma migration foi aplicada em produção. As
-tabelas em `public` da §3 precisam ser criadas no repositório `hub`, seguindo o protocolo de
-backup de `opendriver/docs/plano-producao-final.md`.
+O `hub` está no ar e **não foi tocado**. Nenhuma migration foi aplicada em produção.
+
+Nada no `opendriver` e nada no `hub-mobile` foi alterado nesta sessão, nem em nenhuma
+anterior: esses dois repositórios estão **exatamente** como estavam.
+
+---
+
+## 8. O que falta para implantar — verificado em 2026-10-03
+
+Checklist honesto, separando o que é bloqueio do que é refinamento. Marquei com 🔴 o que
+impede a implantação e com 🟡 o que permite subir mas deixa o sistema incompleto.
+
+### 8.1 Implantar o openad no servidor
+
+| # | Bloqueio | Onde |
+|---|---|---|
+| 🔴 | **Não existe `Dockerfile` algum no repositório.** O `README` cita `Dockerfile.api` e `docker-compose.prod.yml`; nenhum dos dois existe. Os únicos arquivos com esse nome estão em `node_modules`, como template do Nx. | D10, Fase G.1 |
+| 🔴 | **A infraestrutura que o openad exige não existe em produção.** Produção tem Postgres e dois contêineres de backend. Falta MongoDB 7, Redis 7, RabbitMQ 4 com plugin MQTT, e armazenamento S3 (Cloudflare R2). | Fase G.2 |
+| 🔴 | **Não há entrada de DNS para o openad.** Precisa de `adsapi.` e `ads.opendriver.com.br`, mais o subdomínio de MQTT sobre WebSocket. | Fase G.4 |
+| 🔴 | **A migration do schema `openad` nunca foi aplicada.** Exige o bootstrap de `openad._prisma_migrations` antes do primeiro `migrate deploy`, senão o Prisma 6 aborta. | `producao-ecossistema.md` §5 |
+| 🟡 | Sem CI. Não existe nada em `.github/workflows` para o openad. | Fase G.3 |
+
+### 8.2 APK do player
+
+| # | Estado | Observação |
+|---|---|---|
+| 🔴 | **Não existe keystore de release.** Só há APK de debug. | A autoatualização por `PackageInstaller` exige **a mesma assinatura** do APK instalado. Perder a chave significa reprovisionar cada tablete à mão, presencialmente. Criar antes do primeiro tablete em campo. |
+| 🔴 | **Nunca rodou em tablete.** O APK compila (`BUILD SUCCESSFUL`, 6,99 MB), e é tudo que se sabe. | Fase A. É o único item cujo resultado pode invalidar desenho. |
+| 🟡 | D6 — download de vídeo acumulado em memória e convertido para base64. | Pico de ~190 MB de heap para um MP4 de 80 MB. OOM provável no hardware alvo. Fase 7. |
+| 🟡 | D7 — dois gerenciadores de cache concorrentes; espaço livre cai num fallback de 512 MB fixo, que é o caso no Android. | O número falso sobe para a telemetria de frota como `storageFreeGb`. |
+
+### 8.3 App mobile do anunciante
+
+🔴 **Não existe.** Nenhum projeto Expo foi criado no repositório. É a Fase E, 6 a 8 dias.
+Os SKUs de in-app purchase precisam estar cadastrados nos dois consoles **antes** da primeira
+build de revisão.
+
+O que vai para loja hoje são `hub-mobile` e `opendriver/mobile`, que são de outros
+repositórios e não foram tocados. Os bloqueadores deles estão em
+[`publicacao-lojas-ecossistema.md`](./publicacao-lojas-ecossistema.md) — e dois são de
+infraestrutura, não de código: o domínio `opendriverhub.com.br` **não resolve** e nenhum
+e-mail do ecossistema funciona (MX nulo, SPF `-all`).
+
+### 8.4 A integração com o ecossistema está pela metade
+
+O que **está** ligado: o openad tem schema próprio no Postgres compartilhado, espelha
+`public.users`, e aceita token emitido pelo hub como anunciante, com o papel vindo do banco e
+não do token.
+
+O que **não** está:
+
+| # | Falta | Onde mora |
+|---|---|---|
+| 🔴 | **Exclusão de conta não chega ao openad.** O `accountSync.ts` do hub é par a par e conhece só o `OPENDRIVER_API_URL`. Apagar uma conta no hub deixaria dados do anunciante vivos aqui. É LGPD, não refinamento. | rotas `/internal` no openad **e** alteração no repositório `hub` |
+| 🔴 | **O repasse ao motorista não existe em nenhum lado.** Depende da decisão 4.1, que segue aberta: `opendriver.driver_earnings` ou o cashback do hub. Nem a migration de enum nem a rota `/internal` foram escritas no `opendriver`. | decisão + `opendriver` |
+| 🔴 | **Namespace `OpenAd:*` não existe no catálogo de `settingsService.ts` do hub**, e `updateSetting` recusa chave fora do catálogo. Nenhuma credencial do openad pode ser cadastrada pelo Admin → Integrações antes disso. | repositório `hub` |
+| 🟡 | Segmentação não é aplicada na entrega. `campaigns.targeting` é gravado pelas rotas do anunciante, mas `ManifestGeneratorService` ainda tem `void deviceState`: a campanha vai para **toda** a frota. | Fase C.7, aqui |
+| 🟡 | Crédito, IAP e cobrança: nada iniciado. Hoje a campanha é criada sem consumir saldo. | Fase D.2 e D.3 |
+
+### 8.5 Decisões suas que continuam travando trabalho
+
+Listadas na §4 de [`plano-ecossistema-e-mobile.md`](./plano-ecossistema-e-mobile.md), e
+nenhuma delas foi respondida:
+
+1. **4.1** — em qual carteira o motorista recebe o repasse de anúncio? Recomendação:
+   `opendriver.driver_earnings` com `EarningType` novo.
+2. **4.2** — a plataforma antecipa o repasse, ou ele acompanha o ciclo da loja? O código já
+   está pronto para as duas respostas; o padrão é `store_cycle`.
+3. **4.3** — o portal do operador também vai para `ads.opendriver.com.br`? Afeta CORS.
+4. **4.4** — o Coolify da VM antiga passa a gerenciar o servidor novo remotamente, ou migra?
+   E o MongoDB em produção: contêiner no mesmo servidor ou serviço externo?
