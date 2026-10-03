@@ -388,6 +388,15 @@ produção: contêiner gerenciado pelo Coolify no mesmo servidor, ou serviço ex
 
 ---
 
+> **Fase B concluída em 2026-10-02.** O openad entrou no Postgres compartilhado com schema
+> próprio e aceita token do hub; no caminho, uma vulnerabilidade de escalonamento de papel
+> entre serviços foi fechada (D22 em `estado-do-trabalho.md`). Restam as outras fases.
+>
+> A parte **de servidor** de tudo isso — migrations em produção, Asaas, Infosimples,
+> infraestrutura e deploy do openad — está separada em
+> [`producao-tres-repositorios.md`](./producao-tres-repositorios.md), que é o guia a seguir com
+> Kiro conectado ao servidor.
+
 ## 5. Soma e ordem recomendada
 
 | Fase | Trabalho | Depende de |
