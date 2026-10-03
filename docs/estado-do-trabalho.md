@@ -76,6 +76,17 @@ S3 9000, UI do filer 9001. API em 3000, portal em 4200.
   aqui. Os dois saíram do versionamento (D20).
 - Se um teste de MQTT falhar com `waitUntil timeout`, costuma ser estado residual de uma
   execução interrompida. `docker restart openad-rabbitmq` resolve.
+- **`prisma migrate diff --shadow-database-url` apontado para um banco real o apaga.** O
+  Prisma reseta o shadow antes de usá-lo. Aconteceu aqui: o comando destruiu o Postgres de
+  desenvolvimento que acabara de ser montado. Para verificar desvio de schema, use um banco
+  descartável — ou melhor, o `pg_dump --schema-only --schema=public` antes e depois, que é o
+  critério do protocolo de produção.
+- **D21 — `shutdownTestApp` faz `flushall` no Redis inteiro**, que é compartilhado por todos
+  os workers do Jest. Duas consequências: o custo do desligamento cresce com o número de
+  suítes em paralelo (foi o que levou a suíte de PDF a estourar o `afterAll` quando o total
+  passou de 101 para 105), e uma suíte apaga o Redis de outra que ainda está rodando. Hoje
+  passa porque nenhuma suíte depende de estado no Redis entre testes; é flakiness à espera de
+  acontecer. A correção é escopar por prefixo de chave por suíte em vez de `flushall`.
 
 ---
 
@@ -203,14 +214,28 @@ pura `platformConfigDefaults()`, e os specs partem dela com *spread*.
 
 ### O que falta da Fase 3
 
-> Próximo passo recomendado: o item 1. Ele é pré-requisito dos itens 2 e 4, e sem ele o
-> isolamento por dono já escrito nunca é exercitado de verdade — todo token existente hoje é
-> de equipe interna, então `ownerFilterFor` sempre devolve escopo vazio.
+1. ~~**Identidade federada.**~~ **Feita em 2026-10-02.** Duas estratégias passport em vez de
+   uma: `jwt-internal` resolve o `sub` em `openad.users` e `jwt-federated` resolve em
+   `openad.ad_advertisers`, com `issuer`/`aud` do ecossistema e HS256 fixado. O `JwtAuthGuard`
+   combina as duas, e cada uma devolve `null` quando não reconhece o `sub`, que é o que
+   permite a segunda ser tentada.
 
-1. **Identidade federada.** `JwtStrategy` precisa aceitar dois tipos de token com o **mesmo**
-   `JWT_SECRET` do ecossistema: equipe interna (`sub` em `openad.users`, como hoje) e
-   anunciante (`sub` = `public.users.id`, resolvido para `public.ad_advertisers`). Sem isso
-   o isolamento por dono já existe mas nunca é exercitado, porque todo token atual é interno.
+   No caminho, uma **vulnerabilidade latente** foi fechada. A estratégia antiga copiava
+   `payload.role` para `req.user` sem consultar banco nenhum. Como o `JWT_SECRET` é
+   compartilhado com o hub e o opendriver, o que impedia um usuário do hub de virar
+   administrador do openad era apenas os conjuntos de papéis não se cruzarem por acaso —
+   `Admin` lá, `super_admin` aqui — e o `RolesGuard` tem desvio incondicional para
+   `super_admin`. No dia em que o hub criasse um papel com esse nome, qualquer usuário dele
+   teria acesso total. Agora o papel vem do banco: um `sub` que não existe em `openad.users`
+   é recusado, e o principal federado recebe a constante `'advertiser'`, nunca o que o token
+   afirma. Efeito colateral desejado: trocar o papel de alguém passa a valer na hora.
+
+   A separação também passou a ser garantida pelo compilador. `UserRole` virou
+   `InternalUserRole | FederatedUserRole` e `INTERNAL_USER_ROLES` é tipado
+   `readonly InternalUserRole[]`, de modo que acrescentar `'advertiser'` ali **não compila**.
+   Antes a garantia era um comentário — e é garantia que importa, porque `isInternalRole`
+   decide se a consulta é escopada: papel tratado como interno recebe filtro vazio e vê tudo
+   de todos.
 2. **Rotas do anunciante** (`/api/v1/advertiser/*`) e **de moderação**
    (`/api/v1/moderation/*`) — listadas na §4.3 do plano.
 3. ~~**Tabelas em `public`**, que seriam do repositório `hub`~~ — **deixou de ser bloqueio em
@@ -228,6 +253,9 @@ pura `platformConfigDefaults()`, e os specs partem dela com *spread*.
 ---
 
 ## 4. Pendências por fase
+
+> O plano de execução das fases seguintes, já corrigido contra o que os repositórios irmãos
+> de fato fazem, está em [`plano-ecossistema-e-mobile.md`](./plano-ecossistema-e-mobile.md).
 
 | Fase | Estado | O que falta |
 |---|---|---|
@@ -345,8 +373,10 @@ anterior havia apenas JRE 1.8.
 
 ## 6. Catálogo de defeitos encontrados
 
-Dezoito. Treze corrigidos, cinco pendentes. D16 a D18 apareceram ao compilar o código nativo
-pela primeira vez, e o D19 ao rodar a suíte completa.
+Vinte e dois. Quinze corrigidos, seis pendentes. D16 a D18 apareceram ao compilar o código
+nativo pela primeira vez, D19 ao rodar a suíte completa, e D21 e D22 ao federar a identidade.
+O D22 é o mais grave do conjunto: era um caminho de escalonamento de privilégio entre
+serviços, latente porque dependia de os nomes de papéis não coincidirem.
 
 | # | Defeito | Estado |
 |---|---|---|
@@ -370,6 +400,8 @@ pela primeira vez, e o D19 ao rodar a suíte completa.
 | D18 | Receiver registrado sem flag de exportação, exigido por `targetSdk` 34+ | corrigido na conversão |
 | D19 | `content_moderator` ausente no `@Roles` de `PATCH /campaigns/:id/status`: moderação inalcançável | corrigido |
 | D20 | `capacitor.settings.gradle` e `capacitor.build.gradle` versionados, com caminho de máquina | corrigido (saíram do versionamento) |
+| D21 | `shutdownTestApp` faz `flushall` no Redis compartilhado entre workers | **pendente** — escopar por prefixo de chave |
+| D22 | `JwtStrategy` confiava no `role` do token com `JWT_SECRET` compartilhado entre três serviços | corrigido (papel vem do banco) |
 
 ---
 

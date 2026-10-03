@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
-import { INTERNAL_USER_ROLES, type UserRole } from '@openad/domain';
+import { INTERNAL_USER_ROLES, type InternalUserRole } from '@openad/domain';
 
 export type UserDocument = HydratedDocument<User>;
 
@@ -30,12 +30,16 @@ export class User {
   @Prop({ type: String, required: false, default: null })
   photoUrl!: string | null;
 
+  /**
+   * Somente papel interno. O anunciante nao tem linha aqui: ele autentica com a conta do
+   * ecossistema e e resolvido em `openad.ad_advertisers` no Postgres.
+   */
   @Prop({
     type: String,
     required: true,
     enum: INTERNAL_USER_ROLES,
   })
-  role!: UserRole;
+  role!: InternalUserRole;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

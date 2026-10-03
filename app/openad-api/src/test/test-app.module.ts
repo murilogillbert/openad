@@ -3,6 +3,7 @@ import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MongodbModule } from '../infrastructure/mongodb/mongodb.module';
+import { PostgresModule } from '../infrastructure/postgres/postgres.module';
 import { AppLoggerModule } from '../infrastructure/logging/logger.module';
 import { AssetStorageModule } from '../infrastructure/storage/storage.module';
 import { HttpCorrelationInterceptor } from '../infrastructure/http/http-correlation.interceptor';
@@ -39,6 +40,9 @@ import { PlatformConfigModule } from '../modules/platform-config/platform-config
     AppLoggerModule,
     AssetStorageModule,
     MongodbModule,
+    // Global, mas `@Global()` so vale se o modulo estiver no grafo — sem isto o
+    // `FederatedIdentityService` nao resolve o `PrismaService` nos testes.
+    PostgresModule,
     RedisModule,
     MqttModule,
     MetricsModule,

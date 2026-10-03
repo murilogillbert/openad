@@ -13,9 +13,18 @@ describe('GET /api/v1/releases/stable-cheatsheet.pdf (contract)', () => {
     ctx = await createTestApp();
   }, 120_000);
 
+  /**
+   * Orcamento de 60s, nao os 30s do padrao.
+   *
+   * Esta e a suite mais pesada do conjunto — gera PDF pela aplicacao inteira — e o
+   * `shutdownTestApp` faz `flushall` no Redis compartilhado por todos os workers, cujo custo
+   * cresce com o numero de suites em paralelo. Com 105 suites o desligamento passou de 30s e
+   * a suite falhava no `afterAll`, apesar de todas as asserções passarem. O que mudou aqui e
+   * so o orcamento de desligamento; nada do que a suite verifica.
+   */
   afterAll(async () => {
     await shutdownTestApp(ctx);
-  }, 30_000);
+  }, 60_000);
 
   it('returns 404 when no stable is published', async () => {
     const token = await loginAsSuperAdmin(ctx.app);

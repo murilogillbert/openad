@@ -21,6 +21,17 @@ export interface TestAppContext {
   app: INestApplication;
 }
 
+export interface TestAppOptions {
+  /**
+   * Provedores a substituir no modulo de teste.
+   *
+   * Existe para a identidade federada: o `FederatedIdentityService` consulta o Postgres, e a
+   * suite que exercita a cadeia de estrategias precisa de um anunciante resolvido sem exigir
+   * um banco de pe.
+   */
+  overrides?: ReadonlyArray<{ provide: unknown; useValue: unknown }>;
+}
+
 /**
  * MongoDB: Jest always uses `mongodb-memory-server` (ignores `MONGO_TEST_URI` from `.env` unless
  * `OPENAD_TEST_MONGO_INTEGRATION=true`). See `memory-mongo.ts` and `jest-global-setup.cjs`.
@@ -32,12 +43,19 @@ export interface TestAppContext {
  *
  * Each suite uses a unique database name and drops it on teardown.
  */
-export async function createTestApp(): Promise<TestAppContext> {
+export async function createTestApp(
+  options?: TestAppOptions
+): Promise<TestAppContext> {
   const host = await getMongoTestBaseUri();
   const dbName = `openad_api_jest_${randomUUID().replace(/-/g, '')}`;
   process.env.MONGO_URI = `${host.replace(/\/$/, '')}/${dbName}`;
   process.env.JWT_SECRET = 'test-jwt-secret-key-min-32-chars-long!!';
   process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-key-min-32-chars!!';
+  // Ver a nota em `jest-global-setup.cjs`: existe para o `PrismaClient` construir; a conexao
+  // e preguicosa e nenhuma suite abre socket contra este endereco.
+  process.env.DATABASE_URL =
+    process.env.DATABASE_URL ??
+    'postgresql://openad:openad@127.0.0.1:5432/openad_jest_sem_uso?schema=openad';
   process.env.LOG_LEVEL = 'error';
   process.env.REDIS_URL = await getRedisTestUrl();
   const mqttUrl =
@@ -57,12 +75,19 @@ export async function createTestApp(): Promise<TestAppContext> {
   process.env.S3_ACCESS_KEY_ID = 'test';
   process.env.S3_SECRET_ACCESS_KEY = 'test';
 
-  const moduleRef = await Test.createTestingModule({
+  let construtor = Test.createTestingModule({
     imports: [TestAppModule],
   })
     .overrideProvider(AssetStorageService)
-    .useClass(InMemoryAssetStorageService)
-    .compile();
+    .useClass(InMemoryAssetStorageService);
+
+  for (const troca of options?.overrides ?? []) {
+    construtor = construtor
+      .overrideProvider(troca.provide as never)
+      .useValue(troca.useValue);
+  }
+
+  const moduleRef = await construtor.compile();
 
   const app = moduleRef.createNestApplication<NestExpressApplication>({
     rawBody: true,

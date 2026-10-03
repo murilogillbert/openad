@@ -265,7 +265,13 @@ export interface ImpressionEvent {
   currency: string;
 }
 
-export type UserRole =
+/**
+ * Papeis da equipe interna da plataforma, persistidos em `openad.users` no MongoDB.
+ *
+ * Estes sao os unicos papeis que o openad **emite**. Todo token com um papel daqui foi
+ * assinado por este servico.
+ */
+export type InternalUserRole =
   | 'fleet_operator'
   | 'campaign_manager'
   | 'content_moderator'
@@ -274,13 +280,27 @@ export type UserRole =
   | 'super_admin';
 
 /**
+ * Papel de quem entra pela identidade federada do ecossistema.
+ *
+ * Nao e persistido em `openad.users` e **nao vem do token**: e derivado da existencia de
+ * linha em `openad.ad_advertisers` para o `sub` do token do hub. Essa distincao e de
+ * seguranca, nao de estilo — ver `FederatedIdentityService`.
+ */
+export type FederatedUserRole = 'advertiser';
+
+export type UserRole = InternalUserRole | FederatedUserRole;
+
+/**
  * Papeis da equipe interna, em `openad.users`.
  *
- * O anunciante **nao** entra aqui: ele autentica com a conta do ecossistema
- * (`public.users` no Postgres) e e resolvido para `public.ad_advertisers`. Esta lista e so
- * de quem opera a plataforma.
+ * O anunciante **nao** entra aqui, e o tipo garante isso: a lista e `InternalUserRole[]`, de
+ * modo que acrescentar `'advertiser'` aqui nao compila. Antes a garantia era um comentario.
+ *
+ * O motivo e concreto. `isInternalRole` decide se a consulta e escopada por dono: um papel
+ * considerado interno recebe filtro vazio e **ve tudo de todos**. Se o anunciante entrasse
+ * nesta lista, o isolamento entre parceiros cairia por inteiro, sem erro nenhum aparecer.
  */
-export const INTERNAL_USER_ROLES: readonly UserRole[] = [
+export const INTERNAL_USER_ROLES: readonly InternalUserRole[] = [
   'fleet_operator',
   'campaign_manager',
   'content_moderator',

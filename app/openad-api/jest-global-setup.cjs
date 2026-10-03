@@ -38,5 +38,12 @@ module.exports = async function globalSetup() {
     process.env.JWT_SECRET || 'test-jwt-secret-key-min-32-chars-long!!';
   process.env.JWT_REFRESH_SECRET =
     process.env.JWT_REFRESH_SECRET || 'test-refresh-secret-key-min-32-chars!!';
+  // O `PrismaClient` valida a string de conexao ao ser construido, mesmo que nunca consulte.
+  // A conexao e preguicosa (ver `PrismaService`), entao este valor existe apenas para o
+  // cliente construir: nenhuma suite abre socket contra ele. Suites que de fato precisem de
+  // Postgres sobrescrevem `DATABASE_URL` com um banco real.
+  process.env.DATABASE_URL =
+    process.env.DATABASE_URL ||
+    'postgresql://openad:openad@127.0.0.1:5432/openad_jest_sem_uso?schema=openad';
 };
 

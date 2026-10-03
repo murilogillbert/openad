@@ -10,7 +10,13 @@ import { INTERNAL_USER_ROLES, type UserRole } from '@openad/domain';
 
 /** `true` quando o papel pertence a equipe interna da plataforma. */
 export function isInternalRole(role: UserRole | string | undefined): boolean {
-  return role !== undefined && INTERNAL_USER_ROLES.includes(role as UserRole);
+  if (role === undefined) {
+    return false;
+  }
+  // A comparacao e alargada para `string` de proposito: o parametro aceita qualquer texto,
+  // porque o papel pode chegar de um token, e um papel desconhecido tem de responder `false`
+  // em vez de nao compilar.
+  return (INTERNAL_USER_ROLES as readonly string[]).includes(role);
 }
 
 /**
