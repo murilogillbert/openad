@@ -28,6 +28,17 @@ app/openad-ad-client/android/local.properties
 **/*.keystore
 **/*.jks
 
+# App do anunciante (Expo). **Nada** dele entra na imagem do servidor.
+#
+# Isto não é economia: sem a exclusão, o contexto de build passou de 2,19 GB e **derrubou o
+# Docker Desktop** no meio do build. O `android/` gerado pelo `expo prebuild` traz a saída do
+# Gradle e o APK de 105 MB; o `node_modules` próprio traz React Native inteiro. A regra
+# `**/node_modules` acima já pegava parte, mas `android/` e `.expo/` não.
+#
+# A pasta inteira é excluída de propósito, e não só os subdiretórios de build: o `Dockerfile.api`
+# empacota a API NestJS, e nenhum arquivo deste app é importado por ela.
+app/openad-advertiser
+
 # Segredos e configuração de ambiente. **Não** devem entrar na imagem: as variáveis chegam
 # por `environment` do compose, e um `.env` copiado para dentro da camada fica no histórico
 # da imagem mesmo que apagado numa camada posterior.

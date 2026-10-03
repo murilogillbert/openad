@@ -16,6 +16,7 @@ import { AssetStorageService } from '../infrastructure/storage/asset-storage.ser
 import { TestAppModule } from './test-app.module';
 import { InMemoryAssetStorageService } from './in-memory-asset-storage.service';
 import { getMongoTestBaseUri, getRedisTestUrl } from './memory-mongo';
+import { aplicarPrefixoGlobal } from '../app/global-prefix';
 
 export interface TestAppContext {
   app: INestApplication;
@@ -92,7 +93,10 @@ export async function createTestApp(
   const app = moduleRef.createNestApplication<NestExpressApplication>({
     rawBody: true,
   });
-  app.setGlobalPrefix('api/v1');
+  // A mesma configuração de `main.ts`, do mesmo arquivo. Antes era `setGlobalPrefix('api/v1')`
+  // sem as exclusões, e as rotas excluídas respondiam num caminho no teste e em outro em
+  // produção — um teste que passa afirmando a coisa errada.
+  aplicarPrefixoGlobal(app);
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

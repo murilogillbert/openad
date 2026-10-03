@@ -30,6 +30,7 @@ import { SpatialLedgerModule } from '../modules/spatial-ledger/spatial-ledger.mo
 import { AnalyticsModule } from '../modules/analytics/analytics.module';
 import { AdvertiserModule } from '../modules/advertiser/advertiser.module';
 import { ModerationModule } from '../modules/moderation/moderation.module';
+import { LegalModule } from '../modules/legal/legal.module';
 import { InternalModule } from '../modules/internal/internal.module';
 import { DashboardModule } from '../modules/dashboard/dashboard.module';
 import { ReleasesModule } from '../modules/releases/releases.module';
@@ -109,6 +110,7 @@ const testRun = process.env.NODE_ENV === 'test';
     AnalyticsModule,
     AdvertiserModule,
     ModerationModule,
+    LegalModule,
     InternalModule,
     DashboardModule,
     ReleasesModule,

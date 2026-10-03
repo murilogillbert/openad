@@ -1,4 +1,4 @@
-import { RequestMethod, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { IoAdapter } from '@nestjs/platform-socket.io';
@@ -6,6 +6,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app/app.module';
+import { aplicarPrefixoGlobal } from './app/global-prefix';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -17,14 +18,10 @@ async function bootstrap() {
   app.enableCors({ origin: true, credentials: true });
   app.useWebSocketAdapter(new IoAdapter(app));
 
-  app.setGlobalPrefix('api/v1', {
-    exclude: [
-      { path: 'api/health', method: RequestMethod.ALL },
-      { path: 'api/docs', method: RequestMethod.ALL },
-      { path: 'api/docs-json', method: RequestMethod.GET },
-      { path: 'api/metrics', method: RequestMethod.GET },
-    ],
-  });
+  // Prefixo e exclusões vêm de `app/global-prefix.ts`, compartilhado com o factory de teste:
+  // as duas configurações têm de ser idênticas, senão uma rota responde num caminho no teste
+  // e em outro em produção.
+  aplicarPrefixoGlobal(app);
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('OpenAD API')

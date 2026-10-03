@@ -42,8 +42,29 @@ export const env = {
 
 /** As lojas exigem URL pública de política de privacidade e canal de suporte. */
 export const links = {
+  /**
+   * As páginas legais são servidas pela **API do openad**, não pelo site.
+   *
+   * `opendriver.com.br/privacidade` e `/termos` **não existem**: o roteador do SPA do hub não
+   * registra esses caminhos, o nginx devolve `index.html` com status 200 para qualquer caminho
+   * e o catch-all do roteador redireciona para a home. O revisor da Apple abriria o link da
+   * política e veria a página inicial da loja do hub — e por `curl` isso é indistinguível de
+   * uma página real.
+   *
+   * O openad tem páginas próprias porque trata dados diferentes do hub e do opendriver:
+   * faturamento de anunciante e conteúdo de criativo, não compra nem localização. Política
+   * imprecisa é pior que ausente — ela afirma coisa errada sobre tratamento de dado pessoal.
+   */
   privacyPolicy:
-    process.env.EXPO_PUBLIC_PRIVACY_URL || 'https://opendriver.com.br/privacidade',
-  terms: process.env.EXPO_PUBLIC_TERMS_URL || 'https://opendriver.com.br/termos',
-  supportEmail: process.env.EXPO_PUBLIC_SUPPORT_EMAIL || 'suporte@opendriver.com.br',
+    process.env.EXPO_PUBLIC_PRIVACY_URL || `${adsApiUrl}/legal/privacidade`,
+  terms: process.env.EXPO_PUBLIC_TERMS_URL || `${adsApiUrl}/legal/termos`,
+
+  /**
+   * Caixa que **recebe de verdade**, conferido por DNS.
+   *
+   * `suporte@opendriver.com.br` não recebia nada: o domínio publica `MX .` (null MX, que
+   * declara "este domínio não recebe e-mail"), `SPF -all` e `DMARC p=reject`. As duas lojas
+   * exigem canal de suporte funcional, e caixa morta é reprovação.
+   */
+  supportEmail: process.env.EXPO_PUBLIC_SUPPORT_EMAIL || 'murilogillbert@gmail.com',
 } as const;
