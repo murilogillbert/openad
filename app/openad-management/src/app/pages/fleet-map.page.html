@@ -25,10 +25,21 @@
     </div>
 
     <!-- Custom zoom + my location (Leaflet defaults removed — full control above mobile nav) -->
+    <!--
+      Sem `(click)="$event.stopPropagation()"` neste contêiner.
+
+      Ele não fazia nada: o mapa do Leaflet vive em `#mapHost`, que é **irmão** deste div, e
+      não há nenhum handler de clique ancestral no template nem `HostListener` no componente.
+      Clique aqui nunca chegava ao mapa, com ou sem o `stopPropagation`.
+
+      E custava duas violações de acessibilidade reais (`click-events-have-key-events` e
+      `interactive-supports-focus`): um `div` com handler de clique é anunciado como
+      interativo por leitor de tela, sem ser alcançável pelo teclado. Os três botões dentro já
+      são controles de verdade.
+    -->
     <div
       class="fleet-map-zoom-chrome pointer-events-auto absolute right-3 z-[46] flex flex-col divide-y divide-surface-200 overflow-hidden rounded-lg border border-surface-200 bg-surface-0/95 shadow-lg backdrop-blur-md dark:divide-surface-600 dark:border-surface-600 dark:bg-surface-900/95 md:right-4"
       [style.bottom]="mapZoomChromeBottom()"
-      (click)="$event.stopPropagation()"
     >
       <button
         type="button"
@@ -154,8 +165,9 @@
     <div class="flex flex-col gap-4 text-sm">
       @if (meta(); as m) {
         <div>
-          <label class="mb-1 block font-medium">Cities</label>
+          <label class="mb-1 block font-medium" for="flt-cities">Cities</label>
           <p-multiSelect
+            inputId="flt-cities"
             [options]="m.cities"
             [ngModel]="filterCities()"
             (ngModelChange)="filterCities.set($event)"
@@ -166,8 +178,9 @@
           />
         </div>
         <div>
-          <label class="mb-1 block font-medium">Device status</label>
+          <label class="mb-1 block font-medium" for="flt-status">Device status</label>
           <p-multiSelect
+            inputId="flt-status"
             [options]="statusOptions"
             [ngModel]="filterDeviceStatuses()"
             (ngModelChange)="filterDeviceStatuses.set($event)"
@@ -177,8 +190,9 @@
           />
         </div>
         <div>
-          <label class="mb-1 block font-medium">Commercial tier</label>
+          <label class="mb-1 block font-medium" for="flt-tier">Commercial tier</label>
           <p-multiSelect
+            inputId="flt-tier"
             [options]="m.commercialTiers.slice()"
             [ngModel]="filterCategories()"
             (ngModelChange)="filterCategories.set($event)"
@@ -188,8 +202,9 @@
           />
         </div>
         <div>
-          <label class="mb-1 block font-medium">Campaigns</label>
+          <label class="mb-1 block font-medium" for="flt-campaigns">Campaigns</label>
           <p-multiSelect
+            inputId="flt-campaigns"
             [options]="m.campaigns"
             [ngModel]="filterCampaignIds()"
             (ngModelChange)="filterCampaignIds.set($event)"
@@ -210,22 +225,35 @@
           <input id="flt-dev" pInputText class="w-full" [ngModel]="filterDeviceName()" (ngModelChange)="filterDeviceName.set($event)" />
         </div>
       }
-      <button pButton type="button" label="Apply filters" class="w-full" (click)="applyFilters()"></button>
+      <button
+        pButton
+        type="button"
+        label="Apply filters"
+        aria-label="Apply filters"
+        class="w-full"
+        (click)="applyFilters()"
+      ></button>
     </div>
   </p-drawer>
 
   @if (configOpen()) {
+    <!--
+      `(keydown.escape)` no fundo não é só para satisfazer o lint: fechar modal com Esc é o
+      comportamento que todo usuário de teclado espera, e faltava. O evento sobe do diálogo
+      (que recebe foco por `tabindex="-1"`) até aqui, então um único handler cobre os dois.
+    -->
     <div
       class="absolute inset-0 z-[5000] flex items-center justify-center bg-surface-950/35 p-4 backdrop-blur-[1px]"
-      (click)="onConfigVisible(false)"
+      (click)="onConfigBackdropClick($event)"
+      (keydown.escape)="onConfigVisible(false)"
       role="presentation"
     >
       <div
         class="border-surface-200 bg-surface-0 text-color w-full max-w-md rounded-xl border p-4 shadow-xl"
-        (click)="$event.stopPropagation()"
         role="dialog"
         aria-modal="true"
         aria-labelledby="fleet-map-config-title"
+        tabindex="-1"
       >
         <div class="mb-4 flex items-center justify-between gap-2">
           <h2 id="fleet-map-config-title" class="app-font-display text-lg font-semibold">Map configuration</h2>
@@ -291,7 +319,11 @@
               <div class="font-medium capitalize">{{ d.motionState }}</div>
               <div>GPS accuracy</div>
               <div class="font-medium">
-                {{ d.lastAccuracyMeters != null ? d.lastAccuracyMeters + ' m' : '—' }}
+                {{
+                  d.lastAccuracyMeters !== null && d.lastAccuracyMeters !== undefined
+                    ? d.lastAccuracyMeters + ' m'
+                    : '—'
+                }}
               </div>
               <div>Storage used</div>
               <div class="font-medium">{{ d.dataUsagePercent }}%</div>
@@ -318,8 +350,23 @@
             <div class="text-muted-color mt-1 text-[10px]">Hourly plays (24h)</div>
           </p-card>
           <div class="flex gap-2">
-            <button pButton type="button" label="Edit device" class="flex-1" severity="secondary" (click)="editDevice()"></button>
-            <button pButton type="button" label="Ping (MQTT)" class="flex-1" (click)="pingDevice()"></button>
+            <button
+              pButton
+              type="button"
+              label="Edit device"
+              aria-label="Edit device"
+              class="flex-1"
+              severity="secondary"
+              (click)="editDevice()"
+            ></button>
+            <button
+              pButton
+              type="button"
+              label="Ping (MQTT)"
+              aria-label="Ping device over MQTT"
+              class="flex-1"
+              (click)="pingDevice()"
+            ></button>
           </div>
         </div>
       }

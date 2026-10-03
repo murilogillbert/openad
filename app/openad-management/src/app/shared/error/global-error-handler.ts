@@ -12,7 +12,9 @@ export class GlobalErrorHandler implements ErrorHandler {
     const logFirst =
       error instanceof Error ? error : new Error(String(error));
     if (isDevMode() || !environment.production) {
-      // eslint-disable-next-line no-console
+      // Sem `eslint-disable` aqui: a configuração deste projeto não proíbe `no-console`, e a
+      // diretiva inútil é relatada como aviso (`reportUnusedDisableDirectives`). Diretiva que
+      // não desliga nada ensina a próxima pessoa que `console` é proibido quando não é.
       console.error(logFirst);
     }
 

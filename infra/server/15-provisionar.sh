@@ -78,7 +78,11 @@ S3_ACCESS_KEY_ID=${MINIO_KEY}
 S3_SECRET_ACCESS_KEY=${MINIO_SECRET}
 
 # Repasse ao motorista: o openad credita opendriver.driver_earnings por HTTP.
-OPENDRIVER_API_URL=http://${OD_API}:5100
+#
+# Dominio publico, nao nome de conteiner: o Coolify renomeia o conteiner em cada deploy e nao
+# registra alias estavel pelo uuid (conferido em 26-endereco-estavel.sh). Nome de conteiner
+# aqui quebraria o repasse em todo deploy do opendriver, e em silencio.
+OPENDRIVER_API_URL=https://api-app.opendriver.com.br
 
 # Chave de servico com escopo ads:earning:write. Criada em Admin -> Chaves de API no hub e
 # colada aqui; fica vazia na primeira execucao, e o repasse simplesmente nao e enviado (com

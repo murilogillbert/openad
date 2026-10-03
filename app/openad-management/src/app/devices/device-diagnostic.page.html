@@ -53,7 +53,7 @@
               <p class="text-muted-color text-[10px] font-bold uppercase">GPS</p>
               <p class="text-color text-sm font-bold">
                 {{ h.gpsLocked ? 'Locked' : 'No lock' }}
-                @if (h.gpsHdop != null) {
+                @if (h.gpsHdop !== null && h.gpsHdop !== undefined) {
                   <span class="text-muted-color font-normal"> · HDOP {{ h.gpsHdop }}</span>
                 }
               </p>
@@ -108,6 +108,7 @@
               type="button"
               class="p-button-outlined p-button-sm"
               label="Refresh"
+              aria-label="Refresh lifecycle history"
               [disabled]="eventsLoading()"
               (click)="refreshLifecycle()"
             ></button>
@@ -166,8 +167,11 @@
           </ng-template>
           <div class="flex max-w-xl flex-col gap-4">
             <div class="flex flex-col gap-2">
-              <label class="text-muted-color text-xs font-bold uppercase">Target state</label>
+              <label class="text-muted-color text-xs font-bold uppercase" for="targetState"
+                >Target state</label
+              >
               <p-select
+                inputId="targetState"
                 [options]="stateOptions"
                 optionLabel="label"
                 optionValue="value"
@@ -192,6 +196,7 @@
               pButton
               type="button"
               label="Apply transition"
+              aria-label="Apply transition"
               class="p-button-warning"
               [disabled]="transitionBusy"
               [loading]="transitionBusy"

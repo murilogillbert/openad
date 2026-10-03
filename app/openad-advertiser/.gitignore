@@ -1,0 +1,29 @@
+# Expo / React Native
+node_modules/
+.expo/
+dist/
+dist-check/
+web-build/
+
+# Projetos nativos: gerados por `expo prebuild` (CNG). Versionar o resultado de um gerador
+# significa resolver conflito de merge em arquivo que ninguem escreveu a mao.
+/android
+/ios
+
+# Artefatos de build
+*.apk
+*.aab
+*.keystore
+*.jks
+
+# Segredos de publicacao
+secrets/
+google-services.json
+GoogleService-Info.plist
+
+# Metro / sistema
+.metro-health-check*
+npm-debug.*
+yarn-error.*
+.DS_Store
+*.log

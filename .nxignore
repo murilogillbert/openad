@@ -1,0 +1,10 @@
+# Pastas que o Nx NAO deve inferir como projeto.
+#
+# `app/openad-advertiser` e um projeto Expo autonomo, com `package.json`, `eslint.config.js` e
+# `jest.config.js` proprios. Sem esta exclusao, os plugins `@nx/eslint/plugin` e
+# `@nx/jest/plugin` criariam alvos inferidos apontando para dependencias que nao existem no
+# `node_modules` da raiz (React Native 0.86, React 19) — e `nx run-many -t lint` passaria a
+# falhar por um projeto que nunca fez parte do grafo.
+#
+# O app e instalado e rodado na propria pasta: `cd app/openad-advertiser && npm install`.
+app/openad-advertiser

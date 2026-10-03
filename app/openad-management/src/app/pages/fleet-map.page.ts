@@ -416,6 +416,21 @@ export class FleetMapPage implements AfterViewInit, OnDestroy {
     queueMicrotask(() => this.map?.invalidateSize());
   }
 
+  /**
+   * Closes the map configuration modal only when the click landed on the backdrop itself.
+   *
+   * Replaces a `(click)="$event.stopPropagation()"` that used to sit on the dialog element.
+   * That handler worked, but it made the dialog look interactive to assistive technology — a
+   * container with a click handler is announced as clickable while not being reachable by
+   * keyboard. Comparing `target` with `currentTarget` keeps the behaviour and leaves the
+   * dialog as the plain container it is.
+   */
+  onConfigBackdropClick(event: Event): void {
+    if (event.target === event.currentTarget) {
+      this.onConfigVisible(false);
+    }
+  }
+
   private applyMarkers(markers: FleetMapMarker[]): void {
     if (!this.map) return;
     const target = this.mapClustering() ? this.clusterGroup : this.markersLayer;

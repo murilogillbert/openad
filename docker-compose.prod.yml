@@ -231,7 +231,18 @@ services:
 
       # Repasse ao motorista: o openad credita `opendriver.driver_earnings` por HTTP, porque
       # aquele schema não é propriedade dele.
-      OPENDRIVER_API_URL: ${OPENDRIVER_API_URL:-http://cag0pegfzuz1zfhkxgjsfzf2-000753239468:5100}
+      #
+      # O endereço é o **domínio público**, não o nome do contêiner. O Coolify renomeia o
+      # contêiner em cada deploy (`cag0pegfzuz1zfhkxgjsfzf2-000753239468` virou
+      # `...-134608006407` no primeiro redeploy) e **não** registra alias estável pelo uuid —
+      # verificado: `http://cag0pegfzuz1zfhkxgjsfzf2:5100` não resolve. Apontar para o nome do
+      # contêiner significaria quebrar o repasse em todo deploy do opendriver, e quebrar em
+      # silêncio: `DriverEarningClient.creditar` trata falha como "desligado", registra em log
+      # e segue, de modo que o prejuízo apareceria só na conferência de `/internal/ads/payouts`.
+      #
+      # O custo é um salto pelo Traefik no mesmo host, com TLS. É o preço de um endereço que
+      # não muda.
+      OPENDRIVER_API_URL: ${OPENDRIVER_API_URL:-https://api-app.opendriver.com.br}
       # Sem `:?` de propósito: a ausência desta chave **não** deve impedir o boot.
       #
       # `DriverEarningClient.creditar` já trata a falta de configuração como "desligado",

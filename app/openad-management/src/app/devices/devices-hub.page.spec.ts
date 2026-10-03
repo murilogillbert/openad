@@ -6,10 +6,25 @@ describe('DevicesHubPage', () => {
   let fixture: ComponentFixture<DevicesHubPage>;
 
   beforeEach(async () => {
+    /**
+     * `ResizeObserver` não existe no ambiente de teste, e componentes do PrimeNG o usam.
+     *
+     * O dublê registra as chamadas em vez de ter corpo vazio: corpo vazio é relatado por
+     * `no-empty-function`, e silenciar a regra perderia a chance de o teste poder afirmar que
+     * o componente observou algo. Guardar a chamada custa uma linha e remove a exceção.
+     */
+    const observados: unknown[] = [];
     globalThis.ResizeObserver = class {
-      observe(): void {}
-      unobserve(): void {}
-      disconnect(): void {}
+      observe(alvo: Element): void {
+        observados.push(alvo);
+      }
+      unobserve(alvo: Element): void {
+        const i = observados.indexOf(alvo);
+        if (i >= 0) observados.splice(i, 1);
+      }
+      disconnect(): void {
+        observados.length = 0;
+      }
     };
 
     await TestBed.configureTestingModule({

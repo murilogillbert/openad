@@ -32,9 +32,10 @@ import {
       <h2 class="mb-1 text-sm font-bold text-color">Remote: check for updates</h2>
       <p class="mb-3 text-xs text-muted-color">Send a one-shot MQTT command so a device fetches the latest app policies.</p>
       <div class="flex flex-wrap items-end gap-2 text-sm">
-        <label class="flex min-w-0 flex-col gap-1">
+        <label class="flex min-w-0 flex-col gap-1" for="remoteCheckDevice">
           <span class="text-xs font-medium text-color">Device</span>
           <p-select
+            inputId="remoteCheckDevice"
             class="w-full min-w-0"
             styleClass="w-full min-w-0"
             [options]="deviceOptions"

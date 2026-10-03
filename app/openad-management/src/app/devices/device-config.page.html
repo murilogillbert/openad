@@ -48,8 +48,11 @@
         />
       </div>
       <div class="flex flex-col gap-2">
-        <label class="text-muted-color text-xs font-bold uppercase">Commercial tier</label>
+        <label class="text-muted-color text-xs font-bold uppercase" for="commercialTier"
+          >Commercial tier</label
+        >
         <p-select
+          inputId="commercialTier"
           [options]="fleetOptions"
           optionLabel="label"
           optionValue="value"
@@ -85,10 +88,14 @@
     </div>
 
     <div class="mt-8 flex justify-end gap-2">
+      <!-- `aria-label` porque o `label` do pButton é propriedade do componente: o texto só
+           existe depois da renderização, e nem o lint nem um leitor de tela que leia o
+           template o encontram. -->
       <button
         pButton
         type="button"
         label="Save changes"
+        aria-label="Save changes"
         [disabled]="saving()"
         [loading]="saving()"
         (click)="save()"

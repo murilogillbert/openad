@@ -23,11 +23,24 @@
 set -uo pipefail
 
 PG='l5bcr9slmgtmeefkqwg5amia'
-HUB_API='v6q66q2lv00ly550hffog7f5-000642067238'
-OD_API='cag0pegfzuz1zfhkxgjsfzf2-000753239468'
 API='openad-api'
 ENVF=/root/openad/.env
 BASE='http://127.0.0.1:3000/api/v1'
+
+# Os contêineres do Coolify são resolvidos pelo **prefixo do uuid**, não por nome fixo: o
+# Coolify renomeia o contêiner em cada deploy (o do opendriver foi de
+# `cag0pegfzuz1zfhkxgjsfzf2-000753239468` para `...-134608006407` no primeiro redeploy). Nome
+# fixo aqui transformaria este script num gerador de falso negativo depois de qualquer deploy.
+conteiner() {
+  local uuid="$1" nome
+  nome=$(docker ps --format '{{.Names}}' | grep "^${uuid}" | head -1)
+  [ -n "$nome" ] || { echo "ABORTADO: nenhum conteiner com prefixo $uuid" >&2; exit 1; }
+  printf '%s' "$nome"
+}
+HUB_API=$(conteiner 'v6q66q2lv00ly550hffog7f5')
+OD_API=$(conteiner 'cag0pegfzuz1zfhkxgjsfzf2')
+echo "hub-backend:        $HUB_API"
+echo "opendriver-backend: $OD_API"
 
 falhas=0
 ok()     { printf '  ok      %s\n' "$1"; }
@@ -183,11 +196,23 @@ secao 'REPASSE AO MOTORISTA (openad -> opendriver)'
 REF="e2e-$(date +%s)-$(head -c 4 /dev/urandom | od -An -tx1 | tr -d ' \n')"
 PAYLOAD=$(printf '{"driverUserId":"%s","amountCents":37,"referenceId":"%s","campaignId":"e2e-campanha","description":"Verificacao fim a fim"}' "$UID_DRIVER" "$REF")
 
+# A URL vem do `.env`, que é a mesma que a API usa em produção — e não um endereço montado
+# aqui. Se o `.env` estiver errado, este teste tem de falhar; montar a URL "certa" no teste
+# esconderia exatamente o defeito que ele deveria pegar.
+OD_URL="${OPENDRIVER_API_URL:?OPENDRIVER_API_URL ausente no .env}"
+
+# O prefixo `/api/v1` faz parte do caminho: no opendriver, `internalRouter` é montado dentro
+# do router da API (`app.use('/api/v1', api)`), não na raiz. A primeira versão deste script
+# chamava `/internal/...` e levou 404 — que eu cheguei a interpretar como "o deploy não subiu
+# as rotas". Era o teste que estava errado; `DriverEarningClient` sempre usou o caminho certo.
+OD_API_BASE="$OD_URL/api/v1"
+echo "opendriver pelo .env: $OD_URL  (rotas internas em $OD_API_BASE/internal)"
+
 creditar() {
   docker exec "$API" curl -s -o /dev/stdout -w '\n__status__%{http_code}' \
     -X POST -H "Authorization: Bearer $ECOSYSTEM_SERVICE_API_KEY" \
     -H 'content-type: application/json' -d "$PAYLOAD" \
-    "${OPENDRIVER_API_URL:-http://$OD_API:5100}/internal/driver-earnings/ad-revenue"
+    "$OD_API_BASE/internal/driver-earnings/ad-revenue"
 }
 
 r=$(creditar); st=$(status_de "$r"); c=$(corpo_de "$r")
@@ -220,9 +245,11 @@ if [ "$n" = '1' ]; then ok 'exatamente 1 lancamento'; else falhou "$n lancamento
 # ---------------------------------------------------------------- bloqueadores de exclusao
 secao 'BLOQUEADORES DE EXCLUSAO DE CONTA'
 
-for svc in "openad:$BASE/internal/accounts/$UID_HUB/deletion-blockers" \
-           "opendriver:${OPENDRIVER_API_URL:-http://$OD_API:5100}/internal/accounts/$UID_HUB/deletion-blockers"; do
-  nome=${svc%%:*}; url=${svc#*:}
+for svc in "openad|$BASE/internal/accounts/$UID_HUB/deletion-blockers" \
+           "opendriver|$OD_API_BASE/internal/accounts/$UID_HUB/deletion-blockers"; do
+  # O separador é `|` e não `:` porque a URL começa com `https:` — com `:`, o
+  # `${svc#*:}` cortaria no esquema e sobraria `//api-app...`.
+  nome=${svc%%|*}; url=${svc#*|}
   r=$(docker exec "$API" curl -s -o /dev/stdout -w '\n__status__%{http_code}' \
     -H "Authorization: Bearer $ECOSYSTEM_SERVICE_API_KEY" "$url")
   st=$(status_de "$r")

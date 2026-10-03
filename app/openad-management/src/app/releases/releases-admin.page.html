@@ -93,7 +93,7 @@
               <div>
                 <p class="text-xs font-medium text-muted-color">Total on latest</p>
                 <p class="mt-1 text-2xl font-bold text-color">
-                  @if (metricTotalOnLatest != null) {
+                  @if (metricTotalOnLatest !== null && metricTotalOnLatest !== undefined) {
                     {{ metricTotalOnLatest | number }}
                   } @else {
                     —
@@ -122,7 +122,7 @@
               <div>
                 <p class="text-xs font-medium text-muted-color">Staged / rollout</p>
                 <p class="mt-1 text-2xl font-bold text-color">
-                  @if (metricStagedWaves != null) {
+                  @if (metricStagedWaves !== null && metricStagedWaves !== undefined) {
                     {{ metricStagedWaves | number }}
                   } @else {
                     —

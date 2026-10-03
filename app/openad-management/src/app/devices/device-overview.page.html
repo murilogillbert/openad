@@ -161,6 +161,7 @@
         type="button"
         class="p-button-danger p-button-outlined"
         label="Force Update Check"
+        aria-label="Force Update Check"
         [disabled]="forceBusy"
         (click)="confirmForceUpdate()"
       ></button>
@@ -174,6 +175,7 @@
         type="button"
         class="p-button-danger p-button-outlined"
         label="Decommission vehicle"
+        aria-label="Decommission vehicle"
         [disabled]="busy"
         (click)="confirmDecommission()"
       ></button>
