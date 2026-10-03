@@ -277,8 +277,18 @@ export class CampaignWizardComponent {
                 priority: null,
               })
             ),
+            /**
+             * Entrega para revisao, nao para o ar.
+             *
+             * Isto era `{ status: 'active' }` e **devolvia 400 desde que a moderacao entrou**
+             * (commit 52a14df): `draft -> active` deixou de ser transicao valida, e
+             * `pending_review -> active` exige papel de moderador — que o gerente de campanha
+             * que usa este assistente nao tem, de proposito. Ou seja, o ultimo passo do
+             * assistente falhava e a campanha ficava em rascunho com criativo e regra
+             * prontos, sem nada na tela explicando o que faltava.
+             */
             switchMap(() =>
-              this.api.patchCampaignStatus(cid, { status: 'active' })
+              this.api.patchCampaignStatus(cid, { status: 'pending_review' })
             )
           );
         })
@@ -289,7 +299,10 @@ export class CampaignWizardComponent {
           this.close();
           this.messages.add({
             severity: 'success',
-            summary: 'Campaign activated',
+            summary: 'Campanha enviada para revisao',
+            detail:
+              'Um moderador precisa aprovar o criativo antes de ela ir ao ar.',
+            life: 6000,
           });
           this.completed.emit();
         },

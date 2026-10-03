@@ -1,0 +1,215 @@
+<div class="space-y-6 p-4 md:p-6">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h1
+        class="app-font-display text-2xl font-semibold text-slate-900 dark:text-slate-100"
+      >
+        Moderacao de criativo
+      </h1>
+      <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+        {{ total() }} campanha(s) aguardando revisao, mais antiga primeiro.
+      </p>
+    </div>
+    <p-button
+      label="Atualizar"
+      icon="pi pi-refresh"
+      [outlined]="true"
+      [loading]="carregando()"
+      (onClick)="carregar()"
+    />
+  </div>
+
+  @if (carregando()) {
+    <p-progressSpinner class="mx-auto" />
+  } @else if (vazia()) {
+    <div
+      class="rounded-xl border border-slate-200 bg-white p-8 text-center dark:border-slate-600 dark:bg-slate-900/40"
+    >
+      <p class="text-slate-600 dark:text-slate-400">
+        Nada na fila. Campanhas enviadas para revisao aparecem aqui.
+      </p>
+    </div>
+  } @else {
+    <div class="space-y-4">
+      @for (item of itens(); track item.campaignId) {
+        <p-card>
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div class="min-w-0 flex-1 space-y-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <h2
+                  class="truncate text-lg font-semibold text-slate-900 dark:text-slate-100"
+                >
+                  {{ item.name }}
+                </h2>
+                @if (!item.readyToActivate) {
+                  <p-tag severity="warn" value="sem conteudo entregavel" />
+                }
+                @if (item.previousDecision) {
+                  <p-tag
+                    severity="info"
+                    [value]="
+                      'reenviada apos ' +
+                      (item.previousDecision.decision === 'rejected'
+                        ? 'recusa'
+                        : 'aprovacao')
+                    "
+                  />
+                }
+              </div>
+              <p class="text-sm text-slate-600 dark:text-slate-400">
+                {{ item.advertiserName }}
+                @if (item.submittedAt) {
+                  · enviada {{ item.submittedAt | date: 'short' }}
+                }
+              </p>
+              <p class="font-mono text-xs text-slate-500">
+                {{ item.campaignId }}
+              </p>
+            </div>
+
+            <div class="flex shrink-0 gap-2">
+              <p-button
+                label="Aprovar"
+                icon="pi pi-check"
+                severity="success"
+                [loading]="decidindo() === item.campaignId"
+                [disabled]="decidindo() !== null"
+                (onClick)="aprovar(item)"
+              />
+              <p-button
+                label="Recusar"
+                icon="pi pi-times"
+                severity="danger"
+                [outlined]="true"
+                [disabled]="decidindo() !== null"
+                (onClick)="abrirRecusa(item)"
+              />
+            </div>
+          </div>
+
+          @if (!item.readyToActivate && item.readinessReason) {
+            <div
+              class="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200"
+            >
+              {{ item.readinessReason }}
+            </div>
+          }
+
+          @if (item.previousDecision?.reason) {
+            <div
+              class="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm dark:border-slate-600 dark:bg-slate-900/40"
+            >
+              <span class="font-medium">Motivo da decisao anterior:</span>
+              {{ item.previousDecision?.reason }}
+            </div>
+          }
+
+          <dl class="mt-4 grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <dt class="text-slate-500">Orcamento</dt>
+              <dd class="font-mono">
+                {{ item.budget.totalAmountCents | cents }}
+                {{ item.budget.currency }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-slate-500">Tarifa por veiculacao</dt>
+              <dd class="font-mono">
+                {{ item.budget.ratePerImpressionCents | cents }}
+                {{ item.budget.currency }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-slate-500">Repasse ao motorista</dt>
+              <dd>{{ repasse(item) }}</dd>
+            </div>
+            <div>
+              <dt class="text-slate-500">Janela contratada</dt>
+              <dd>
+                {{ item.scheduledStart | date: 'shortDate' }} —
+                {{ item.scheduledEnd | date: 'shortDate' }}
+              </dd>
+            </div>
+          </dl>
+
+          <p class="mt-4 text-sm text-slate-600 dark:text-slate-400">
+            {{ segmentacao(item) }}
+          </p>
+
+          <div class="mt-4">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300">
+              Criativos ({{ item.creatives.length }})
+            </h3>
+            @if (item.creatives.length === 0) {
+              <p class="mt-1 text-sm text-slate-500">
+                Nenhum criativo ativo. Nao ha o que revisar.
+              </p>
+            } @else {
+              <ul class="mt-2 space-y-2">
+                @for (c of item.creatives; track c.mediaId) {
+                  <li
+                    class="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-slate-200 p-3 text-sm dark:border-slate-600"
+                  >
+                    <span class="font-medium">{{ c.filename }}</span>
+                    <span class="text-slate-500"
+                      >{{ c.width }}x{{ c.height }}</span
+                    >
+                    <span class="text-slate-500"
+                      >{{ c.durationSeconds }}s</span
+                    >
+                    <span class="text-slate-500">{{ c.mimeType ?? '—' }}</span>
+                    <p-tag
+                      [severity]="
+                        c.validationStatus === 'approved' ? 'success' : 'warn'
+                      "
+                      [value]="c.validationStatus ?? 'sem validacao'"
+                    />
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        </p-card>
+      }
+    </div>
+  }
+</div>
+
+<p-dialog
+  header="Recusar campanha"
+  [(visible)]="recusaAberta"
+  [modal]="true"
+  [style]="{ width: 'min(32rem, 92vw)' }"
+>
+  <p class="text-sm text-slate-600 dark:text-slate-400">
+    O motivo abaixo fica visivel para o anunciante e e o unico caminho dele para
+    saber o que corrigir.
+  </p>
+  <label
+    for="moderation-reject-reason"
+    class="mt-4 block text-sm font-medium text-slate-700 dark:text-slate-300"
+  >
+    Motivo da recusa
+  </label>
+  <textarea
+    id="moderation-reject-reason"
+    pTextarea
+    class="mt-1 w-full"
+    rows="4"
+    [(ngModel)]="recusaMotivo"
+    placeholder="Ex.: texto ilegivel a 3 metros de distancia"
+  ></textarea>
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Cancelar"
+      [text]="true"
+      (onClick)="recusaAberta = false"
+    />
+    <p-button
+      label="Recusar campanha"
+      severity="danger"
+      [loading]="decidindo() !== null"
+      (onClick)="confirmarRecusa()"
+    />
+  </ng-template>
+</p-dialog>

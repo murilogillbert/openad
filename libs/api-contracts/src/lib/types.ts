@@ -231,9 +231,29 @@ export interface CreateScheduleRuleRequest {
   priority: number | null;
 }
 
-/** PATCH /api/v1/campaigns/{id}/status */
+/**
+ * PATCH /api/v1/campaigns/{id}/status
+ *
+ * Os destinos possiveis acompanham `CAMPAIGN_STATUSES` e a maquina de estados em
+ * `campaign-status.policy.ts` — a rota recusa transicao invalida com 400, nao com erro de
+ * tipo, porque o que e valido depende do estado atual.
+ *
+ * `active` so e alcancavel a partir de `pending_review` e **so por moderador**. O tipo nao
+ * expressava isso e o contrato listava apenas tres estados, o que fez o assistente de
+ * campanha do portal tentar ir de `draft` direto para `active` por meses sem que nada
+ * acusasse em tempo de compilacao.
+ */
 export interface CampaignStatusPatch {
-  status: 'active' | 'paused' | 'completed';
+  status:
+    | 'draft'
+    | 'pending_review'
+    | 'rejected'
+    | 'active'
+    | 'paused'
+    | 'completed'
+    | 'archived';
+  /** Obrigatorio quando `status` e `rejected`. */
+  reason?: string;
 }
 
 /** POST /api/v1/geo-zones */

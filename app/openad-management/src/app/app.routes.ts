@@ -159,6 +159,18 @@ export const appRoutes: Route[] = [
           import('./pages/campaigns.page').then((m) => m.CampaignsPage),
       },
       {
+        /**
+         * Fila de moderacao. A autorizacao de verdade esta na API
+         * (`@Roles('content_moderator')`); aqui so se evita mostrar um item de menu que
+         * levaria a uma tela de 403. Esconder no cliente nao e controle de acesso.
+         */
+        path: 'moderation',
+        loadComponent: () =>
+          import('./moderation/moderation-queue.page').then(
+            (m) => m.ModerationQueuePage
+          ),
+      },
+      {
         path: 'campaigns/:campaignId/analytics',
         loadComponent: () =>
           import(

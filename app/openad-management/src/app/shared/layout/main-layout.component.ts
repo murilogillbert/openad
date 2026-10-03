@@ -7,7 +7,8 @@ import { DesktopShellNavbarComponent } from '../shell/desktop-shell-navbar/deskt
 import { MobileBottomNavComponent } from '../shell/mobile-bottom-nav/mobile-bottom-nav.component';
 import { MobileTopBarComponent } from '../shell/mobile-top-bar/mobile-top-bar.component';
 import { MobileTopBarLayoutService } from '../shell/mobile-top-bar-layout.service';
-import { SHELL_NAV_ITEMS } from '../shell/shell-nav.model';
+import { navItemsForRole } from '../shell/shell-nav.model';
+import { PortalAuthService } from '../../auth/portal-auth.service';
 import { PortalFleetNotificationsService } from '../notifications/portal-fleet-notifications.service';
 
 @Component({
@@ -26,7 +27,16 @@ import { PortalFleetNotificationsService } from '../notifications/portal-fleet-n
   },
 })
 export class MainLayoutComponent implements OnInit, OnDestroy {
-  readonly shellNavItems = SHELL_NAV_ITEMS;
+  private readonly auth = inject(PortalAuthService);
+
+  /**
+   * Menu filtrado pelo papel. Ver a nota em `ShellNavItem.roles`: isto evita oferecer uma
+   * tela que responderia 403, nao substitui a autorizacao, que esta na API.
+   *
+   * Avaliado uma vez na construcao do layout, que e quando o shell monta — depois do login,
+   * entao o papel ja esta em `localStorage`.
+   */
+  readonly shellNavItems = navItemsForRole(this.auth.getPortalUser()?.role);
 
   readonly mobileTopLayout = inject(MobileTopBarLayoutService);
 
