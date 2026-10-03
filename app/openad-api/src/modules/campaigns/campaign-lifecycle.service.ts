@@ -13,23 +13,21 @@ import {
 import { randomUUID } from 'crypto';
 import { PinoLogger } from 'nestjs-pino';
 import type { FleetAuditContext } from '../../infrastructure/logging/fleet-audit.context';
-import { ScheduleRulesRepository } from '../schedule-rules/schedule-rules.repository';
-import { CreativeAssetsRepository } from './creative-assets.repository';
 import { CampaignsRepository } from './campaigns.repository';
 import type { CreateCampaignDto } from './dto/create-campaign.dto';
 import type { PatchCampaignStatusDto } from './dto/patch-campaign-status.dto';
 import { SchedulePushService } from '../schedule-rules/schedule-push.service';
 import { MediaFolderProvisioningService } from '../media-ingestion/media-folder-provisioning.service';
+import { CampaignReadinessService } from './campaign-readiness.service';
 
 @Injectable()
 export class CampaignLifecycleService {
   constructor(
     private readonly logger: PinoLogger,
     private readonly campaigns: CampaignsRepository,
-    private readonly assets: CreativeAssetsRepository,
-    private readonly rules: ScheduleRulesRepository,
     private readonly schedulePush: SchedulePushService,
-    private readonly mediaFolders: MediaFolderProvisioningService
+    private readonly mediaFolders: MediaFolderProvisioningService,
+    private readonly readiness: CampaignReadinessService
   ) {
     this.logger.setContext(CampaignLifecycleService.name);
   }
@@ -154,19 +152,11 @@ export class CampaignLifecycleService {
     }
 
     if (body.status === 'active') {
-      const activeRules = await this.rules.findActiveByCampaignId(campaignId);
-      if (activeRules.length === 0) {
-        throw new BadRequestException(
-          'Campaign must have at least one active schedule rule before activation'
-        );
-      }
-      for (const r of activeRules) {
-        const asset = await this.assets.findByAssetId(r.assetId);
-        if (!asset || asset.status !== 'verified') {
-          throw new BadRequestException(
-            'All schedule rules must reference verified assets before activation'
-          );
-        }
+      // A verificacao vive em `CampaignReadinessService` porque ha **dois** caminhos de
+      // entrega e a versao anterior conhecia so um — ver a nota naquele arquivo.
+      const prontidao = await this.readiness.verificar(campaignId);
+      if (!prontidao.pronta) {
+        throw new BadRequestException(prontidao.motivo ?? 'Campanha sem conteudo');
       }
     }
 

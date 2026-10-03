@@ -6,6 +6,7 @@ import { CreativeAsset, CreativeAssetSchema } from './creative-asset.schema';
 import { CampaignsRepository } from './campaigns.repository';
 import { CreativeAssetsRepository } from './creative-assets.repository';
 import { CampaignLifecycleService } from './campaign-lifecycle.service';
+import { CampaignReadinessService } from './campaign-readiness.service';
 import { AssetUploadService } from './asset-upload.service';
 import { AssetIntegrityService } from './asset-integrity.service';
 import { AssetIntegrityWorker } from './asset-integrity.worker';
@@ -34,6 +35,7 @@ import { MediaIngestionModule } from '../media-ingestion/media-ingestion.module'
     CampaignsRepository,
     CreativeAssetsRepository,
     CampaignLifecycleService,
+    CampaignReadinessService,
     AssetUploadService,
     AssetIntegrityService,
     AssetIntegrityWorker,
@@ -43,6 +45,7 @@ import { MediaIngestionModule } from '../media-ingestion/media-ingestion.module'
   exports: [
     CampaignsRepository,
     CreativeAssetsRepository,
+    CampaignReadinessService,
     AssetUrlService,
     MongooseModule,
   ],

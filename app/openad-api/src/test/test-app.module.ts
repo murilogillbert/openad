@@ -28,6 +28,7 @@ import { PriorityCommandsModule } from '../modules/priority-commands/priority-co
 import { SpatialLedgerModule } from '../modules/spatial-ledger/spatial-ledger.module';
 import { AnalyticsModule } from '../modules/analytics/analytics.module';
 import { AdvertiserModule } from '../modules/advertiser/advertiser.module';
+import { ModerationModule } from '../modules/moderation/moderation.module';
 import { ReleasesModule } from '../modules/releases/releases.module';
 import { PlatformConfigModule } from '../modules/platform-config/platform-config.module';
 
@@ -64,6 +65,7 @@ import { PlatformConfigModule } from '../modules/platform-config/platform-config
     SpatialLedgerModule,
     AnalyticsModule,
     AdvertiserModule,
+    ModerationModule,
     ReleasesModule,
     PlatformConfigModule,
   ],
