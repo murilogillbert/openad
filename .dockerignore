@@ -1,0 +1,64 @@
+# Contexto de build do Docker.
+#
+# Sem este arquivo o contexto enviado ao daemon passa de 2 GB: `node_modules`, os caches do
+# Nx e do Angular, o `build/` do Gradle e o APK somados. O envio do contexto acontece **antes**
+# de qualquer camada ser avaliada, então isso não é otimização de cache — é minutos de espera
+# em cada build, e memória no daemon.
+
+# Dependências: reinstaladas dentro da imagem a partir do lockfile.
+node_modules
+**/node_modules
+
+# Caches de build locais. Pior que lentos: um cache do Nx gerado na máquina de alguém pode
+# fazer o build na imagem reaproveitar artefato que não corresponde ao código copiado.
+.nx
+.angular
+.cache
+dist
+tmp
+coverage
+
+# Android do player. Não entra em imagem de servidor, e o `build/` tem o APK inteiro.
+app/openad-ad-client/android/build
+app/openad-ad-client/android/app/build
+app/openad-ad-client/android/.gradle
+app/openad-ad-client/android/local.properties
+**/*.apk
+**/*.aab
+**/*.keystore
+**/*.jks
+
+# Segredos e configuração de ambiente. **Não** devem entrar na imagem: as variáveis chegam
+# por `environment` do compose, e um `.env` copiado para dentro da camada fica no histórico
+# da imagem mesmo que apagado numa camada posterior.
+.env
+.env.*
+!.env.example
+secrets
+*.pem
+*.key
+
+# Git e metadados de editor.
+.git
+.gitignore
+.github
+.vscode
+.idea
+.kiro
+.cursor
+.agent
+.agents
+.gemini
+
+# Documentação e scripts de operação: não são usados em tempo de execução.
+docs
+specs
+infra/server
+*.md
+!README.md
+
+# Log e temporário gerados por mim durante o trabalho.
+*.log
+.tmp-*
+.msg.txt
+.build-*.log

@@ -1,0 +1,144 @@
+# Imagem de produção da `openad-api`.
+#
+# O `README` citava este arquivo há meses e ele não existia — não havia caminho de implantação
+# versionado para o serviço.
+#
+# Três coisas tornam esta imagem diferente de um Dockerfile Node comum, e cada uma custou uma
+# decisão:
+#
+# 1. **ffmpeg é obrigatório.** `VideoValidatorService` chama `ffprobe` para extrair bitrate,
+#    resolução, codec e duração, e validar contra o ruleset DOOH. Sem o binário, todo upload
+#    de criativo falha — e falha no `complete`, depois de os bytes já estarem no storage, que
+#    é o pior momento para descobrir.
+# 2. **O Prisma precisa do engine musl.** `schema.prisma` já declara
+#    `binaryTargets = ["native", "linux-musl-openssl-3.0.x"]`; o `prisma generate` roda no
+#    estágio de build, dentro do Alpine, para que o engine correto venha junto.
+# 3. **O build é do Nx, não do `tsc`.** O alvo `build` gera um pacote webpack em
+#    `dist/app/openad-api`, e `prune` gera ali um `package.json` e um `pnpm-lock.yaml` com
+#    **apenas** as dependências que o bundle de fato usa. Instalar a partir desse lockfile
+#    reduzido, em vez do lockfile do monorepo, é o que mantém a imagem pequena.
+
+# ---------------------------------------------------------------------------------------
+# Estágio 1 — build
+# ---------------------------------------------------------------------------------------
+FROM node:22-alpine AS build
+
+# `libc6-compat` porque alguns binários pré-compilados (swc, esbuild) assumem glibc.
+# `openssl` é exigido pelo engine do Prisma.
+RUN apk add --no-cache libc6-compat openssl
+
+WORKDIR /app
+
+# `corepack` resolve o pnpm a partir do campo `packageManager` do package.json. Fixar a
+# versão lá e deixar o corepack obedecer evita o `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` que
+# aparece quando um pnpm mais novo ignora o bloco `pnpm` e os `overrides`.
+RUN corepack enable
+
+# As dependências primeiro, em camada própria: elas mudam muito menos que o código-fonte, e
+# essa separação é o que faz o rebuild de uma alteração de código não reinstalar nada.
+# Não há `pnpm-workspace.yaml`: o monorepo é Nx com um `package.json` único na raiz, e o
+# `app/openad-ad-client/package.json` existe só para o Capacitor resolver os plugins nativos
+# — não é membro de workspace.
+COPY package.json pnpm-lock.yaml ./
+RUN corepack install && pnpm install --frozen-lockfile
+
+COPY . .
+
+# O cliente do Prisma tem de ser gerado **antes** do webpack: o bundle importa
+# `@prisma/client`, que sem `generate` é um stub sem nenhum modelo.
+RUN pnpm exec prisma generate --schema app/openad-api/prisma/schema.prisma
+
+# O `NxAppWebpackPlugin` roda com `generatePackageJson: true`, então o build já deposita em
+# `dist/openad-api` um `package.json` com as dependências **externas** ao bundle, em versões
+# exatas, mais um `pnpm-lock.yaml` podado. São 48 pacotes em vez dos 121 da raiz — o Angular e
+# o Capacitor ficam de fora, porque o bundle do servidor não os importa.
+#
+# O alvo `openad-api:prune` do Nx faria isso de novo e **não funciona** neste repositório:
+# `prune-lockfile` exige um `app/openad-api/package.json` que não existe, porque o projeto é
+# definido só por `project.json`. Usar a saída do webpack evita a dependência de um alvo
+# quebrado.
+RUN pnpm exec nx run openad-api:build --skip-nx-cache
+
+# ---------------------------------------------------------------------------------------
+# Estágio 2 — runtime
+# ---------------------------------------------------------------------------------------
+FROM node:22-alpine AS runtime
+
+# `ffmpeg` traz o `ffprobe`, que é o que o validador de mídia usa. `tini` dá um init PID 1 de
+# verdade: sem ele, o Node vira PID 1, não repassa SIGTERM aos filhos e o contêiner leva os
+# 10 s inteiros de timeout do Docker para parar — em cada implantação.
+RUN apk add --no-cache ffmpeg openssl tini curl
+
+ENV NODE_ENV=production
+WORKDIR /app
+
+# **npm no runtime, pnpm no build.** Decisão deliberada, não inconsistência.
+#
+# O pnpm monta `node_modules` com links simbólicos para um store endereçado por hash
+# (`node_modules/.pnpm/@prisma+client@6.19.3_<hash>/`). O `prisma generate` escreve o cliente
+# ao lado do `@prisma/client` que resolveu, ou seja, dentro daquele caminho com hash — que
+# muda a cada alteração de dependência. Qualquer `COPY` daquele caminho quebraria no primeiro
+# bump de versão, e quebraria em tempo de build, longe de quem fez o bump.
+#
+# O npm monta a árvore plana clássica, onde `node_modules/.prisma/client` é um caminho
+# estável. E o determinismo não se perde: o `package.json` que o webpack gerou traz as
+# versões **exatas**, sem `^` nem `~`, então a resolução é a mesma em toda execução.
+COPY --from=build /app/dist/openad-api/package.json ./package.json
+
+# Duas dependências de **build** vazam para o `package.json` gerado: `@nx/webpack` e
+# `typescript`. O `generatePackageJson` do Nx as inclui por varrer o grafo do projeto em vez
+# de só o que o bundle requer — e elas custam ~1,1 GB de árvore (webpack, babel, o compilador
+# de TypeScript inteiro) numa imagem que nunca compila nada.
+#
+# Que o bundle não as usa é verificável, não suposição: `grep` por `@nx/webpack`,
+# `typescript`, `@swc/` e `ts-morph` em `dist/openad-api/main.js` devolve **zero**
+# ocorrências. O webpack resolveu tudo o que precisava em tempo de compilação.
+#
+# A remoção é feita aqui, no Dockerfile, e não editando o arquivo gerado: ele é uma saída de
+# build e seria sobrescrito na próxima compilação.
+RUN node -e "const p=require('./package.json'); for (const d of ['@nx/webpack','typescript']) delete p.dependencies[d]; require('fs').writeFileSync('./package.json', JSON.stringify(p,null,2));" \
+ && npm install --omit=dev --no-audit --no-fund \
+ && npm cache clean --force
+
+# O schema vai junto para diagnóstico (`prisma validate`, inspeção do modelo no contêiner) e
+# porque o `generate` abaixo precisa dele.
+#
+# O `migrate deploy` **não** roda daqui. Migration em banco compartilhado por três serviços é
+# operação deliberada, com backup e diff de `pg_dump` antes e depois — ver
+# `infra/server/10-migrations-producao.sh`. Um contêiner que migrasse no boot aplicaria schema
+# novo sem ninguém olhando, e repetiria isso em cada reinício automático.
+COPY --from=build /app/app/openad-api/prisma ./prisma
+
+# O cliente do Prisma é gerado aqui, contra o `@prisma/client` que acabou de ser instalado —
+# é o resolvedor que sabe onde escrever, não um caminho que eu adivinhe.
+#
+# O CLI entra como dependência de desenvolvimento temporária e sai na mesma camada: mantê-lo
+# na imagem final seriam ~50 MB de engines de migration que o runtime nunca usa, porque o
+# `migrate deploy` roda fora do contêiner.
+#
+# A versão é a **mesma** do `@prisma/client` que o `package.json` gerado fixou. CLI e client
+# em versões diferentes produzem um cliente que o runtime recusa a carregar.
+RUN npm install --no-save --no-audit --no-fund prisma@6.19.3 \
+ && npx prisma generate --schema ./prisma/schema.prisma \
+ && npm remove --no-audit --no-fund prisma \
+ && npm cache clean --force \
+ && rm -rf /root/.npm /tmp/*
+
+# O bundle, o `assets/` e o resto da saída do build. Por último: é o que muda em toda
+# alteração de código, e nada acima precisa ser refeito por causa dele.
+COPY --from=build /app/dist/openad-api ./
+
+# Usuário sem privilégio. A imagem `node` já traz `node:node` (uid 1000) criado.
+USER node
+
+EXPOSE 3000
+
+# `/health` é servido por `HealthModule` (`@nestjs/terminus`) e checa Mongo, Redis e MQTT. O
+# `start-period` é generoso porque a primeira conexão com o Mongo e a subida do consumidor do
+# RabbitMQ levam alguns segundos — sem isso, o orquestrador mataria o contêiner durante um
+# boot que estava indo bem.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=45s --retries=3 \
+  CMD curl -fsS http://127.0.0.1:3000/health || exit 1
+
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["node", "main.js"]

@@ -1,0 +1,264 @@
+# Infraestrutura e serviços do openad em produção.
+#
+# Roda **ao lado** da pilha que já existe no servidor (Coolify, Postgres compartilhado,
+# hub-minio, backends do hub e do opendriver). Não duplica nada disso:
+#
+#   - **Postgres**: usa o container existente, pela rede `coolify`. Um segundo Postgres
+#     quebraria a premissa do ecossistema de um banco só com três schemas.
+#   - **Armazenamento S3**: usa o `hub-minio` existente, por decisão de 2026-10-03.
+#   - **TLS e domínios**: terminam no Traefik do Coolify, por label.
+#
+# O que é novo e exclusivo do openad: MongoDB (operação e telemetria), Redis (BullMQ e
+# pub/sub) e RabbitMQ com plugin MQTT (plano de dispositivo dos tablets).
+#
+# ---------------------------------------------------------------------------------------
+# Memória: a VPS tem 2 vCPU e 7,8 GB, com ~4,1 GB disponíveis.
+# ---------------------------------------------------------------------------------------
+# Todo serviço tem limite declarado, e isso não é zelo: sem limite, o MongoDB reserva cache
+# até metade da RAM visível e o RabbitMQ usa 40% como marca d'água — somados, os dois
+# sozinhos passariam do que existe livre. O resultado seria o OOM killer escolhendo a vítima,
+# e ele tende a escolher o processo maior, que aqui seria o Postgres **compartilhado pelos
+# três serviços**. Limitar é o que mantém a falha contida no openad.
+#
+# Orçamento: Mongo 1,2 G + Redis 256 M + RabbitMQ 512 M + API 768 M + portal 64 M ≈ 2,8 G,
+# deixando folga para o que já roda.
+
+name: openad
+
+networks:
+  # Rede do Coolify, onde vivem o Postgres compartilhado, o hub-minio e o Traefik.
+  coolify:
+    external: true
+  # Rede interna do openad. Mongo, Redis e RabbitMQ ficam **só** aqui: nenhum deles precisa
+  # ser alcançado de fora, e porta publicada é a diferença entre um serviço interno e um
+  # serviço exposto à internet.
+  openad-interna:
+    driver: bridge
+
+volumes:
+  openad-mongo-data:
+  openad-mongo-config:
+  openad-redis-data:
+  openad-rabbitmq-data:
+
+services:
+  # -------------------------------------------------------------------------------------
+  # MongoDB — operação e telemetria (frota, mídia, entrega, eventos, 28 collections)
+  # -------------------------------------------------------------------------------------
+  mongo:
+    image: mongo:7
+    container_name: openad-mongo
+    restart: unless-stopped
+    networks: [openad-interna]
+    environment:
+      # ATENÇÃO: estas duas só têm efeito na **criação** do volume. Se o contêiner subir sem
+      # elas uma vez, acrescentá-las depois não liga a autenticação — é preciso recriar o
+      # volume. Um Mongo sem senha é comprometido em horas.
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:?defina MONGO_ROOT_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?defina MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: openad
+    # `--wiredTigerCacheSizeGB` explícito porque o padrão é `max(0,5 GB, (RAM-1G)/2)`, e o
+    # Mongo lê a RAM do **host**, não o limite do contêiner: ele pediria ~3,4 GB e seria morto
+    # pelo cgroup. O cache é a maior parte do consumo, então é ele que precisa ser dito.
+    command: >
+      mongod
+      --wiredTigerCacheSizeGB 0.5
+      --bind_ip_all
+    volumes:
+      - openad-mongo-data:/data/db
+      - openad-mongo-config:/data/configdb
+    deploy:
+      resources:
+        limits:
+          memory: 1200M
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', 'db.adminCommand({ping:1}).ok']
+      interval: 30s
+      timeout: 5s
+      start_period: 40s
+      retries: 3
+    logging: &log
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+
+  # -------------------------------------------------------------------------------------
+  # Redis — filas BullMQ, cache e pub/sub do painel
+  # -------------------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: openad-redis
+    restart: unless-stopped
+    networks: [openad-interna]
+    # `appendonly yes` porque o Redis aqui guarda **fila**, não só cache: um lote de analytics
+    # enfileirado e não processado some num reinício sem persistência, e com ele as
+    # veiculações faturáveis daquele lote.
+    #
+    # `maxmemory-policy noeviction` é o ponto que importa: com `allkeys-lru`, o Redis
+    # descartaria silenciosamente chaves de job do BullMQ ao chegar no teto — perda de dado
+    # faturável disfarçada de funcionamento normal. Com `noeviction`, a escrita falha e o erro
+    # aparece.
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 200mb
+      --maxmemory-policy noeviction
+      --requirepass ${REDIS_PASSWORD:?defina REDIS_PASSWORD}
+    volumes:
+      - openad-redis-data:/data
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    healthcheck:
+      test: ['CMD-SHELL', 'redis-cli -a "$$REDIS_PASSWORD" ping | grep -q PONG']
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    logging: *log
+
+  # -------------------------------------------------------------------------------------
+  # RabbitMQ + plugin MQTT — plano de dispositivo dos tablets
+  # -------------------------------------------------------------------------------------
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    container_name: openad-rabbitmq
+    restart: unless-stopped
+    networks: [openad-interna, coolify]
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:?defina RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?defina RABBITMQ_PASSWORD}
+      # A marca d'água padrão é 40% da RAM do **host** (~3,1 GB aqui), bem acima do limite do
+      # cgroup. Em valor absoluto, o RabbitMQ aplica contrapressão aos publicadores antes de
+      # o cgroup matá-lo — degrada em vez de morrer.
+      RABBITMQ_VM_MEMORY_HIGH_WATERMARK: 384MiB
+    volumes:
+      - openad-rabbitmq-data:/var/lib/rabbitmq
+      - ./docker/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+    labels:
+      # MQTT sobre WebSocket seguro, pela porta 15675 do `rabbitmq_web_mqtt`.
+      #
+      # O proxy do Cloudflare encaminha HTTP e WebSocket na 443, mas **não** TCP bruto nas
+      # 1883/8883 — isso é Spectrum, plano Enterprise. Então o caminho é WSS, e ele já
+      # funciona sem build novo de APK: o `brokerUrl` é entregue a cada tablete na resposta do
+      # pareamento, não compilado no aplicativo.
+      #
+      # As portas 1883 e 15672 **não** são publicadas: a 1883 não é usada neste desenho e a
+      # 15672 é o painel de administração.
+      - traefik.enable=true
+      - traefik.docker.network=coolify
+      - traefik.http.routers.openad-mqtt.rule=Host(`mqtt.opendriver.com.br`)
+      - traefik.http.routers.openad-mqtt.entrypoints=https
+      - traefik.http.routers.openad-mqtt.tls.certresolver=letsencrypt
+      - traefik.http.services.openad-mqtt.loadbalancer.server.port=15675
+    logging: *log
+
+  # -------------------------------------------------------------------------------------
+  # API
+  # -------------------------------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    image: openad-api:latest
+    container_name: openad-api
+    restart: unless-stopped
+    # `coolify` para alcançar o Postgres compartilhado e o hub-minio; `openad-interna` para
+    # Mongo, Redis e RabbitMQ.
+    networks: [openad-interna, coolify]
+    depends_on:
+      mongo: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+
+      # `?schema=openad` é obrigatório, e a validação de ambiente recusa o boot sem ele: sem o
+      # parâmetro, o histórico de migrations do openad iria para o schema do hub.
+      DATABASE_URL: ${DATABASE_URL:?defina DATABASE_URL com ?schema=openad}
+
+      MONGO_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@openad-mongo:27017/openad?authSource=admin
+      REDIS_URL: redis://:${REDIS_PASSWORD}@openad-redis:6379
+      MQTT_URL: mqtt://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@openad-rabbitmq:1883
+      RABBITMQ_MANAGEMENT_URL: http://openad-rabbitmq:15672
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+
+      # O `brokerUrl` entregue ao tablete no pareamento. É WSS porque o Cloudflare não
+      # encaminha TCP bruto — ver a nota no serviço `rabbitmq`.
+      MQTT_PUBLIC_BROKER_URL: wss://mqtt.opendriver.com.br/ws
+
+      # **Idêntico** ao do hub e do opendriver: é o que faz um token de um valer nos três. A
+      # validação recusa menos de 32 caracteres.
+      JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET igual ao do hub}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?defina JWT_REFRESH_SECRET}
+
+      # Armazenamento: o `hub-minio` que já existe, alcançado pela rede do Coolify.
+      MEDIA_STORAGE_BACKEND: s3
+      S3_ENDPOINT: http://hub-minio:9000
+      S3_REGION: us-east-1
+      S3_BUCKET: ${S3_BUCKET:-openad-media}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:?defina S3_ACCESS_KEY_ID}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:?defina S3_SECRET_ACCESS_KEY}
+      S3_FORCE_PATH_STYLE: 'true'
+      PUBLIC_ASSET_BASE_URL: https://adsapi.opendriver.com.br
+
+      # Repasse ao motorista: o openad credita `opendriver.driver_earnings` por HTTP, porque
+      # aquele schema não é propriedade dele.
+      OPENDRIVER_API_URL: ${OPENDRIVER_API_URL:-http://cag0pegfzuz1zfhkxgjsfzf2-000753239468:5100}
+      ECOSYSTEM_SERVICE_API_KEY: ${ECOSYSTEM_SERVICE_API_KEY:?defina a chave de servico}
+
+      RABBITMQ_PROVISION_DEVICE_MQTT_USERS: 'true'
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=coolify
+      - traefik.http.routers.openad-api.rule=Host(`adsapi.opendriver.com.br`)
+      - traefik.http.routers.openad-api.entrypoints=https
+      - traefik.http.routers.openad-api.tls.certresolver=letsencrypt
+      - traefik.http.services.openad-api.loadbalancer.server.port=3000
+    logging: *log
+
+  # -------------------------------------------------------------------------------------
+  # Portal do operador
+  # -------------------------------------------------------------------------------------
+  management:
+    build:
+      context: .
+      dockerfile: Dockerfile.management
+    image: openad-management:latest
+    container_name: openad-management
+    restart: unless-stopped
+    networks: [coolify]
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=coolify
+      - traefik.http.routers.openad-portal.rule=Host(`ads.opendriver.com.br`)
+      - traefik.http.routers.openad-portal.entrypoints=https
+      - traefik.http.routers.openad-portal.tls.certresolver=letsencrypt
+      - traefik.http.services.openad-portal.loadbalancer.server.port=80
+    logging: *log
