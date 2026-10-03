@@ -29,6 +29,7 @@ import { SpatialLedgerModule } from '../modules/spatial-ledger/spatial-ledger.mo
 import { AnalyticsModule } from '../modules/analytics/analytics.module';
 import { AdvertiserModule } from '../modules/advertiser/advertiser.module';
 import { ModerationModule } from '../modules/moderation/moderation.module';
+import { InternalModule } from '../modules/internal/internal.module';
 import { ReleasesModule } from '../modules/releases/releases.module';
 import { PlatformConfigModule } from '../modules/platform-config/platform-config.module';
 
@@ -66,6 +67,7 @@ import { PlatformConfigModule } from '../modules/platform-config/platform-config
     AnalyticsModule,
     AdvertiserModule,
     ModerationModule,
+    InternalModule,
     ReleasesModule,
     PlatformConfigModule,
   ],

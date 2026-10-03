@@ -4,6 +4,8 @@ import { AuthModule } from '../auth/auth.module';
 import { CampaignsModule } from '../campaigns/campaigns.module';
 import { DevicesModule } from '../devices/devices.module';
 import { GeoZonesModule } from '../geo-zones/geo-zones.module';
+import { InternalModule } from '../internal/internal.module';
+import { VehiclesModule } from '../vehicles/vehicles.module';
 import { MediaAsset, MediaAssetSchema } from '../media-ingestion/schemas/media-asset.schema';
 import { QueuesModule } from '../../infrastructure/queues/queues.module';
 import { PlatformConfigModule } from '../platform-config/platform-config.module';
@@ -35,6 +37,10 @@ import { ReportingAggregationService } from './services/reporting-aggregation.se
     GeoZonesModule,
     CampaignsModule,
     PlatformConfigModule,
+    // O repasse ao motorista é creditado pelo processador de reconciliação, no instante em
+    // que a veiculação vira faturável. `VehiclesModule` resolve `vehicles.driverId`.
+    VehiclesModule,
+    InternalModule,
   ],
   controllers: [
     PlaybackBatchController,

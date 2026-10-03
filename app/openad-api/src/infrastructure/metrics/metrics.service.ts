@@ -16,6 +16,21 @@ export class MetricsService {
   /** Media VFS: clone / delete / patch / complete timings */
   readonly mediaVfsOperationSeconds: Histogram;
   readonly mediaVfsMutationsTotal: Counter;
+  /**
+   * Itens de midia suprimidos do manifesto por segmentacao, rotulados pelo motivo.
+   *
+   * Contador, nao documento por evento: o manifesto e puxado por cada tablete a cada 15 min,
+   * e gravar uma linha por item suprimido seria da ordem de `frota x campanhas` escritas por
+   * ciclo, para um dado que ninguem le evento a evento. O que o anunciante precisa saber e
+   * "quanto" e "por que", e isso o contador responde com a mesma fidelidade.
+   *
+   * `lost_opportunity_events` continua sendo o lugar dos eventos reportados **pelo tablete**
+   * por MQTT (`higher_tier`, `cooldown`, `velocity`, `loop_lock`), que sao decisoes de
+   * arbitragem na ponta. Supressao por segmentacao e decisao do servidor, com natureza e
+   * volume diferentes — misturar as duas na mesma colecao tornaria qualquer consulta
+   * ambigua, alem de `zoneId` ser obrigatorio la e nao existir aqui.
+   */
+  readonly manifestTargetingSuppressedTotal: Counter;
 
   constructor() {
     collectDefaultMetrics({ register: this.registry });
@@ -48,6 +63,15 @@ export class MetricsService {
       name: 'openad_media_vfs_mutations_total',
       help: 'Count of media VFS mutations by operation and outcome',
       labelNames: ['op', 'outcome'],
+      registers: [this.registry],
+    });
+    this.manifestTargetingSuppressedTotal = new Counter({
+      name: 'openad_manifest_targeting_suppressed_total',
+      help: 'Media items excluded from a manifest by campaign targeting, by reason',
+      // `campaignId` **nao** entra como rotulo de proposito: rotulo de cardinalidade alta
+      // multiplica series temporais sem limite e e a forma classica de derrubar o Prometheus.
+      // O campaignId vai no log estruturado, que e onde investigacao individual acontece.
+      labelNames: ['reason'],
       registers: [this.registry],
     });
   }

@@ -2,12 +2,28 @@ import { Injectable } from '@nestjs/common';
 import { PinoLogger } from 'nestjs-pino';
 import { CampaignsRepository } from '../../campaigns/campaigns.repository';
 import { PacingSignalService } from '../../analytics/services/pacing-signal.service';
+import { PlatformConfigRuntimeService } from '../../platform-config/platform-config-runtime.service';
+import {
+  boostDeRepasse,
+  percentEfetivoDoRepasse,
+} from '../../internal/driver-payout.policy';
+import type { Segmentacao } from './targeting-matcher.service';
 
 /** Campanha apta a veicular agora. */
 export interface EligibleCampaign {
   campaignId: string;
   /** `campaigns.priority` — 1 e a mais alta. */
   campaignPriority: number;
+  /** `campaigns.targeting`. Dimensao vazia = sem restricao. */
+  targeting: Segmentacao | null;
+  /**
+   * Multiplicador do leilao de repasse, de `boostDeRepasse`.
+   *
+   * Vale 1 quando o leilao esta desligado (`driverPayoutAuctionWeight = 0`) ou quando a
+   * campanha oferece exatamente o piso. Acima de 1 ela ganha inventario; e o que impede o
+   * piso de virar so um custo fixo que ninguem tem motivo para superar.
+   */
+  payoutBoost: number;
 }
 
 /**
@@ -45,6 +61,7 @@ export class CampaignEligibilityService {
   constructor(
     private readonly campaigns: CampaignsRepository,
     private readonly pacing: PacingSignalService,
+    private readonly platform: PlatformConfigRuntimeService,
     private readonly logger: PinoLogger
   ) {
     this.logger.setContext(CampaignEligibilityService.name);
@@ -73,9 +90,28 @@ export class CampaignEligibilityService {
         pausedByPacing += 1;
         continue;
       }
+      const monetizacao = this.platform.get().monetization;
       eligible.set(campaign.campaignId, {
         campaignId: campaign.campaignId,
         campaignPriority: campaign.priority,
+        targeting: campaign.targeting
+          ? {
+              cities: campaign.targeting.cities ?? [],
+              zoneIds: campaign.targeting.zoneIds ?? [],
+              tiers: campaign.targeting.tiers ?? [],
+              vehicleTiers: campaign.targeting.vehicleTiers ?? [],
+              dayparts: campaign.targeting.dayparts ?? [],
+            }
+          : null,
+        payoutBoost: boostDeRepasse({
+          percentEfetivo: percentEfetivoDoRepasse(
+            campaign.driverPayout,
+            campaign.budget?.ratePerImpressionCents ?? 0,
+            monetizacao.driverPayoutMinPercent
+          ),
+          piso: monetizacao.driverPayoutMinPercent,
+          k: monetizacao.driverPayoutAuctionWeight,
+        }),
       });
     }
 

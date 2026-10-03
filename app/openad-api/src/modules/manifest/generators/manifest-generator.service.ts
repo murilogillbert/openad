@@ -17,6 +17,7 @@ import {
   FILLER_MANIFEST_PRIORITY,
   manifestPriorityFor,
 } from './campaign-eligibility.service';
+import { TargetingMatcherService } from './targeting-matcher.service';
 
 export interface GeneratedManifestPayload {
   deviceId: string;
@@ -33,6 +34,7 @@ export class ManifestGeneratorService {
     private readonly storage: AssetStorageService,
     private readonly spatialManifest: SpatialManifestBuilderService,
     private readonly eligibility: CampaignEligibilityService,
+    private readonly targeting: TargetingMatcherService,
     private readonly metrics: MetricsService,
     private readonly logger: PinoLogger
   ) {
@@ -56,11 +58,17 @@ export class ManifestGeneratorService {
     deviceId: string,
     deviceState: DeviceStateDto | undefined
   ): Promise<GeneratedManifestPayload> {
-    // TODO(Fase 3): segmentacao por device/veiculo/zona usa `deviceState` e
-    // `campaigns.targeting`, que ainda nao existe no schema.
-    void deviceState;
-
     const eligible = await this.eligibility.resolveEligible();
+
+    /**
+     * Contexto do tablete: veículo, tier e as zonas que contêm a posição reportada.
+     *
+     * Até esta leva o `deviceState` era descartado com `void deviceState`, e a consequência
+     * era concreta: `campaigns.targeting` era gravado pelas rotas do anunciante e **nunca**
+     * consultado na entrega, então toda campanha ia para toda a frota. Quem pagou por uma
+     * cidade recebia veiculação de todo o país.
+     */
+    const ctx = await this.targeting.contextoDe(deviceId, deviceState);
 
     const rows = await this.mediaModel
       .find({ isActive: true })
@@ -70,6 +78,7 @@ export class ManifestGeneratorService {
 
     const media: ManifestMediaItemDto[] = [];
     let skippedIneligible = 0;
+    let skippedTargeting = 0;
 
     for (const row of rows) {
       const campaignId = row.campaignId;
@@ -81,7 +90,44 @@ export class ManifestGeneratorService {
           skippedIneligible += 1;
           continue;
         }
+
+        const alcance = this.targeting.alcanca(campaign.targeting, ctx);
+        if (!alcance.ok) {
+          skippedTargeting += 1;
+          /**
+           * Supressão medida, não silenciosa — mas em contador, não em documento.
+           *
+           * A pergunta que isto responde é "por que a minha campanha tocou menos?". Gravar um
+           * evento por item suprimido custaria da ordem de `frota x campanhas` escritas a
+           * cada ciclo de 15 min, para um dado que ninguém lê evento a evento. O contador dá
+           * a mesma resposta; o `campaignId` vai no log estruturado, que é onde investigação
+           * individual acontece.
+           */
+          this.metrics.manifestTargetingSuppressedTotal.inc({
+            reason: alcance.motivo,
+          });
+          void this.logger.debug(
+            {
+              event: 'manifest.targeting.suppressed',
+              deviceId,
+              campaignId,
+              mediaId: row.mediaId,
+              reason: alcance.motivo,
+            },
+            'item suprimido do manifesto por segmentacao'
+          );
+          continue;
+        }
+
         priority = manifestPriorityFor(campaign.campaignPriority);
+        /**
+         * Leilão de repasse: campanha que paga mais ao motorista ganha mais inventário.
+         *
+         * Entra como multiplicador da prioridade, não como termo somado, para que o efeito
+         * seja proporcional e não atropele a faixa de prioridade. `k = 0` em
+         * `platform_config` desliga o leilão e mantém só o piso.
+         */
+        priority = Math.round(priority * campaign.payoutBoost);
       } else {
         priority = FILLER_MANIFEST_PRIORITY;
       }
@@ -114,6 +160,9 @@ export class ManifestGeneratorService {
         deviceId,
         count: media.length,
         skippedIneligible,
+        skippedTargeting,
+        zonesMatched: ctx.zoneIds.length,
+        vehicleTier: ctx.vehicleTier,
       },
       'manifest generated'
     );

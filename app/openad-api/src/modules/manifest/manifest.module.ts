@@ -5,9 +5,12 @@ import { AuthModule } from '../auth/auth.module';
 import { CampaignsModule } from '../campaigns/campaigns.module';
 import { DevicesModule } from '../devices/devices.module';
 import { GeoZonesModule } from '../geo-zones/geo-zones.module';
+import { PlatformConfigModule } from '../platform-config/platform-config.module';
+import { VehiclesModule } from '../vehicles/vehicles.module';
 import { AssetStorageModule } from '../../infrastructure/storage/storage.module';
 import { MediaIngestionModule } from '../media-ingestion/media-ingestion.module';
 import { CampaignEligibilityService } from './generators/campaign-eligibility.service';
+import { TargetingMatcherService } from './generators/targeting-matcher.service';
 import { DeltaCalculatorService } from './generators/delta-calculator.service';
 import { ManifestGeneratorService } from './generators/manifest-generator.service';
 import { SpatialManifestBuilderService } from './generators/spatial-manifest-builder.service';
@@ -31,12 +34,16 @@ import {
     GeoZonesModule,
     forwardRef(() => AnalyticsModule),
     forwardRef(() => CampaignsModule),
+    // Segmentacao na entrega: o matcher resolve veiculo e zonas a partir do `deviceState`.
+    VehiclesModule,
+    PlatformConfigModule,
   ],
   controllers: [ManifestController],
   providers: [
     ManifestService,
     ManifestGeneratorService,
     CampaignEligibilityService,
+    TargetingMatcherService,
     SpatialManifestBuilderService,
     DeltaCalculatorService,
     ManifestDeviceJwtGuard,

@@ -11,6 +11,9 @@ import { PlayRecord } from '../schemas/play-record.schema';
 import { FraudDetectionService } from '../services/fraud-detection.service';
 import { PacingSignalService } from '../services/pacing-signal.service';
 import { ReconciliationService } from '../services/reconciliation.service';
+import { DriverEarningClient } from '../../internal/driver-earning.client';
+import { repasseEmCentavos } from '../../internal/driver-payout.policy';
+import { Vehicle, VehicleDocument } from '../../vehicles/vehicles.schema';
 
 export interface PlayBatchJobData {
   deviceId: string;
@@ -25,13 +28,73 @@ export class AnalyticsReconciliationProcessor extends WorkerHost {
   constructor(
     @InjectModel(PlayRecord.name)
     private readonly playRecords: Model<PlayRecord>,
+    @InjectModel(Vehicle.name)
+    private readonly vehicles: Model<VehicleDocument>,
     private readonly reconciliation: ReconciliationService,
     private readonly fraud: FraudDetectionService,
     private readonly pacing: PacingSignalService,
     private readonly campaigns: CampaignsRepository,
-    private readonly platform: PlatformConfigRuntimeService
+    private readonly platform: PlatformConfigRuntimeService,
+    private readonly repasses: DriverEarningClient
   ) {
     super();
+  }
+
+  /**
+   * Credita o repasse do motorista por uma veiculação que acabou de virar faturável.
+   *
+   * Tudo aqui é best-effort por desenho — ver a nota em `DriverEarningClient.creditar`. O
+   * lote de analytics não pode falhar por causa do repasse: reprocessá-lo recontaria o
+   * pacing das veiculações já contadas, trocando um crédito perdido (recuperável pela
+   * conferência em `/internal/ads/payouts`) por faturamento duplicado (não recuperável).
+   */
+  private async creditarRepasse(
+    play: { campaignId: string; vehicleId: string; uniqueEventId: string },
+    valorFaturavelCents: number
+  ): Promise<void> {
+    if (valorFaturavelCents <= 0 || !this.repasses.habilitado()) {
+      return;
+    }
+    try {
+      const veiculo = await this.vehicles
+        .findOne({ vehicleId: play.vehicleId })
+        .select({ driverId: 1 })
+        .lean()
+        .exec();
+      if (!veiculo?.driverId) {
+        // Veículo sem motorista vinculado: a receita existiu, mas não há a quem pagar. O
+        // relatório de conferência expõe isso como `unattributedPlays`.
+        return;
+      }
+
+      const campanha = await this.campaigns.findByCampaignId(play.campaignId);
+      const amountCents = repasseEmCentavos({
+        valorFaturavelCents,
+        repasse: campanha?.driverPayout ?? null,
+        piso: this.platform.get().monetization.driverPayoutMinPercent,
+      });
+      if (amountCents <= 0) {
+        return;
+      }
+
+      await this.repasses.creditar({
+        driverUserId: veiculo.driverId,
+        amountCents,
+        // A trava de idempotência do opendriver. `uniqueEventId` é único por dispositivo e
+        // por veiculação, então o mesmo play record reprocessado não paga duas vezes.
+        referenceId: `${play.campaignId}:${play.uniqueEventId}`,
+        campaignId: play.campaignId,
+        description: 'Repasse por veiculacao de anuncio',
+      });
+    } catch (e: unknown) {
+      this.log.warn(
+        JSON.stringify({
+          event: 'analytics.repasse.falhou',
+          uniqueEventId: play.uniqueEventId,
+          err: e instanceof Error ? e.message : String(e),
+        })
+      );
+    }
   }
 
   async process(job: Job<PlayBatchJobData>): Promise<void> {
@@ -110,6 +173,21 @@ export class AnalyticsReconciliationProcessor extends WorkerHost {
             costCents,
             at: new Date(updated.timestampEnd),
           });
+
+          /**
+           * Este é o único instante em que o repasse pode ser creditado.
+           *
+           * A condição acima (`pre.reconciliationStatus === 'pending'` e agora `billable`) é
+           * a transição, não o estado: ela acontece **uma vez** por play record, depois de a
+           * reconciliação de duração e as regras de antifraude terem passado. Creditar em
+           * cima do estado `billable` pagaria de novo a cada reprocessamento do lote.
+           *
+           * As duas operações ficam juntas de propósito. O pacing debita o orçamento do
+           * anunciante e o repasse credita o motorista pela **mesma** veiculação; separá-las
+           * em caminhos diferentes criaria o estado em que uma aconteceu e a outra não, sem
+           * nada que o relacione.
+           */
+          await this.creditarRepasse(updated, costCents);
         }
 
         const status = updated?.reconciliationStatus;

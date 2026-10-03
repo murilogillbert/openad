@@ -7,6 +7,10 @@ import {
   CampaignEligibilityService,
   type EligibleCampaign,
 } from './campaign-eligibility.service';
+import {
+  TargetingMatcherService,
+  type Segmentacao,
+} from './targeting-matcher.service';
 import { AssetStorageService } from '../../../infrastructure/storage/asset-storage.service';
 import { MediaAsset } from '../../media-ingestion/schemas/media-asset.schema';
 import { MetricsService } from '../../../infrastructure/metrics/metrics.service';
@@ -22,6 +26,7 @@ const spatialManifestStub = {
 
 const metricsStub = {
   spatialManifestBuildSeconds: { observe: jest.fn() },
+  manifestTargetingSuppressedTotal: { inc: jest.fn() },
 } as unknown as MetricsService;
 
 interface MediaRow {
@@ -73,6 +78,26 @@ async function buildService(
         provide: CampaignEligibilityService,
         useValue: { resolveEligible: jest.fn().mockResolvedValue(eligible) },
       },
+      {
+        /**
+         * Matcher real seria acoplamento a Mongo (ele consulta device, veiculo e zonas).
+         * Aqui ele e substituido por um que resolve contexto vazio e aceita tudo; a
+         * segmentacao em si tem suite propria em `targeting-matcher.service.spec.ts`.
+         */
+        provide: TargetingMatcherService,
+        useValue: {
+          contextoDe: jest.fn().mockResolvedValue({
+            deviceId: DEVICE_ID,
+            vehicleId: null,
+            vehicleTier: null,
+            zoneIds: [],
+            cities: [],
+            zoneTiers: [],
+            agora: new Date(),
+          }),
+          alcanca: jest.fn().mockReturnValue({ ok: true, motivo: null }),
+        },
+      },
       { provide: MetricsService, useValue: metricsStub },
       { provide: PinoLogger, useValue: logger },
     ],
@@ -81,13 +106,25 @@ async function buildService(
   return { svc: mod.get(ManifestGeneratorService), s3 };
 }
 
+/**
+ * Campanha apta sem segmentacao e sem leilao (`payoutBoost: 1`), que e o caso base: a
+ * prioridade do manifesto sai igual a `manifestPriorityFor(prioridade)`. Quem exercita
+ * segmentacao ou leilao passa o quarto e o quinto argumento.
+ */
 const eligibleWith = (
-  ...entries: Array<[string, number]>
+  ...entries: Array<
+    [string, number] | [string, number, Segmentacao | null] | [string, number, Segmentacao | null, number]
+  >
 ): Map<string, EligibleCampaign> =>
   new Map(
-    entries.map(([campaignId, campaignPriority]) => [
+    entries.map(([campaignId, campaignPriority, targeting, payoutBoost]) => [
       campaignId,
-      { campaignId, campaignPriority },
+      {
+        campaignId,
+        campaignPriority,
+        targeting: targeting ?? null,
+        payoutBoost: payoutBoost ?? 1,
+      },
     ])
   );
 
