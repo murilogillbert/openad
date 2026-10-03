@@ -360,7 +360,15 @@ export async function shutdownTestApp(
   }
   try {
     const redis = ctx.app.get(RedisService);
-    await redis.getClient().flushall();
+    /**
+     * `flushdb`, nao `flushall` (D21).
+     *
+     * `flushall` apaga **todos** os bancos logicos da instancia, incluindo o de uma suite que
+     * ainda esta rodando em outro worker do Jest. Como `getRedisTestUrl` passou a dar um
+     * banco por worker, limpar apenas o banco corrente e suficiente e deixa de alcancar os
+     * vizinhos. O custo tambem para de crescer com o numero de suites em paralelo.
+     */
+    await redis.getClient().flushdb();
   } catch {
     /* ignore teardown races */
   }

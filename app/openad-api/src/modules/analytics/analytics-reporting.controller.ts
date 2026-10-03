@@ -18,10 +18,17 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { ReportingAggregationService } from './services/reporting-aggregation.service';
 
 /**
- * Read-only campaign analytics (FR-009–FR-011). Versioned under `analytics/v1/…`.
+ * Analytics de campanha, somente leitura (FR-009–FR-011).
+ *
+ * O caminho era `analytics/v1/campaigns`, que sob o prefixo global `api/v1` produzia
+ * `/api/v1/analytics/v1/campaigns` — a versao duas vezes, uma delas sem significado. A
+ * `specs/006` descrevia esse segmento como superficie versionada de forma independente, mas
+ * isso nunca se concretizou: nao existe `analytics/v2`, nenhuma outra area da API tem
+ * versionamento proprio, e o hub e o opendriver usam um unico prefixo. Manter dois niveis de
+ * versao custa confusao em cada rota nova e nao compra nada.
  */
 @ApiTags('analytics', 'reporting')
-@Controller('analytics/v1/campaigns')
+@Controller('analytics/campaigns')
 export class AnalyticsReportingController {
   constructor(private readonly reporting: ReportingAggregationService) {}
 

@@ -121,22 +121,57 @@ export async function stopMemoryMongo(): Promise<void> {
 const DEFAULT_REDIS_TEST_URL = 'redis://127.0.0.1:6379';
 
 /**
+ * Quantos bancos logicos o Redis expoe por padrao (`databases 16` no `redis.conf`).
+ *
+ * Usar o indice do worker modulo este numero significa que, com mais de 16 workers, dois
+ * voltariam a compartilhar banco. Nao e problema pratico — o Jest aqui roda com bem menos —
+ * e o modulo e preferivel a falhar: um indice fora da faixa derruba a conexao com
+ * `ERR DB index is out of range`, que seria um erro pior de diagnosticar do que a colisao
+ * que ele evita.
+ */
+const REDIS_LOGICAL_DBS = 16;
+
+/**
  * Redis URL for API tests. Uses a real Redis instance (e.g. Docker on the dev machine).
  * Resolution order:
  * - `REDIS_TEST_URI` — explicit test override
  * - `REDIS_URL` — same as local API / compose (see `.env.dev`, `.env.test`)
  * - default `redis://127.0.0.1:6379`
+ *
+ * **Um banco logico por worker do Jest (D21).** O `shutdownTestApp` precisa limpar o Redis
+ * entre suites, mas todas as suites compartilhavam o banco 0 e o desligamento fazia
+ * `flushall` — que apaga **tudo**, inclusive as chaves de uma suite que ainda esta rodando
+ * em outro worker. Nao estourava porque nenhuma suite dependia de estado no Redis entre
+ * testes; era intermitencia a espera de acontecer, e aconteceu: a suite de reconciliacao de
+ * analytics falhou uma vez e passou sozinha em seguida.
+ *
+ * Isolar por `JEST_WORKER_ID` resolve sem escopar chave por chave, porque dentro de um
+ * worker as suites rodam **em sequencia** — o banco logico fica livre quando a proxima
+ * comeca. E `flushdb` no teardown deixou de alcancar os vizinhos.
  */
 export async function getRedisTestUrl(): Promise<string> {
-  const testUri = process.env.REDIS_TEST_URI?.trim();
-  if (testUri) {
-    return testUri;
+  const base =
+    process.env.REDIS_TEST_URI?.trim() ||
+    process.env.REDIS_URL?.trim() ||
+    DEFAULT_REDIS_TEST_URL;
+
+  const worker = Number(process.env.JEST_WORKER_ID ?? '');
+  if (!Number.isInteger(worker) || worker < 1) {
+    // Fora do Jest (script, execucao manual): mantem a URL como esta, sem escolher banco.
+    return base;
   }
-  const appUri = process.env.REDIS_URL?.trim();
-  if (appUri) {
-    return appUri;
+
+  const db = worker % REDIS_LOGICAL_DBS;
+  try {
+    const url = new URL(base);
+    // O caminho da URL do Redis e o indice do banco: `redis://host:6379/3`.
+    url.pathname = `/${db}`;
+    return url.toString();
+  } catch {
+    // URL que o `URL` nao parseia (socket unix, forma exotica): seguir sem indice e melhor
+    // que falhar a suite inteira por causa do isolamento.
+    return base;
   }
-  return DEFAULT_REDIS_TEST_URL;
 }
 
 /** No-op: Redis is external; kept for teardown compatibility. */

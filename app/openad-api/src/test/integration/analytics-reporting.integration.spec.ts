@@ -94,7 +94,7 @@ describe('Analytics reporting API (integration)', () => {
     const token = await loginAsFleetOperator(ctx.app);
     const res = await request(ctx.app.getHttpServer())
       .get(
-        `/api/v1/analytics/v1/campaigns/${campaignId}/reporting/summary?from=2026-04-05T00:00:00.000Z&to=2026-04-06T00:00:00.000Z`
+        `/api/v1/analytics/campaigns/${campaignId}/reporting/summary?from=2026-04-05T00:00:00.000Z&to=2026-04-06T00:00:00.000Z`
       )
       .set('Authorization', `Bearer ${token}`)
       .expect(200);

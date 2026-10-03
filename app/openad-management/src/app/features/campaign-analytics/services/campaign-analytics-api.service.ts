@@ -28,7 +28,7 @@ export class CampaignAnalyticsApiService {
       .set('from', from.toISOString())
       .set('to', to.toISOString());
     return this.http.get<CampaignReportingSummaryDto>(
-      `${this.base}/analytics/v1/campaigns/${encodeURIComponent(campaignId)}/reporting/summary`,
+      `${this.base}/analytics/campaigns/${encodeURIComponent(campaignId)}/reporting/summary`,
       { params }
     );
   }

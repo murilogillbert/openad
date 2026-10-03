@@ -54,7 +54,7 @@ describe('Analytics pacing (integration)', () => {
 
     const res = await request(ctx.app.getHttpServer())
       .get(
-        `/api/v1/analytics/v1/campaigns/${encodeURIComponent(campaignId)}/pacing`
+        `/api/v1/analytics/campaigns/${encodeURIComponent(campaignId)}/pacing`
       )
       .set('Authorization', `Bearer ${token}`);
 

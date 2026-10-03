@@ -11,7 +11,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { PacingSignalService } from './services/pacing-signal.service';
 
 @ApiTags('analytics', 'pacing')
-@Controller('analytics/v1/campaigns')
+@Controller('analytics/campaigns')
 export class PacingSignalController {
   constructor(private readonly pacing: PacingSignalService) {}
 
