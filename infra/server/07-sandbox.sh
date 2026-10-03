@@ -76,6 +76,17 @@ echo '--- restaurando roles do cluster'
 docker cp "$BACKUP_DIR/globals.sql" "$SANDBOX:/tmp/globals.sql" >/dev/null
 docker exec "$SANDBOX" psql -U postgres -q -f /tmp/globals.sql >/dev/null 2>&1 || true
 
+# A senha do sandbox tem de ser reposta **depois** do restore dos globals.
+#
+# `pg_dumpall --globals-only` inclui `ALTER ROLE postgres WITH PASSWORD 'SCRAM-SHA-256$...'`
+# — o hash da senha de **producao**. Restaurar isso troca a senha do sandbox pela de
+# producao, e qualquer ferramenta que use `SANDBOX_PASS` passa a receber
+# `P1000: Authentication failed`. Levou uma execucao do ensaio para aparecer, porque
+# `docker exec psql` autentica por socket local (`trust`) e nao sente a troca; so a conexao
+# TCP de outro container sente.
+docker exec "$SANDBOX" psql -U postgres -q -c \
+  "ALTER ROLE postgres WITH PASSWORD '$SANDBOX_PASS'" >/dev/null
+
 echo '--- criando o banco hub'
 docker exec "$SANDBOX" psql -U postgres -q -c 'DROP DATABASE IF EXISTS hub' >/dev/null
 docker exec "$SANDBOX" psql -U postgres -q -c 'CREATE DATABASE hub' >/dev/null
