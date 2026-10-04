@@ -426,6 +426,31 @@ try {
   Write-Output ''
   if ($falhas -gt 0) { throw "$falhas conferencia(s) falharam. NAO use este $($Artefato.ToUpper())" }
 
+  <#
+    Copia o artefato aprovado para fora da pasta de build.
+
+    `android/app/build/outputs` nao sobrevive: gerar o APK apaga o AAB e gerar o AAB apaga o
+    APK, porque as duas tarefas reescrevem a mesma arvore de saida. Depois de uma rodada de
+    `assembleRelease`, os tres AAB que tinham acabado de ser enviados a loja nao existiam mais
+    em disco - e nem `gradlew clean` tinha sido chamado.
+
+    Fora dos repositorios de proposito, ao lado de `.credenciais-loja`: artefato de 100 MB nao
+    entra em git, e dentro do repositorio ficaria a um `.gitignore` de distancia de ser
+    commitado por engano.
+  #>
+  $arquivo_destino = $null
+  try {
+    $acervo = 'd:\Projetos\.artefatos-loja'
+    New-Item -ItemType Directory -Path $acervo -Force | Out-Null
+    $arquivo_destino = Join-Path $acervo ("{0}-v{1}.{2}" -f $App, $VersionCode, $Artefato)
+    Copy-Item $aab.FullName $arquivo_destino -Force
+    $h = (Get-FileHash $arquivo_destino -Algorithm SHA256).Hash
+    Add-Content -Path (Join-Path $acervo 'hashes.txt') -Value ("{0}  {1}  {2}" -f (Get-Date -Format 's'), $h, (Split-Path $arquivo_destino -Leaf))
+    Write-Output ("  ok    copia guardada em {0}" -f $arquivo_destino)
+  } catch {
+    Write-Output ("  ATENCAO nao consegui guardar a copia: {0}" -f $_.Exception.Message)
+  }
+
   # A frase "pronto para upload" e o veredito que o `50-aab-todos.ps1` procura no log; mudar o
   # texto quebraria o resumo dele em silencio.
   if ($Artefato -eq 'aab') {
