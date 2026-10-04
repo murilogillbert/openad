@@ -30,6 +30,19 @@ param(
   # **nao funciona**: o template do Expo nao le essa propriedade, e o AAB saia sempre com
   # versionCode 1 - o Play recusa reenvio do mesmo numero.
   [int] $VersionCode = 2,
+
+  <#
+    `aab` para a loja, `apk` para instalar por cabo.
+
+    O APK aqui sai assinado com a **chave de upload**, nao com a de debug. Isso importa na
+    hora de instalar: o Android recusa atualizar por cima de um pacote assinado com chave
+    diferente (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`), entao qualquer build anterior precisa
+    ser desinstalado antes. Em troca, o que se instala e o mesmo codigo do artefato que foi
+    para a loja.
+  #>
+  [ValidateSet('aab', 'apk')]
+  [string] $Artefato = 'aab',
+
   [switch] $Limpar,
   [string] $Credenciais = 'd:\Projetos\.credenciais-loja',
   [string] $Jdk = 'D:\dev\jdk\jdk-21.0.12.1+1',
@@ -168,36 +181,65 @@ try {
   if ($pn -ne $p) { Set-Content -Path $props -Value $pn -NoNewline; Write-Output 'gradle.properties: memoria elevada' }
 
   # ----------------------------------------------------------------- build
+  $tarefa = if ($Artefato -eq 'apk') { 'assembleRelease' } else { 'bundleRelease' }
+  $pastaSaida = if ($Artefato -eq 'apk') { 'android\app\build\outputs\apk' } else { 'android\app\build\outputs\bundle' }
+
   Write-Output ''
-  Write-Output '--- gradle bundleRelease'
+  Write-Output "--- gradle $tarefa"
   Push-Location (Join-Path $raiz 'android')
   try {
-    & .\gradlew.bat bundleRelease --build-cache `
+    & .\gradlew.bat $tarefa --build-cache `
       "-PRELEASE_STORE_FILE=$keystore" `
       "-PRELEASE_STORE_PASSWORD=$senha" `
       "-PRELEASE_KEY_ALIAS=$alias" `
-      "-PRELEASE_KEY_PASSWORD=$senha" `
-      "-PversionCode=$VersionCode" 2>&1 | Select-Object -Last 6
+      "-PRELEASE_KEY_PASSWORD=$senha" 2>&1 | Select-Object -Last 6
   } finally {
     Pop-Location
   }
 
-  $aab = Get-ChildItem -Recurse (Join-Path $raiz 'android\app\build\outputs\bundle') -Filter '*.aab' -ErrorAction SilentlyContinue |
+  $aab = Get-ChildItem -Recurse (Join-Path $raiz $pastaSaida) -Filter "*.$Artefato" -ErrorAction SilentlyContinue |
     Sort-Object LastWriteTime -Descending | Select-Object -First 1
-  if (-not $aab) { throw 'gradle terminou mas nenhum AAB foi encontrado' }
+  if (-not $aab) { throw "gradle terminou mas nenhum $($Artefato.ToUpper()) foi encontrado" }
 
   # ----------------------------------------------------------------- conferencias
   Write-Output ''
-  Write-Output '=== AAB ==='
+  Write-Output ("=== {0} ===" -f $Artefato.ToUpper())
   Write-Output ("arquivo: {0}" -f $aab.FullName)
   Write-Output ("tamanho: {0} MB" -f [math]::Round($aab.Length / 1MB, 1))
 
   $falhas = 0
 
-  # 1) Assinatura: o teste que importa. AAB assinado em debug e recusado no upload, depois de
-  #    minutos de envio.
-  $jarsigner = Join-Path $Jdk 'bin\jarsigner.exe'
-  $assinatura = & $jarsigner -verify -verbose:summary -certs $aab.FullName 2>&1 | Out-String
+  <#
+    1) Assinatura: o teste que importa. Artefato assinado em debug e recusado no upload,
+       depois de minutos de envio.
+
+    Ferramenta diferente para cada formato, e isto nao e detalhe:
+
+    - AAB e um JAR, e `jarsigner` o verifica.
+    - APK de release do Android Gradle Plugin e assinado **so** com os esquemas v2/v3 quando
+      o minSdk permite, sem a assinatura v1 (JAR). O `jarsigner` entende apenas v1, entao
+      devolvia "assinatura nao verificada" para um APK perfeitamente assinado - um falso
+      negativo que, repetido, ensina a ignorar a conferencia. `apksigner`, do build-tools, e
+      o verificador oficial de APK e entende os tres esquemas.
+  #>
+  if ($Artefato -eq 'apk') {
+    $apksigner = Get-ChildItem (Join-Path $Sdk 'build-tools') -Directory -ErrorAction SilentlyContinue |
+      Sort-Object Name -Descending |
+      ForEach-Object { Join-Path $_.FullName 'apksigner.bat' } |
+      Where-Object { Test-Path $_ } |
+      Select-Object -First 1
+    if (-not $apksigner) { throw "apksigner nao encontrado em $Sdk\build-tools" }
+    $env:JAVA_HOME = $Jdk
+    $assinatura = & $apksigner verify --print-certs --verbose $aab.FullName 2>&1 | Out-String
+    # `apksigner` nao imprime "jar verified"; o sinal de sucesso e algum esquema validado.
+    if ($assinatura -match 'Verified using v\d.*: true') {
+      $assinatura += "`njar verified"
+    }
+  } else {
+    $jarsigner = Join-Path $Jdk 'bin\jarsigner.exe'
+    $assinatura = & $jarsigner -verify -verbose:summary -certs $aab.FullName 2>&1 | Out-String
+  }
+
   if ($assinatura -match 'jar verified|jar validado') {
     if ($assinatura -match 'Android Debug|androiddebugkey|CN=Android Debug') {
       Write-Output '  FALHA assinado com a chave de DEBUG - o Play recusa'
@@ -237,10 +279,41 @@ try {
   }
 
   $java = Join-Path $Jdk 'bin\java.exe'
-  $manifesto = & $java -jar $bundletool dump manifest --bundle $aab.FullName 2>&1 | Out-String
+
+  if ($Artefato -eq 'aab') {
+    $manifesto = & $java -jar $bundletool dump manifest --bundle $aab.FullName 2>&1 | Out-String
+  } else {
+    <#
+      APK se le com aapt2 (o bundletool e para AAB). Duas saidas, por motivos diferentes:
+
+      - `dump badging` da nome do pacote e versionCode em texto limpo. No `xmltree`, inteiro
+        vem tipado (`android:versionCode(0x0101021b)=(type 0x10)0x2`), e comparar "0x2" com
+        "2" daria falso negativo.
+      - `dump xmltree` e o unico que mostra os elementos `<service>`, necessario para flagrar
+        o `AudioControlsService`.
+
+      Os identificadores hexadecimais do xmltree sao removidos para a saida ficar na mesma
+      forma do bundletool (`android:name="..."`), e as conferencias abaixo servirem aos dois
+      formatos sem duplicacao.
+    #>
+    $aapt2 = Get-ChildItem (Join-Path $Sdk 'build-tools') -Directory -ErrorAction SilentlyContinue |
+      Sort-Object Name -Descending |
+      ForEach-Object { Join-Path $_.FullName 'aapt2.exe' } |
+      Where-Object { Test-Path $_ } |
+      Select-Object -First 1
+    if (-not $aapt2) { throw "aapt2 nao encontrado em $Sdk\build-tools" }
+
+    $badging = & $aapt2 dump badging $aab.FullName 2>&1 | Out-String
+    $cabecalho = ''
+    if ($badging -match "package: name='([^']+)'") { $cabecalho += " package=""$($Matches[1])""" }
+    if ($badging -match "versionCode='(\d+)'") { $cabecalho += " android:versionCode=""$($Matches[1])""" }
+
+    $arvore = & $aapt2 dump xmltree --file AndroidManifest.xml $aab.FullName 2>&1 | Out-String
+    $manifesto = $cabecalho + "`n" + ($arvore -replace '\(0x[0-9a-fA-F]{8}\)', '')
+  }
 
   if ($manifesto -notmatch 'package="([^"]+)"') {
-    Write-Output '  FALHA nao consegui ler o manifesto do AAB'
+    Write-Output ("  FALHA nao consegui ler o manifesto do {0}" -f $Artefato.ToUpper())
     $falhas++
   } else {
     $pacoteAab = $Matches[1]
@@ -351,9 +424,18 @@ try {
   }
 
   Write-Output ''
-  if ($falhas -gt 0) { throw "$falhas conferencia(s) falharam. NAO suba este AAB" }
-  Write-Output 'AAB pronto para upload.'
-  Write-Output ("  node infra\server\39-subir-play.mjs {0} ""{1}"" internal" -f $App, $aab.FullName)
+  if ($falhas -gt 0) { throw "$falhas conferencia(s) falharam. NAO use este $($Artefato.ToUpper())" }
+
+  # A frase "pronto para upload" e o veredito que o `50-aab-todos.ps1` procura no log; mudar o
+  # texto quebraria o resumo dele em silencio.
+  if ($Artefato -eq 'aab') {
+    Write-Output 'AAB pronto para upload.'
+    Write-Output ("  node infra\server\39-subir-play.mjs {0} ""{1}"" internal" -f $App, $aab.FullName)
+  } else {
+    Write-Output 'APK pronto para upload.'
+    Write-Output '  Assinado com a chave de upload: desinstale builds anteriores antes de instalar.'
+    Write-Output ("  adb install -r ""{0}""" -f $aab.FullName)
+  }
 } finally {
   Pop-Location
 }

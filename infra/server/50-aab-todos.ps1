@@ -9,7 +9,11 @@
 
 param(
   [int] $VersionCode = 2,
-  [string[]] $Apps = @('opendriver', 'opendriverhub', 'opendriverads')
+  [string[]] $Apps = @('opendriver', 'opendriverhub', 'opendriverads'),
+
+  # `aab` para a loja, `apk` para instalar por cabo e tirar as capturas de tela.
+  [ValidateSet('aab', 'apk')]
+  [string] $Artefato = 'aab'
 )
 
 $ErrorActionPreference = 'Continue'
@@ -31,6 +35,7 @@ New-Item -ItemType Directory -Path $logs -Force | Out-Null
 
 $inicio = Get-Date
 Write-Host ("inicio: {0}" -f $inicio.ToString('HH:mm:ss'))
+Write-Host ("artefato: {0}" -f $Artefato)
 Write-Host ("versionCode: {0}" -f $VersionCode)
 Write-Host ("apps: {0}" -f ($Apps -join ', '))
 
@@ -38,7 +43,9 @@ $resultados = @()
 
 foreach ($app in $Apps) {
   $t0 = Get-Date
-  $log = Join-Path $logs "$app.log"
+  # Nome do log inclui o artefato: sem isso, uma rodada de APK sobrescreve o log da rodada de
+  # AAB do mesmo app, e o veredito lido do log passa a se referir ao artefato errado.
+  $log = Join-Path $logs "$app.$Artefato.log"
   Write-Host ''
   Write-Host ('=' * 72)
   Write-Host ("[{0}] {1}  ->  {2}" -f $t0.ToString('HH:mm:ss'), $app, $log)
@@ -58,12 +65,12 @@ foreach ($app in $Apps) {
     do cano. O preco e nao ver a saida ao vivo; por isso o resumo de cada app sai do log
     depois.
   #>
-  $erroLog = Join-Path $logs "$app.err.log"
+  $erroLog = Join-Path $logs "$app.$Artefato.err.log"
   $proc = Start-Process -FilePath 'powershell' -PassThru -NoNewWindow `
     -ArgumentList @(
       '-NoProfile', '-ExecutionPolicy', 'Bypass',
       '-File', (Join-Path $aqui '38-aab.ps1'),
-      '-App', $app, '-VersionCode', "$VersionCode"
+      '-App', $app, '-VersionCode', "$VersionCode", '-Artefato', $Artefato
     ) `
     -RedirectStandardOutput $log -RedirectStandardError $erroLog
 
@@ -92,7 +99,7 @@ foreach ($app in $Apps) {
     saida nulo fica como desconhecido, nao como falha.
   #>
   $codigo = if ($null -ne $proc.ExitCode) { $proc.ExitCode } else { '?' }
-  $veredito = (Select-String -Path $log -Pattern 'AAB pronto para upload' -Quiet) -eq $true
+  $veredito = (Select-String -Path $log -Pattern 'pronto para upload' -Quiet) -eq $true
 
   # As linhas que importam: as conferencias e o veredito.
   Get-Content $log -ErrorAction SilentlyContinue |
@@ -112,7 +119,12 @@ foreach ($app in $Apps) {
     opendriverhub = 'd:\Projetos\hub-mobile'
     opendriverads = 'd:\Projetos\openad\app\openad-advertiser'
   }
-  $aab = Join-Path $raizes[$app] 'android\app\build\outputs\bundle\release\app-release.aab'
+  $relativo = if ($Artefato -eq 'apk') {
+    'android\app\build\outputs\apk\release\app-release.apk'
+  } else {
+    'android\app\build\outputs\bundle\release\app-release.aab'
+  }
+  $aab = Join-Path $raizes[$app] $relativo
   $mb = if (Test-Path $aab) { [math]::Round((Get-Item $aab).Length / 1MB, 1) } else { 0 }
 
   $resultados += [pscustomobject]@{
@@ -138,7 +150,7 @@ $ruins = $resultados | Where-Object { $_.MB -le 0 -or $_.Conferido -ne 'sim' }
 if ($ruins) {
   Write-Host ''
   Write-Host 'ATENCAO: nao suba os apps abaixo. Veja o log de cada um.' -ForegroundColor Red
-  $ruins | ForEach-Object { Write-Host ("  {0}  {1}" -f $_.App, (Join-Path $logs "$($_.App).log")) }
+  $ruins | ForEach-Object { Write-Host ("  {0}  {1}" -f $_.App, (Join-Path $logs "$($_.App).$Artefato.log")) }
   exit 1
 }
 
