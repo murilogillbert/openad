@@ -2,6 +2,7 @@ import { Controller, Get, Header, Res } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { SkipThrottle } from '@nestjs/throttler';
+import { paginaExclusao } from './exclusao';
 
 /**
  * Política de privacidade e termos de uso do OpenDriver Ads, servidos pela própria API.
@@ -91,10 +92,57 @@ ${identificacao()}
 <p>Conexão criptografada (HTTPS), tokens de sessão no armazenamento seguro do aparelho, criativos em armazenamento privado com credencial de acesso restrita a este serviço, e trilha de auditoria das ações administrativas.</p>
 
 <h2>9. Contato</h2>
-<p>Dúvidas, pedidos de titular e suporte: <a href="mailto:${esc(CONTROLADOR.contato)}">${esc(CONTROLADOR.contato)}</a>.</p>
+<p>Dúvidas, pedidos de titular e suporte: <!--email_off--><a href="mailto:${esc(CONTROLADOR.contato)}">${esc(CONTROLADOR.contato)}</a><!--/email_off-->.</p>
 <p>Você também pode reclamar à Autoridade Nacional de Proteção de Dados (ANPD).</p>`
       )
     );
+  }
+
+  /**
+   * Exigencia do Google Play: link **na web**, sem login, para pedir exclusao de conta e
+   * dados. O app ja tinha a tela interna; o link web nao existia e e campo obrigatorio da
+   * ficha de loja.
+   */
+  @Get('exclusao-de-conta')
+  @Header('Cache-Control', 'public, max-age=3600')
+  @Header(
+    'Content-Security-Policy',
+    "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'"
+  )
+  exclusaoDeConta(@Res() res: Response): void {
+    paginaExclusao(res, {
+      produto: 'OpenDriver Ads',
+      caminhoNoApp: 'Conta → Sair → (excluir pelo app OpenDriver ou OpenDriverHub)',
+      atualizadoEm: ATUALIZADO_EM,
+      controlador: CONTROLADOR,
+      apagados: [
+        'Cadastro de anunciante: nome ou razão social com que o anúncio é identificado.',
+        'Criativos enviados (imagens e vídeos) e os metadados técnicos extraídos deles.',
+        'Campanhas em rascunho e suas configurações.',
+        'Sessões ativas.',
+      ],
+      retidos: [
+        {
+          oque: 'Registros de exibição e de faturamento das campanhas veiculadas',
+          prazo: '5 anos',
+          motivo: 'Obrigação fiscal e contábil',
+        },
+        {
+          oque: 'Recibos de compra de crédito (Apple e Google)',
+          prazo: '5 anos',
+          motivo: 'Obrigação fiscal e prova de transação',
+        },
+        {
+          oque: 'Criativos de campanha já veiculada',
+          prazo: '12 meses após o encerramento',
+          motivo: 'Prova do que foi efetivamente exibido, em caso de questionamento',
+        },
+      ],
+      bloqueios: [
+        'Há campanha em veiculação — pause ou aguarde o encerramento.',
+        'Crédito não utilizado é perdido na exclusão e não é reembolsável em dinheiro (ver os Termos, seção 4).',
+      ],
+    });
   }
 
   @Get('termos')
@@ -159,7 +207,7 @@ ${identificacao()}
 <p>Podemos alterar estes termos; mudanças relevantes são avisadas no app com antecedência razoável. O uso continuado após o aviso significa concordância.</p>
 
 <h2>10. Contato e foro</h2>
-<p>Dúvidas e suporte: <a href="mailto:${esc(CONTROLADOR.contato)}">${esc(CONTROLADOR.contato)}</a>. Aplica-se a legislação brasileira, e fica eleito o foro da comarca de Brasília/DF, sem prejuízo do direito do consumidor de demandar no foro do seu domicílio.</p>`
+<p>Dúvidas e suporte: <!--email_off--><a href="mailto:${esc(CONTROLADOR.contato)}">${esc(CONTROLADOR.contato)}</a><!--/email_off-->. Aplica-se a legislação brasileira, e fica eleito o foro da comarca de Brasília/DF, sem prejuízo do direito do consumidor de demandar no foro do seu domicílio.</p>`
       )
     );
   }
@@ -203,7 +251,7 @@ function identificacao(): string {
   CNPJ ${esc(CONTROLADOR.cnpj)}<br>
   ${esc(CONTROLADOR.endereco)}<br>
   Encarregado pelo tratamento de dados pessoais (DPO):
-  <a href="mailto:${esc(CONTROLADOR.contato)}">${esc(CONTROLADOR.contato)}</a>
+  <!--email_off--><a href="mailto:${esc(CONTROLADOR.contato)}">${esc(CONTROLADOR.contato)}</a><!--/email_off-->
 </p>`;
 }
 

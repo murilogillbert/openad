@@ -25,7 +25,7 @@ describe('paginas legais (integration)', () => {
     await shutdownTestApp(ctx);
   });
 
-  const caminhos = ['/legal/privacidade', '/legal/termos'];
+  const caminhos = ['/legal/privacidade', '/legal/termos', '/legal/exclusao-de-conta'];
 
   it.each(caminhos)('%s responde 200 em HTML, sem autenticacao', async (caminho) => {
     const res = await request(ctx.app.getHttpServer()).get(caminho).expect(200);
@@ -64,6 +64,19 @@ describe('paginas legais (integration)', () => {
     // É a razão de `ad_credit_ledger` existir separado da carteira do hub: saldo comprado por
     // compra no aplicativo que virasse dinheiro sacável seria recusado como valor armazenado.
     expect(res.text).toMatch(/n[aã]o [eé] convers[ií]vel em dinheiro/i);
+  });
+
+  it('a pagina de exclusao diz como pedir sem ter o app instalado', async () => {
+    const res = await request(ctx.app.getHttpServer())
+      .get('/legal/exclusao-de-conta')
+      .expect(200);
+    // E o ponto da exigencia do Google: quem desinstalou o app nao consegue entrar, entao a
+    // pagina tem de ser alcancavel sem login e oferecer um canal.
+    expect(res.text).toMatch(/n[aã]o tem mais o app instalado/i);
+    expect(res.text).toContain('mailto:');
+    // Prazo de atendimento e o que e retido: as duas coisas que a politica exige declarar.
+    expect(res.text).toMatch(/15 dias/);
+    expect(res.text).toMatch(/O que [eé] retido/i);
   });
 
   it('as paginas sao cacheaveis e com CSP fechada', async () => {
