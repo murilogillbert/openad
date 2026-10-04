@@ -470,6 +470,38 @@ e não usa IDFA/GAID.
 
 ---
 
+## 10. O que já está preenchido pela API, e o que falta na interface
+
+Preenchido em 04/10/2026 por `infra/server/53-publicar-ficha-play.mjs`, conferido depois por
+`52-ler-ficha-play.mjs`:
+
+| Campo | OpenDriver | HUB | Anúncios |
+| --- | --- | --- | --- |
+| AAB versionCode 2 | produção (enviado por você) | faixa interna | faixa interna |
+| Nome do app | ok | ok | ok (`OpenDriver Anúncios`) |
+| Breve descrição | ok | ok | ok |
+| Descrição completa | ok | ok | ok |
+| Ícone 512×512 | ok | ok | ok |
+| Recurso gráfico 1024×500 | ok | ok | ok |
+| E-mail e site de contato | ok | ok | ok |
+| Capturas de tela | 2 enviadas | **falta** | **falta** |
+
+A API do Play **não expõe** a seção "Conteúdo do app" — conferido no documento de descoberta
+da v3, cujos únicos recursos de `edits` são `apks`, `bundles`, `countryavailability`,
+`deobfuscationfiles`, `details`, `expansionfiles`, `images`, `listings`, `testers` e `tracks`.
+Tudo abaixo é só pela interface, com as respostas das seções 1 a 8 deste documento:
+
+- Acesso ao app (seção 1)
+- Política de privacidade e exclusão de dados (seção 2)
+- Recursos financeiros (seção 3)
+- Anúncios, classificação de conteúdo, público-alvo (seção 8)
+- Segurança dos dados (seção 8)
+- **Só no OpenDriver**: declaração de serviço em primeiro plano (`FOREGROUND_SERVICE_LOCATION`
+  e `FOREGROUND_SERVICE_MICROPHONE`) e declaração de localização em segundo plano. As duas
+  pedem link de vídeo demonstrando a funcionalidade.
+
+---
+
 ## Scripts que sustentam este documento
 
 | Script | O que faz |
@@ -480,3 +512,8 @@ e não usa IDFA/GAID.
 | `infra/server/47-conferir-sites-publicos.ps1` | Confere os endereços que vão na ficha |
 | `infra/server/48-arte-lojas.ps1` | Gera os ícones 512×512 e os recursos gráficos 1024×500 |
 | `infra/server/49-conferir-textos-loja.ps1` | Mede os textos da ficha contra os limites do Play |
+| `infra/server/50-aab-todos.ps1` | Gera os três AAB em sequência, com o mesmo versionCode |
+| `infra/server/51-conferir-aabs.ps1` | Confere os AAB em disco: assinatura, pacote, versionCode, permissões |
+| `infra/server/52-ler-ficha-play.mjs` | Lê o estado atual da ficha de cada app no Play |
+| `infra/server/53-publicar-ficha-play.mjs` | Sobe o AAB e grava ficha, imagens e contato pela API |
+| `infra/server/54-diagnosticar-play.mjs` | Despeja faixas, versões e bundles sem resumir |

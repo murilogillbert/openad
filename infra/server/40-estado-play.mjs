@@ -66,14 +66,29 @@ for (const app of APPS) {
   const { id } = await insRes.json();
 
   try {
+    /**
+     * Erro de HTTP **aparece**. A primeira versao fazia `bRes.ok ? dados : []` e seguia em
+     * frente: quando duas leituras rodam ao mesmo tempo nos mesmos apps, uma delas colide na
+     * edicao e a resposta vira erro - e o relatorio dizia "bundles enviados: nenhum" para um
+     * app que tinha dois bundles e uma versao em producao. Vazio silencioso num relatorio de
+     * estado e pior que erro, porque parece resposta.
+     */
     const bRes = await fetch(`${base}/edits/${id}/bundles`, { headers: auth });
-    const bundles = bRes.ok ? ((await bRes.json()).bundles ?? []) : [];
+    if (!bRes.ok) {
+      console.log(`  ERRO ao ler bundles: HTTP ${bRes.status} ${(await bRes.text()).slice(0, 160)}`);
+      continue;
+    }
+    const bundles = (await bRes.json()).bundles ?? [];
     console.log(
       `  bundles enviados: ${bundles.length ? bundles.map((b) => b.versionCode).join(', ') : 'nenhum'}`
     );
 
     const tRes = await fetch(`${base}/edits/${id}/tracks`, { headers: auth });
-    const tracks = tRes.ok ? ((await tRes.json()).tracks ?? []) : [];
+    if (!tRes.ok) {
+      console.log(`  ERRO ao ler faixas: HTTP ${tRes.status} ${(await tRes.text()).slice(0, 160)}`);
+      continue;
+    }
+    const tracks = (await tRes.json()).tracks ?? [];
     const comConteudo = tracks.filter((x) => (x.releases ?? []).some((r) => r.versionCodes?.length));
 
     if (comConteudo.length === 0) {
