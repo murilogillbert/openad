@@ -25,7 +25,11 @@ param(
   [ValidateSet('opendriver', 'opendriverhub', 'opendriverads')]
   [string] $App,
 
-  [int] $VersionCode = 1,
+  # Chega ao build por `ANDROID_VERSION_CODE`, que o `app.config.ts` le e o prebuild grava em
+  # `android/app/build.gradle`. A primeira versao passava `-PversionCode` ao gradle, o que
+  # **nao funciona**: o template do Expo nao le essa propriedade, e o AAB saia sempre com
+  # versionCode 1 - o Play recusa reenvio do mesmo numero.
+  [int] $VersionCode = 2,
   [switch] $Limpar,
   [string] $Credenciais = 'd:\Projetos\.credenciais-loja',
   [string] $Jdk = 'D:\dev\jdk\jdk-21.0.12.1+1',
@@ -47,6 +51,17 @@ $config = @{
       EXPO_PUBLIC_MAP_STYLE_URL = 'https://tiles.opendriver.com.br/style.json'
     }
     Dominios = @('api-app.opendriver.com.br')
+    # Permissoes que **precisam** estar no artefato. RECORD_AUDIO entra nesta lista porque ela
+    # ja foi removida silenciosamente uma vez, por conflito entre o plugin do expo-audio (que
+    # a pede) e o do expo-image-picker (que a bloqueava com microphonePermission: false). O
+    # AAB saiu com FOREGROUND_SERVICE_MICROPHONE e o servico de gravacao, e sem a permissao
+    # que os faz funcionar.
+    Exigidas = @(
+      'android.permission.RECORD_AUDIO',
+      'android.permission.FOREGROUND_SERVICE_MICROPHONE',
+      'android.permission.FOREGROUND_SERVICE_LOCATION',
+      'android.permission.ACCESS_BACKGROUND_LOCATION'
+    )
   }
   opendriverhub = @{
     Raiz   = 'd:\Projetos\hub-mobile'
@@ -88,6 +103,7 @@ $env:JAVA_HOME = $Jdk
 $env:ANDROID_HOME = $Sdk
 $env:ANDROID_SDK_ROOT = $Sdk
 $env:NODE_ENV = 'production'
+$env:ANDROID_VERSION_CODE = "$VersionCode"
 foreach ($k in $c.Env.Keys) { Set-Item -Path "env:$k" -Value $c.Env[$k] }
 
 Write-Output "app        : $App"
@@ -240,16 +256,54 @@ try {
       Write-Output "  ok    versionCode $($Matches[1])"
     }
 
-    # Permissoes proibidas, conferidas no artefato: a fusao de manifestos acrescenta permissao
-    # vinda de dependencia, e nenhuma leitura de configuracao mostra isso. Foi assim que o
-    # `SYSTEM_ALERT_WINDOW` do `expo-dev-client` apareceu nos APKs.
-    $proibidas = @('SYSTEM_ALERT_WINDOW', 'READ_CONTACTS', 'READ_SMS', 'QUERY_ALL_PACKAGES')
-    $achadas = $proibidas | Where-Object { $manifesto -match "android.permission.$_" }
+    <#
+      Permissoes proibidas e exigidas, conferidas no artefato: a fusao de manifestos
+      acrescenta e **remove** permissao por conta de dependencia, e nenhuma leitura de
+      configuracao mostra isso. Foi assim que o `SYSTEM_ALERT_WINDOW` do `expo-dev-client`
+      apareceu nos APKs, e foi assim que o `RECORD_AUDIO` desapareceu do AAB do opendriver.
+
+      `FOREGROUND_SERVICE_MEDIA_PLAYBACK` esta proibida nos tres: nenhum deles toca audio. O
+      Play exige justificar cada permissao de servico em primeiro plano com demonstracao em
+      video, e nao ha o que demonstrar - foi um erro de upload no primeiro envio.
+
+      Comparacao pelo atributo inteiro (`android:name="..."`), e nao por substring: com
+      substring, procurar `FOREGROUND_SERVICE` casa com `FOREGROUND_SERVICE_LOCATION` e a
+      conferencia passa a mentir.
+    #>
+    function TemPermissao([string]$texto, [string]$permissao) {
+      return $texto -match ('android:name="' + [regex]::Escape($permissao) + '"')
+    }
+
+    $proibidas = @(
+      'android.permission.SYSTEM_ALERT_WINDOW',
+      'android.permission.READ_CONTACTS',
+      'android.permission.READ_SMS',
+      'android.permission.QUERY_ALL_PACKAGES',
+      'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK'
+    )
+    $achadas = $proibidas | Where-Object { TemPermissao $manifesto $_ }
     if ($achadas) {
       foreach ($p in $achadas) { Write-Output "  FALHA permissao proibida no AAB: $p" }
       $falhas += $achadas.Count
     } else {
       Write-Output '  ok    nenhuma permissao proibida'
+    }
+
+    # Sem `??`: este script roda no Windows PowerShell 5.1, que nao tem o operador.
+    $exigidas = if ($c.ContainsKey('Exigidas')) { $c.Exigidas } else { @() }
+    foreach ($p in $exigidas) {
+      if (TemPermissao $manifesto $p) {
+        Write-Output "  ok    permissao exigida presente: $($p -replace '^android\.permission\.', '')"
+      } else {
+        Write-Output "  FALHA permissao exigida AUSENTE no AAB: $p"
+        $falhas++
+      }
+    }
+
+    # Servico de reproducao de midia: o Play olha o manifesto, nao so as permissoes.
+    if ($manifesto -match 'AudioControlsService') {
+      Write-Output '  FALHA AudioControlsService presente (reproducao de midia em 1o plano nao usada)'
+      $falhas++
     }
 
     $n = ([regex]::Matches($manifesto, 'uses-permission')).Count

@@ -99,6 +99,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     package: `${PACKAGE}${SUFFIX}`,
+    /**
+     * O Play recusa upload com `versionCode` já usado, e o template do prebuild grava `1`
+     * fixo em `android/app/build.gradle` quando este campo não existe — passar
+     * `-PversionCode` ao gradle não resolve, porque o template não lê essa propriedade.
+     * Por isso o valor mora aqui, e `infra/server/38-aab.ps1` o injeta por
+     * `ANDROID_VERSION_CODE`.
+     */
+    versionCode: Number(process.env.ANDROID_VERSION_CODE ?? 2),
     adaptiveIcon: {
       backgroundColor: NAVY,
       foregroundImage: './assets/android-icon-foreground.png',
