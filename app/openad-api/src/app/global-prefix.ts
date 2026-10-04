@@ -32,6 +32,7 @@ export const ROTAS_FORA_DO_PREFIXO = [
    */
   { path: 'legal/privacidade', method: RequestMethod.GET },
   { path: 'legal/termos', method: RequestMethod.GET },
+  { path: 'legal/exclusao-de-conta', method: RequestMethod.GET },
 ] as const;
 
 /** Aplica o prefixo e as exclusões. Use nos dois lugares; não repita a configuração. */
