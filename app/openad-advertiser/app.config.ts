@@ -54,6 +54,8 @@ if (VARIANT !== 'development') {
 }
 
 const NAVY = '#0A1726';
+/** Fundo do ícone do aplicativo. A logo da ficha da Play vem com fundo transparente. */
+const FUNDO_DO_ICONE = '#FFFFFF';
 const FOTOS =
   'Suas fotos e vídeos são usados para enviar o criativo do anúncio que vai ser exibido nos veículos.';
 const CAMERA = 'A câmera é usada para fotografar o criativo do anúncio na hora.';
@@ -106,9 +108,21 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
      * Por isso o valor mora aqui, e `infra/server/38-aab.ps1` o injeta por
      * `ANDROID_VERSION_CODE`.
      */
-    versionCode: Number(process.env.ANDROID_VERSION_CODE ?? 2),
+    /**
+     * 8, e não 3: a Play já tem os versionCodes 1, 2, 3 e 7 deste pacote, com o 7 em
+     * produção. Um build sem `ANDROID_VERSION_CODE` precisa sair com número livre, senão o
+     * envio é recusado depois de minutos de upload.
+     */
+    versionCode: Number(process.env.ANDROID_VERSION_CODE ?? 8),
     adaptiveIcon: {
-      backgroundColor: NAVY,
+      /**
+       * Branco, e não o navy da marca: a logo enviada à ficha da Play é o "D" com volante em
+       * azul e oliva, com fundo transparente. O fundo do ícone adaptativo é o que o lançador
+       * desenha atrás dela, e sobre navy o azul escuro da marca perde contraste.
+       *
+       * `NAVY` continua valendo para a tela de abertura.
+       */
+      backgroundColor: FUNDO_DO_ICONE,
       foregroundImage: './assets/android-icon-foreground.png',
       monochromeImage: './assets/android-icon-monochrome.png',
     },

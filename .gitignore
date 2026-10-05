@@ -33,3 +33,6 @@ __screenshots__/
 # Tarballs de imagem Docker gerados por `docker save` para transferir para a VPS.
 # Sao artefatos de centenas de megabytes, reproduziveis a partir dos Dockerfiles.
 .imagens/
+
+# Extracao temporaria de icones de dentro de APK (infra/server/68-extrair-icone-lancador.ps1).
+.icones/
