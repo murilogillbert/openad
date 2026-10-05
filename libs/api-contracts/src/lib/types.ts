@@ -16,7 +16,13 @@ export type VehicleBindingStatus =
 
 export interface VehicleBindingAuditEntry {
   eventId: string;
-  action: 'pair' | 'unpair' | 'decommission';
+  /** `driver_bind`/`driver_unbind` sao acrescimos: troca de motorista muda quem recebe. */
+  action:
+    | 'pair'
+    | 'unpair'
+    | 'decommission'
+    | 'driver_bind'
+    | 'driver_unbind';
   vehicleId: string;
   deviceId: string | null;
   actorUserId: string;

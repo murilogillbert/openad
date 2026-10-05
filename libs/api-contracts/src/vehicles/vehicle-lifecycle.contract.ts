@@ -43,7 +43,13 @@ export const vehicleListItemWithBindingSchema = z.object({
 
 export const vehicleBindingAuditEntrySchema = z.object({
   eventId: z.string().uuid(),
-  action: z.enum(['pair', 'unpair', 'decommission']),
+  action: z.enum([
+    'pair',
+    'unpair',
+    'decommission',
+    'driver_bind',
+    'driver_unbind',
+  ]),
   vehicleId: z.string().uuid(),
   deviceId: z.string().uuid().nullable(),
   actorUserId: z.string(),

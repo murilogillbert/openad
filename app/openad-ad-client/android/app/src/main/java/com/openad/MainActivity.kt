@@ -6,6 +6,7 @@ import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.KeyEvent
 import com.getcapacitor.BridgeActivity
 
 /**
@@ -17,8 +18,44 @@ class MainActivity : BridgeActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     registerPlugin(PowerStatePlugin::class.java)
     registerPlugin(OpenAdSilentInstallPlugin::class.java)
+    registerPlugin(OpenAdVolumeKeyPlugin::class.java)
     configurarLockTaskSeDeviceOwner()
     super.onCreate(savedInstanceState)
+  }
+
+  /**
+   * Intercepta o volume para baixo e repassa ao lado web, consumindo a tecla.
+   *
+   * Duas razoes para consumir em vez de deixar passar com `super`:
+   *
+   * 1. O tablete em quiosque nao deve responder a controle nenhum. Lock Task bloqueia home,
+   *    recentes e barra de status, mas **nao** bloqueia as teclas de volume — elas continuam
+   *    chegando e mudando o volume do sistema.
+   * 2. Esta tecla e metade do gesto que libera o aparelho (a outra metade e toque mantido na
+   *    tela). Mudar o volume ao mesmo tempo seria efeito colateral visivel de um gesto que
+   *    deve ser discreto.
+   *
+   * `repeatCount == 0` filtra a repeticao automatica de tecla mantida: o lado web precisa de
+   * uma borda de descida, nao de dezenas de eventos por segundo. O volume para **cima**
+   * continua no caminho padrao de proposito — e a saida de quem precisa provar que o
+   * aparelho responde, sem destravar nada.
+   */
+  override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+    if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+      if (event.repeatCount == 0) {
+        OpenAdVolumeKeyPlugin.instancia?.emitir(true)
+      }
+      return true
+    }
+    return super.onKeyDown(keyCode, event)
+  }
+
+  override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
+    if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+      OpenAdVolumeKeyPlugin.instancia?.emitir(false)
+      return true
+    }
+    return super.onKeyUp(keyCode, event)
   }
 
   /**

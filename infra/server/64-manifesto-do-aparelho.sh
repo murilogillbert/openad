@@ -89,8 +89,11 @@ async function principal() {
   for (const m of midia) {
     const u = String(m.downloadUrl || '');
     const host = u ? new URL(u).host : '(sem url)';
+    // `mimeType` e o que o player usa para escolher entre `<img>` e `<video>`. Ausente, todo
+    // criativo ia para um `<video>`, nenhum JPEG decodificava e a tela ficava preta.
+    const tipo = m.mimeType === undefined ? '<AUSENTE>' : m.mimeType;
     console.log(
-      `  - ${m.mediaId}  prio ${m.priority}  ${m.fileSize} bytes  host ${host}`
+      `  - ${m.mediaId}  prio ${m.priority}  ${m.fileSize} bytes  ${tipo}  host ${host}`
     );
   }
   if (d.spatial) {

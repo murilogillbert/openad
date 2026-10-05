@@ -114,6 +114,10 @@ export class VehicleDetailComponent {
         return 'Unpair';
       case 'decommission':
         return 'Decommission';
+      case 'driver_bind':
+        return 'Motorista vinculado';
+      case 'driver_unbind':
+        return 'Motorista desvinculado';
       default:
         return action;
     }

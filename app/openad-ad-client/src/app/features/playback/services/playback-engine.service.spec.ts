@@ -7,6 +7,7 @@ import {
   PlaybackEngineService,
   duracaoDeExibicaoMs,
   kindOf,
+  prazoMaximoDeVideoMs,
 } from './playback-engine.service';
 import type { ManifestMediaItem } from '../../sync/models/manifest-api.model';
 import { ConstraintFilterService } from './constraint-filter.service';
@@ -104,7 +105,12 @@ describe('PlaybackEngineService', () => {
     expect(avancou).toHaveBeenCalled();
   });
 
-  it('nao agenda troca por tempo para video, que avanca no ended', async () => {
+  /**
+   * Video avanca no `ended`, nao por tempo. O prazo existe so para o caso em que o `ended`
+   * nunca chega, e por isso tem de ficar **muito** acima da duracao: cortar um video no
+   * proprio tempo nominal truncaria o anuncio.
+   */
+  it('nao corta video na duracao nominal; o prazo de seguranca e bem maior', async () => {
     await new Promise((r) => setTimeout(r, 30));
     const idb = TestBed.inject(DownloadProgressIdbService);
     vi.mocked(idb.getCachedManifest).mockResolvedValue({
@@ -179,5 +185,38 @@ describe('duracaoDeExibicaoMs', () => {
     expect(
       duracaoDeExibicaoMs({ kind: 'factory', url: '/f/a.jpg', mediaId: 'f:a' })
     ).toBe(10_000);
+  });
+
+  /** Mesmo teto de `platform_config.mediaLimits.maxDurationSeconds`. */
+  it('limita a 120s um criativo com duracao absurda', () => {
+    expect(
+      duracaoDeExibicaoMs({ kind: 'manifest', item: imagem({ duration: 9_999 }) })
+    ).toBe(120_000);
+  });
+});
+
+describe('prazoMaximoDeVideoMs', () => {
+  it('da folga sobre a duracao real, para nao truncar o anuncio', () => {
+    expect(
+      prazoMaximoDeVideoMs({
+        kind: 'manifest',
+        item: imagem({ duration: 30, mimeType: 'video/mp4' }),
+      })
+    ).toBe(35_000);
+  });
+
+  it('usa o teto de 120s quando a duracao e desconhecida ou maior que o teto', () => {
+    expect(
+      prazoMaximoDeVideoMs({
+        kind: 'manifest',
+        item: imagem({ duration: 0, mimeType: 'video/mp4' }),
+      })
+    ).toBe(125_000);
+    expect(
+      prazoMaximoDeVideoMs({
+        kind: 'manifest',
+        item: imagem({ duration: 9_999, mimeType: 'video/mp4' }),
+      })
+    ).toBe(125_000);
   });
 });

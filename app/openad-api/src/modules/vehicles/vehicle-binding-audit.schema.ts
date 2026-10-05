@@ -9,12 +9,30 @@ export class VehicleBindingAuditEvent {
   @Prop({ type: String, required: true, unique: true })
   eventId!: string;
 
+  /**
+   * `driver_bind` e `driver_unbind` sao acrescimos, nao substituicoes.
+   *
+   * Vinculo de motorista decide **para quem vai dinheiro**: `vehicles.driverId` e a unica
+   * fonte que o crédito de repasse e o relatorio de conferencia consultam. Uma troca de
+   * motorista sem trilha torna impossivel responder "quem recebeu por esta veiculacao".
+   * Entra nesta colecao, e nao numa nova, porque e a mesma pergunta — quem estava ligado a
+   * este veiculo e quando — e o indice `{vehicleId, createdAt}` ja atende.
+   *
+   * Acrescentar valor a um enum do Mongoose e aditivo: documento antigo continua valido e
+   * leitor antigo continua lendo. Nenhuma das rotas consumidas pelos aplicativos em revisao
+   * le esta colecao.
+   */
   @Prop({
     type: String,
     required: true,
-    enum: ['pair', 'unpair', 'decommission'],
+    enum: ['pair', 'unpair', 'decommission', 'driver_bind', 'driver_unbind'],
   })
-  action!: 'pair' | 'unpair' | 'decommission';
+  action!:
+    | 'pair'
+    | 'unpair'
+    | 'decommission'
+    | 'driver_bind'
+    | 'driver_unbind';
 
   @Prop({ type: String, required: true })
   vehicleId!: string;

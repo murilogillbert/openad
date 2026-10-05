@@ -13,6 +13,7 @@ import { ConfigurationProfilesModule } from '../modules/configuration-profiles/c
 import { DeviceGroupsModule } from '../modules/device-groups/device-groups.module';
 import { VehiclesModule } from '../modules/vehicles/vehicles.module';
 import { DevicesModule } from '../modules/devices/devices.module';
+import { DriversModule } from '../modules/drivers/drivers.module';
 import { CampaignsModule } from '../modules/campaigns/campaigns.module';
 import { GeoZonesModule } from '../modules/geo-zones/geo-zones.module';
 import { MetricsModule } from '../infrastructure/metrics/metrics.module';
@@ -54,6 +55,7 @@ import { PlatformConfigModule } from '../modules/platform-config/platform-config
     AuthModule,
     VehiclesModule,
     DevicesModule,
+    DriversModule,
     ConfigurationProfilesModule,
     DeviceGroupsModule,
     CampaignsModule,

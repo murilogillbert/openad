@@ -40,6 +40,26 @@ const RECUO_APOS_FALHA_MS = 1_000;
 /** Exibicao de imagem quando o manifesto nao traz `duration` utilizavel. */
 const EXIBICAO_PADRAO_S = 10;
 
+/**
+ * Teto de duracao de um criativo, em segundos.
+ *
+ * Mesmo valor de `platform_config.mediaLimits.maxDurationSeconds`, que o envio ja aplica em
+ * `video-validator.service.ts`. Repetido aqui como ultimo recurso: o tablete nao pode
+ * depender de validacao do servidor para nao congelar, e criativo gravado antes do limite
+ * existir nao passou por ela.
+ */
+const TETO_DE_DURACAO_S = 120;
+
+/**
+ * Folga sobre a duracao antes de forcar a troca de um video.
+ *
+ * `<video>` avanca pelo evento `ended`. Quando ele nao chega — arquivo truncado que
+ * decodifica o inicio, decodificador travado, rede caindo no meio de um buffer — nao ha
+ * `error` nem `ended`, e o laco **para para sempre** num quadro congelado, sem nada no log.
+ * A folga existe para nao cortar um video que esta so alguns decimos atrasado.
+ */
+const FOLGA_DE_VIDEO_S = 5;
+
 const EXTENSAO_DE_IMAGEM = /\.(jpe?g|png|webp|gif|bmp|avif)(\?|#|$)/i;
 
 /**
@@ -55,11 +75,26 @@ export function kindOf(ad: QueuedAd): MediaKind {
   return ad.item.mimeType?.startsWith('image/') ? 'image' : 'video';
 }
 
-/** Quanto tempo uma imagem fica na tela antes do proximo item. */
+/** Quanto tempo uma imagem fica na tela antes do proximo item. Limitado ao teto. */
 export function duracaoDeExibicaoMs(ad: QueuedAd): number {
   const d = ad.kind === 'factory' ? 0 : ad.item.duration;
   const segundos = typeof d === 'number' && d > 0 ? d : EXIBICAO_PADRAO_S;
-  return segundos * 1000;
+  return Math.min(segundos, TETO_DE_DURACAO_S) * 1000;
+}
+
+/**
+ * Prazo maximo que um video pode ocupar a tela antes de ser trocado a forca.
+ *
+ * Nao e o mecanismo normal de avanco — video avanca no `ended`, que respeita a duracao real
+ * do arquivo. Isto e a rede de seguranca para quando o `ended` nao vem.
+ */
+export function prazoMaximoDeVideoMs(ad: QueuedAd): number {
+  const d = ad.kind === 'factory' ? 0 : ad.item.duration;
+  const segundos =
+    typeof d === 'number' && d > 0
+      ? Math.min(d, TETO_DE_DURACAO_S)
+      : TETO_DE_DURACAO_S;
+  return (segundos + FOLGA_DE_VIDEO_S) * 1000;
 }
 
 /**
@@ -352,7 +387,31 @@ export class PlaybackEngineService {
      */
     if (cur && this.currentKind() === 'image') {
       this.agendarTransicao(duracaoDeExibicaoMs(cur));
+    } else if (cur) {
+      // Video: o avanco normal e o `ended`. Este prazo so age quando ele nao chega.
+      this.agendarTransicao(prazoMaximoDeVideoMs(cur));
     }
+
+    /**
+     * O que foi para a tela, em linha unica legivel no `adb logcat`.
+     *
+     * Sem isto o diagnostico de tela preta nao tinha onde comecar: `sync.ok` provava que o
+     * arquivo chegou, e dali em diante o unico sinal era visual. Com `kind` e `src` no log,
+     * "o criativo nao decodifica" e "o criativo nao chegou ao elemento" param de ser a mesma
+     * observacao.
+     */
+    console.info(
+      JSON.stringify({
+        event: 'playback.current',
+        mediaId: cur
+          ? cur.kind === 'factory'
+            ? cur.mediaId
+            : cur.item.mediaId
+          : null,
+        kind: cur ? this.currentKind() : null,
+        src: this.currentSrc(),
+      })
+    );
   }
 
   private agendarTransicao(ms: number): void {
@@ -444,16 +503,38 @@ export class PlaybackEngineService {
       return;
     }
     try {
+      /**
+       * Descarte sempre dito em voz alta.
+       *
+       * Os tres retornos abaixo sao legitimos — proof-of-play atribui exposicao a um
+       * veiculo e a uma campanha, e sem esses vinculos o registro nao significa nada. Mas
+       * eles eram silenciosos, e o resultado observavel era identico ao de um defeito:
+       * criativo girando na tela e `play_records` em zero, sem nada no log para separar
+       * "nao ha veiculo vinculado" de "o buffer esta quebrado".
+       */
+      const descartar = (motivo: string): void => {
+        console.info(
+          JSON.stringify({
+            event: 'playrecord.skipped',
+            mediaId: item.mediaId,
+            reason: motivo,
+          })
+        );
+      };
+
       const deviceId = await this.session.getStoredDeviceId();
       if (!deviceId) {
+        descartar('no_device_id');
         return;
       }
       const vehicleId = await this.fleetContext.resolveBoundVehicleId();
       if (!vehicleId) {
+        descartar('no_bound_vehicle');
         return;
       }
       const campaignId = item.campaignId;
       if (!campaignId || !uuidValidate(campaignId)) {
+        descartar('no_campaign_id');
         return;
       }
       const loc = this.deviceInfo.location();

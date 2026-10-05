@@ -27,6 +27,7 @@ import { DeepSleepService } from './services/watchdog/deep-sleep.service';
 import { PlayerRestartScheduler } from './services/watchdog/player-restart.scheduler';
 import { SafetyLoopService } from './services/watchdog/safety-loop.service';
 import { TabletNativeIntegrationService } from './services/tablet-native-integration.service';
+import { KioskUnlockGestureService } from './services/kiosk-unlock-gesture.service';
 import { AppUpdateSchedulerService } from './services/app-update-scheduler.service';
 import { GEO_FEATURE_PROVIDERS } from './features/geo/geo.providers';
 import { SpatialRuntimeService } from './features/geo/services/spatial-runtime.service';
@@ -56,6 +57,24 @@ export const appConfig: ApplicationConfig = {
             return Promise.resolve();
           }
           return native.initialize();
+        },
+    },
+    {
+      /**
+       * Gesto de destravamento do quiosque. Inicializador proprio, e nao uma chamada dentro
+       * de `TabletNativeIntegrationService.initialize()`, porque ele registra escuta em
+       * `window` e na ponte nativa de tecla — falhar aqui nao deve impedir sensores,
+       * brilho e Lock Task de subirem.
+       */
+      provide: APP_INITIALIZER,
+      multi: true,
+      deps: [PLATFORM_ID, KioskUnlockGestureService],
+      useFactory:
+        (platformId: object, gesto: KioskUnlockGestureService) => () => {
+          if (!isPlatformBrowser(platformId)) {
+            return Promise.resolve();
+          }
+          return gesto.start().catch(() => undefined);
         },
     },
     {

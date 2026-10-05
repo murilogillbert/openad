@@ -139,9 +139,82 @@ Write-Host '--- MQTT e manifesto no log do app'
   Select-Object -Last 20 | ForEach-Object { "    " + $_.Line.Trim() }
 
 Write-Host ''
+Write-Host '--- o que foi para a tela (playback.current)'
+$naTela = & $adb logcat -d 2>&1 | Select-String -Pattern 'playback\.current'
+if ($naTela) {
+  $naTela | Select-Object -Last 4 | ForEach-Object {
+    "    " + ($_.Line -replace '^.*?(\{"event")', '$1')
+  }
+} else {
+  Write-Host '    (nenhum) o motor nao colocou criativo na tela' -ForegroundColor Yellow
+}
+
+# ------------------------------------------------------- a tela mostra algo?
+#
+# "App vivo e sem travamento" conviveu por horas com uma tela inteiramente preta: imagens
+# iam para um `<video>`, que nunca produz quadro. Nenhum log acusava isso, porque nada
+# falhava - o elemento simplesmente nao desenhava. A unica evidencia que distingue
+# "veiculando" de "preto" e o pixel.
+#
+# `screencap` grava no aparelho e o arquivo vem por `adb pull` de proposito: redirecionar
+# `exec-out` para arquivo no PowerShell passa bytes por um fluxo de texto e corrompe o PNG.
+Write-Host ''
+Write-Host '--- captura de tela'
+$capturaRemota = '/sdcard/openad-tela.png'
+$capturaLocal = Join-Path $env:TEMP 'openad-tela.png'
+if (Test-Path $capturaLocal) { Remove-Item $capturaLocal -Force }
+& $adb shell screencap -p $capturaRemota 2>&1 | Out-Null
+& $adb pull $capturaRemota $capturaLocal 2>&1 | Out-Null
+& $adb shell rm -f $capturaRemota 2>&1 | Out-Null
+
+$telaOk = $false
+if (-not (Test-Path $capturaLocal)) {
+  Write-Host '    nao consegui capturar a tela' -ForegroundColor Yellow
+} else {
+  Add-Type -AssemblyName System.Drawing
+  $bmp = [System.Drawing.Bitmap]::FromFile($capturaLocal)
+  try {
+    # Amostra em grade, nao pixel a pixel: 40x40 = 1600 leituras resolvem a pergunta
+    # ("ha imagem?") e terminam instantaneamente, contra milhoes numa tela 1200x2000.
+    $passoX = [Math]::Max(1, [int]($bmp.Width / 40))
+    $passoY = [Math]::Max(1, [int]($bmp.Height / 40))
+    $total = 0
+    $escuros = 0
+    $cores = @{}
+    for ($x = 0; $x -lt $bmp.Width; $x += $passoX) {
+      for ($y = 0; $y -lt $bmp.Height; $y += $passoY) {
+        $p = $bmp.GetPixel($x, $y)
+        $total++
+        if (($p.R + $p.G + $p.B) -lt 36) { $escuros++ }
+        $cores[('{0}-{1}-{2}' -f $p.R, $p.G, $p.B)] = $true
+      }
+    }
+    $pctEscuro = [Math]::Round(100 * $escuros / $total, 1)
+    Write-Host ("    {0}x{1}  amostras {2}  quase-preto {3}%  cores distintas {4}" -f `
+      $bmp.Width, $bmp.Height, $total, $pctEscuro, $cores.Count)
+    Write-Host ("    arquivo: {0}" -f $capturaLocal)
+
+    # Criativo real e uma foto ou arte: dezenas de cores e boa parte da tela clara. Tela
+    # preta da <= 2 cores (preto e a letterbox) e ~100% quase-preto.
+    if ($pctEscuro -ge 97 -or $cores.Count -le 3) {
+      Write-Host '    TELA PRETA: nenhum criativo desenhado' -ForegroundColor Red
+    } else {
+      Write-Host '    ha criativo desenhado na tela' -ForegroundColor Green
+      $telaOk = $true
+    }
+  } finally {
+    $bmp.Dispose()
+  }
+}
+
+Write-Host ''
 if ($fatais -or $morreu) {
   Write-Host 'O app nao sobreviveu limpo. Veja o log acima.' -ForegroundColor Red
   exit 1
 }
-Write-Host ("App vivo e sem travamento por {0}s." -f $SegundosDeObservacao) -ForegroundColor Green
+if (-not $telaOk) {
+  Write-Host 'App vivo, mas a tela nao mostra criativo.' -ForegroundColor Red
+  exit 1
+}
+Write-Host ("App vivo, sem travamento por {0}s, e exibindo criativo." -f $SegundosDeObservacao) -ForegroundColor Green
 exit 0

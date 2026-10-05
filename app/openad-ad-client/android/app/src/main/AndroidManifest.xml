@@ -45,7 +45,21 @@
             android:name="android.content.APP_RESTRICTIONS"
             android:resource="@xml/app_restrictions" />
 
+        <!--
+            screenOrientation="landscape" trava o tablete deitado o tempo todo.
+
+            Sem o atributo a orientacao seguia o sensor, e o criativo da plataforma e 16:9
+            deitado (o app do anunciante recorta para 16:9 antes de enviar). Em retrato, o
+            criativo cobrindo a tela perderia dois tercos da largura; em paisagem ele encaixa
+            exato. Travar no manifesto, e nao em chamada de runtime, garante que a primeira
+            composicao da tela ja saia na orientacao certa - nao ha instante em retrato.
+
+            `configChanges` com `orientation|screenSize` continua: a Activity trata a mudanca
+            sem ser recriada, o que importa porque recriar derruba a WebView e reinicia o laco
+            de veiculacao.
+        -->
         <activity
+            android:screenOrientation="landscape"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
             android:name=".MainActivity"
             android:label="@string/title_activity_main"

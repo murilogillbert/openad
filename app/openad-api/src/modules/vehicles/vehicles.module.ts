@@ -60,6 +60,10 @@ import { ScheduleRulesModule } from '../schedule-rules/schedule-rules.module';
     FleetStatusRepository,
     FleetDomainEventsService,
     VehiclesQueryService,
+    // Exportado para o `DriversModule`: vinculo de motorista grava trilha na mesma colecao
+    // de auditoria de binding, porque e a mesma pergunta — quem estava ligado a este
+    // veiculo e quando.
+    VehicleBindingAuditService,
     MongooseModule,
   ],
 })

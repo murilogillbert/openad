@@ -5,7 +5,12 @@ import type { FleetAuditContext } from '../../infrastructure/logging/fleet-audit
 import { VehicleBindingAuditRepository } from './vehicle-binding-audit.repository';
 import type { VehicleBindingAuditDocument } from './vehicle-binding-audit.schema';
 
-export type BindingAuditAction = 'pair' | 'unpair' | 'decommission';
+export type BindingAuditAction =
+  | 'pair'
+  | 'unpair'
+  | 'decommission'
+  | 'driver_bind'
+  | 'driver_unbind';
 
 @Injectable()
 export class VehicleBindingAuditService {

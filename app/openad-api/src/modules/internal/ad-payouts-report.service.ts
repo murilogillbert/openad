@@ -169,6 +169,121 @@ export class AdPayoutsReportService {
     };
   }
 
+  /**
+   * Anúncios que tocaram nos veículos deste motorista dentro de uma janela de tempo.
+   *
+   * Existe para que o **opendriver** possa somar a receita de anúncio à corrida na tela de
+   * Ganhos. O openad não conhece corrida — não há entidade, coleção nem evento de trajeto
+   * aqui — então a única pergunta que ele sabe responder é "o que tocou entre estes dois
+   * instantes". Quem conhece início e fim do trajeto é o opendriver; ele passa a janela.
+   *
+   * O recorte por motorista é indireto, pelo mesmo caminho do crédito: veículos cujo
+   * `driverId` é ele, e `play_records` desses veículos. Um motorista com N tablets no mesmo
+   * veículo tem todos contemplados, porque `pairedDeviceIds` é um array e o play record
+   * carrega `vehicleId`.
+   *
+   * Só `reconciliationStatus: 'billable'`. Veiculação reprovada na reconciliação de duração
+   * ou nas regras de antifraude **não** entra: mostrar ao motorista um ganho que não foi
+   * creditado é pior que não mostrar nada.
+   */
+  async veiculacoesDoMotorista(
+    driverUserId: string,
+    from: Date,
+    to: Date
+  ): Promise<{
+    driverUserId: string;
+    window: { from: string; to: string };
+    plays: number;
+    payoutCents: number;
+    payoutMinPercent: number;
+    items: Array<{
+      playedAt: string;
+      campaignId: string;
+      mediaId: string | null;
+      vehicleId: string;
+      payoutCents: number;
+    }>;
+  }> {
+    const piso = this.platform.get().monetization.driverPayoutMinPercent;
+
+    const veiculos = await this.vehicles
+      .find({ driverId: driverUserId })
+      .select({ vehicleId: 1 })
+      .lean()
+      .exec();
+    const vehicleIds = veiculos.map((v) => v.vehicleId);
+
+    if (vehicleIds.length === 0) {
+      return {
+        driverUserId,
+        window: { from: from.toISOString(), to: to.toISOString() },
+        plays: 0,
+        payoutCents: 0,
+        payoutMinPercent: piso,
+        items: [],
+      };
+    }
+
+    const registros = await this.playRecords
+      .find({
+        vehicleId: { $in: vehicleIds },
+        reconciliationStatus: 'billable',
+        timestampEnd: { $gte: from, $lte: to },
+      })
+      .select({
+        timestampEnd: 1,
+        campaignId: 1,
+        mediaId: 1,
+        vehicleId: 1,
+      })
+      .sort({ timestampEnd: 1 })
+      .lean()
+      .exec();
+
+    // Mesmo cache de campanha do relatório: uma janela repete poucas campanhas muitas vezes.
+    const campanhaPorId = new Map<string, number>();
+    const items: Array<{
+      playedAt: string;
+      campaignId: string;
+      mediaId: string | null;
+      vehicleId: string;
+      payoutCents: number;
+    }> = [];
+    let payoutCents = 0;
+
+    for (const r of registros) {
+      if (!campanhaPorId.has(r.campaignId)) {
+        const c = await this.campaigns.findByCampaignId(r.campaignId);
+        campanhaPorId.set(
+          r.campaignId,
+          repasseEmCentavos({
+            valorFaturavelCents: c?.budget?.ratePerImpressionCents ?? 0,
+            repasse: this.lerRepasse(c?.driverPayout),
+            piso,
+          })
+        );
+      }
+      const valor = campanhaPorId.get(r.campaignId) ?? 0;
+      payoutCents += valor;
+      items.push({
+        playedAt: new Date(r.timestampEnd).toISOString(),
+        campaignId: r.campaignId,
+        mediaId: r.mediaId ?? null,
+        vehicleId: r.vehicleId,
+        payoutCents: valor,
+      });
+    }
+
+    return {
+      driverUserId,
+      window: { from: from.toISOString(), to: to.toISOString() },
+      plays: registros.length,
+      payoutCents,
+      payoutMinPercent: piso,
+      items,
+    };
+  }
+
   private lerRepasse(
     dp:
       | { model: 'percent' | 'per_play'; percent: number | null; valueCents: number | null }

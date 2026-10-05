@@ -1,1 +1,13 @@
 /* You can add global styles to this file, and also import other style files */
+
+/*
+  Reset minimo. A margem padrao de 8px do `body` empurrava a area de veiculacao e abria
+  barra de rolagem numa tela que nao tem nada para rolar. Nao ha framework de CSS aqui
+  (nem Tailwind nem PostCSS); cada componente traz o seu proprio estilo.
+*/
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}

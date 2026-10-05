@@ -14,6 +14,7 @@ import { AccountPurgeService } from './account-purge.service';
 import { AdPayoutsReportService } from './ad-payouts-report.service';
 import { EscoposDeChave, ServiceApiKeyGuard } from './service-api-key.guard';
 import { PayoutsQueryDto } from './dto/payouts-query.dto';
+import { DriverPlaysQueryDto } from './dto/driver-plays-query.dto';
 
 /**
  * Superfície servico-a-servico (`/api/v1/internal/*`).
@@ -79,5 +80,33 @@ export class InternalController {
   @ApiOperation({ summary: 'Repasse por motorista no periodo (conferencia)' })
   async adPayouts(@Query() q: PayoutsQueryDto) {
     return this.payouts.porMotorista(new Date(q.from), new Date(q.to));
+  }
+
+  /**
+   * Anúncios exibidos nos veículos de um motorista numa janela de tempo.
+   *
+   * É o que permite ao opendriver somar a receita de anúncio **à corrida** na tela de
+   * Ganhos: ele conhece o início e o fim do trajeto, passa o intervalo, e recebe quantos
+   * anúncios tocaram e quanto rendem. O openad não tem conceito de corrida, então a janela
+   * é o único recorte que ele sabe fazer.
+   *
+   * Rota de leitura, sem efeito nenhum. O crédito continua saindo no instante em que a
+   * veiculação vira faturável; aqui é só o detalhamento que a tela precisa mostrar.
+   *
+   * Reusa o escopo `ads:payout:read` em vez de criar um novo: é o mesmo dado (repasse do
+   * motorista) com outro recorte, e um escopo novo exigiria reemitir chave no hub — um
+   * serviço que hoje consulta o total passaria a receber 403 ao pedir o detalhe.
+   */
+  @Get('ads/driver-plays')
+  @EscoposDeChave('ads:payout:read')
+  @ApiOperation({
+    summary: 'Anuncios exibidos para um motorista numa janela (soma a corrida)',
+  })
+  async driverPlays(@Query() q: DriverPlaysQueryDto) {
+    return this.payouts.veiculacoesDoMotorista(
+      q.driverUserId,
+      new Date(q.from),
+      new Date(q.to)
+    );
   }
 }
