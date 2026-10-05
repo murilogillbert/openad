@@ -11,6 +11,7 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { DeviceBindDialogComponent } from '../inventory/device-bind-dialog.component';
+import { DeviceDriverDialogComponent } from './device-driver-dialog.component';
 import { formatRelativeTime } from '../inventory/inventory-relative-time';
 import { InventoryService } from '../inventory/inventory.service';
 import { OperationsTelemetryService } from '../operations/operations-telemetry.service';
@@ -37,6 +38,7 @@ export type DeviceLifecycleFilter =
     InputTextModule,
     TooltipModule,
     DeviceBindDialogComponent,
+    DeviceDriverDialogComponent,
   ],
   templateUrl: './device-inventory.page.html',
   styleUrl: './device-inventory.page.css',
@@ -53,6 +55,9 @@ export class DeviceInventoryPage implements OnInit {
   protected readonly search = signal('');
   protected readonly lifecycleFilter = signal<DeviceLifecycleFilter>('all');
   protected readonly bindOpen = signal(false);
+  protected readonly driverOpen = signal(false);
+  protected readonly driverDeviceId = signal<string | null>(null);
+  protected readonly driverSerial = signal<string | null>(null);
   /** `deviceId` em operação, para desabilitar só a linha afetada. */
   protected readonly busyDeviceId = signal<string | null>(null);
   protected readonly actionError = signal<string | null>(null);
@@ -285,6 +290,21 @@ export class DeviceInventoryPage implements OnInit {
     return detalhe
       ? `Não foi possível ${acao}: ${detalhe}`
       : `Não foi possível ${acao} (HTTP ${err.status}).`;
+  }
+
+  /** Abre o vínculo de motorista do aparelho da linha. */
+  protected openDriverDialog(row: DeviceInventoryItem): void {
+    this.driverDeviceId.set(row.deviceId);
+    this.driverSerial.set(row.serialNumber);
+    this.driverOpen.set(true);
+  }
+
+  protected onDriverVisible(v: boolean): void {
+    this.driverOpen.set(v);
+    if (!v) {
+      this.driverDeviceId.set(null);
+      this.driverSerial.set(null);
+    }
   }
 
   protected openProvisionDialog(): void {

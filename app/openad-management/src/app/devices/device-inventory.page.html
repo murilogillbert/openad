@@ -296,6 +296,21 @@
                 </button>
               }
 
+              <!-- Motorista: quem recebe o repasse das veiculações deste tablete. O vínculo
+                   é guardado no veículo, então aparelho sem veículo recebe 409 com o
+                   próximo passo escrito. -->
+              <button
+                pButton
+                type="button"
+                class="p-button-text p-button-sm"
+                [disabled]="busyDeviceId() === row.deviceId"
+                (click)="openDriverDialog(row)"
+                [attr.aria-label]="'Motorista do aparelho ' + row.serialNumber"
+                pTooltip="Vincular motorista (repasse)"
+              >
+                <span class="material-symbols-outlined text-[20px]">person</span>
+              </button>
+
               <button
                 pButton
                 type="button"
@@ -407,5 +422,13 @@
     [visible]="bindOpen()"
     (visibleChange)="onBindVisible($event)"
     (bound)="onDeviceBound()"
+  />
+
+  <app-device-driver-dialog
+    [visible]="driverOpen()"
+    [deviceId]="driverDeviceId()"
+    [serialNumber]="driverSerial()"
+    (visibleChange)="onDriverVisible($event)"
+    (changed)="refresh()"
   />
 </section>

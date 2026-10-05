@@ -135,3 +135,79 @@ pode consultar esta rota pela janela de tempo. O que falta não está neste repo
 - Produção: 4 criativos (todos imagem), 3 campanhas ativas, 1 aparelho
   (`c5ba917f-56fd-4c36-94f9-9b0f9045da5a`), **`vehicles` = 0**, `play_records` = 0.
 - Orientação do tablete: livre (segue sensor). Criativo com `object-fit: contain`.
+
+### Execução concluída — 2026-10-05
+
+Tudo que o plano previa está feito e verificado em produção, com uma exceção registrada no
+fim. Commits: `c2de1e7`, `c0c2a10` e o desta leva.
+
+| Item | Estado | Evidência |
+|---|---|---|
+| A.1 paisagem travada | feito | captura do aparelho em **2000×1200** |
+| A.2 `cover` | feito | **0,6%** de pixel quase-preto, 1505 cores distintas |
+| A.3 parada de vídeo | feito | `prazoMaximoDeVideoMs`, testes 114→116 |
+| B diretório + vínculo | feito | `GET /admin/drivers/search` 200 com 32 motoristas |
+| C anúncios por janela | feito | `GET /internal/ads/driver-plays` responde 401 sem chave |
+| D destravamento | feito (código) | ver ressalva abaixo |
+| E portal | feito | 4 trechos novos no bundle servido pelo nginx |
+| F.12 repasse ligado | conferido | `OPENDRIVER_API_URL` e `ECOSYSTEM_SERVICE_API_KEY` presentes |
+| F.13 fim a fim | **feito** | ver abaixo |
+
+#### O caminho do dinheiro está fechado
+
+Sequência real, em produção:
+
+1. Veículo **DEM1A23** (Chevrolet Onix 2022, `f74a5508-59e5-4625-ac5a-40f308ce0d7f`) criado
+   já pareado ao tablete `c5ba917f-56fd-4c36-94f9-9b0f9045da5a`. Placa e modelo vêm da ficha
+   do Play, onde esse é o veículo aprovado do motorista de demonstração — não foram
+   inventados.
+2. Motorista `play.motorista@opendriver.com.br` (`0efd58a2-1fe8-4941-8168-87c5a982d054`)
+   vinculado pela rota nova. Trilha gravada: `driver_bind` por `admin@opendriver.com.br`.
+3. **71 play records, todos `reconciliationStatus: billable`.**
+4. `repasse.creditado` de **7 centavos por veiculação** — `floor(25 × 0,3)`, com tarifa de 25
+   centavos e repasse de 30% — confirmado pelo opendriver.
+
+#### O defeito que só apareceu aqui
+
+`play_records` continuou em zero depois do vínculo, e a causa era independente de tudo que
+este plano previa: `Filesystem.appendFile` **não aceita** `recursive` (o tipo é
+`Omit<WriteFileOptions, 'recursive'>`), então não criava `analytics/` e falhava com
+`OS-PLUG-FILE-0011`. Num aparelho novo a pasta nunca existia, porque `writeFile` — que a
+criaria — só roda na compactação, e a compactação depende de já haver linhas. Impasse
+permanente.
+
+A exceção morria no `catch` vazio de `recordManifestPlayCommitted`. O tablete exibia anúncio,
+o laço girava, e **toda** veiculação faturável era perdida sem um único sinal. Corrigido com
+`mkdir` memoizado e com log de `playrecord.enqueue.failed` — engolir exceção para proteger a
+exibição está certo, engolir sem registrar transforma perda de receita em silêncio.
+
+Mesma classe do defeito de `writeMediaFile` corrigido em `bc032f7`. Dois casos em dois dias;
+daí a suíte `PlayRecordBufferService (nativo)`.
+
+#### Ressalva: o gesto de destravamento não foi testado com a mão
+
+`OpenAdVolumeKeyPlugin` + `onKeyDown`/`onKeyUp` em `MainActivity` estão compilados e
+instalados, e o quiosque está ativo (`isInKioskMode: true` no log). Mas o gesto exige **toque
+mantido na tela junto com volume para baixo por 5 s**, e `adb shell input` não sustenta as
+duas entradas em paralelo — não há como provar por automação. O que falta é um teste com o
+dedo no aparelho.
+
+Se não funcionar, o caminho de diagnóstico é: `adb logcat | grep kiosk` deve mostrar
+`kiosk.unlocked` ao completar o gesto. Se nada aparecer, conferir se
+`Capacitor.isPluginAvailable('OpenAdVolumeKey')` é verdadeiro — é a condição que o serviço
+usa para registrar a escuta. A saída de emergência continua existindo: o comando remoto
+`TEMP_DISABLE_KIOSK` pelo portal.
+
+#### Pendências que este plano não cobriu
+
+- **Bloco `monetization` ainda não é editável na tela de Admin → Plataforma.** O piso de 30%
+  e o `k` do leilão só mudam chamando `PUT /platform-config` direto. Os valores sobrevivem ao
+  salvamento da página (ela faz `PUT` do objeto inteiro), mas não há controle para eles.
+- **Atribuição à corrida depende do opendriver.** `GET /internal/ads/driver-plays` entrega os
+  anúncios de uma janela de tempo; quem sabe o início e o fim do trajeto é o opendriver, e
+  somar isso ao ganho da corrida é trabalho naquele repositório, que não está neste monorepo.
+- **`driverPayoutSettlement` e `storeCycleSettlementDays` continuam sem leitor no código.**
+  Configuração sem consumidor: não há fechamento por período nem data prevista calculada.
+- O veículo DEM1A23 é o do motorista de demonstração. Para frota real, cadastrar os veículos
+  de verdade e vincular pela tela nova — `infra/server/68-vincular-motorista.sh` faz a
+  sequência inteira por linha de comando, se preferir.
