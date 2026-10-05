@@ -211,3 +211,65 @@ usa para registrar a escuta. A saída de emergência continua existindo: o coman
 - O veículo DEM1A23 é o do motorista de demonstração. Para frota real, cadastrar os veículos
   de verdade e vincular pela tela nova — `infra/server/68-vincular-motorista.sh` faz a
   sequência inteira por linha de comando, se preferir.
+
+### Encerramento do quiosque — 2026-10-05, noite
+
+Confirmado pelo usuário no aparelho: exibição e travamento funcionando. Commits desta
+etapa: `f0fa181`, `87cf8b2`, `d84f01c`.
+
+#### Por que o quiosque não travava — quatro causas, uma envenenando o diagnóstico das outras
+
+1. **O aplicativo morria ao sair do primeiro plano.** `CapacitorAndroidKioskPlugin.handleOnPause`
+   chama `moveTaskToFront()`, que exige `android.permission.REORDER_TASKS` — não declarada.
+   O `SecurityException` caía **dentro do ciclo de pausa**, virava
+   `RuntimeException: Unable to pause activity` e derrubava o processo. Ao tocar em home o
+   app morria e o lançador aparecia. Permissão declarada.
+
+2. **`isInKioskMode` mentia.** Devolvia `true` com `mLockTaskModeState=NONE`, porque o valor
+   sai de um sinalizador que o plugin mantém quando a entrada **não lança** — e
+   `startLockTask()` sem Device Owner não lança, só não trava. Isso ia para a telemetria como
+   `kioskModeActive`: o mapa de frota mostraria a frota inteira travada sem nenhum aparelho
+   estar. Substituído por `OpenAdKioskStatePlugin`, que lê
+   `ActivityManager.getLockTaskModeState()`.
+
+3. **O plugin do fornecedor não travava.** Com `startLockTask()` chamado direto, na thread de
+   UI, o sistema passou a reportar `mLockTaskModeState=PINNED`. O plugin ficou como segunda
+   tentativa, para aparelho com Device Owner.
+
+4. **Botão voltar encerrava o app.** O Capacitor encerra no voltar sem ouvinte registrado, e
+   o player não tem navegação. Ouvinte vazio registrado.
+
+E, à parte: o modo imersivo era opt-in por `openad_fullscreen_enabled`, preferência que nada
+no aplicativo escrevia — nunca ativava. Agora ausente vale como ligado, e é reaplicado no
+retorno ao primeiro plano, porque o Android abandona o imersivo quando a Activity perde o
+foco.
+
+#### Pré-requisito de aparelho, não de código
+
+```
+adb shell settings put system lock_to_app_enabled 1
+```
+
+Sem isso `startLockTask()` é ignorado mesmo com a chamada correta. Em frota, entra no
+provisionamento.
+
+#### O teto sem Device Owner
+
+`pinned` **não** é `locked`: o usuário ainda sai segurando voltar e recentes juntos, e a
+fixação se perde no botão de recentes — medido. `reentrarQuiosqueSeNecessario()` refixa no
+retorno ao primeiro plano, respeitando a janela do gesto de destravamento.
+
+Travamento sem saída exige Device Owner. `dpm set-device-owner` é recusado neste tablete:
+15 contas Google, e o Android responde `Not allowed to set the device owner because there
+are already some accounts on the device`. Não removi as contas — são pessoais do usuário.
+Para um aparelho de frota o caminho é formatar e provisionar antes de cadastrar conta
+nenhuma, com `74-provisionar-device-owner.ps1`.
+
+Por isso `kioskModeActive` na telemetria reflete só `locked`: relatar `pinned` como travado
+seria prometer garantia que não existe.
+
+#### Fora destes commits, de propósito
+
+`app/openad-advertiser` tem alterações de ícone não commitadas (arte nova, fundo branco no
+ícone adaptativo, `versionCode` padrão 3). Não são desta sessão e tocam um aplicativo em
+revisão na loja — ficaram para decisão do usuário.
