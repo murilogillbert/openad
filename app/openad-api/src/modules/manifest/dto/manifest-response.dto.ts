@@ -9,6 +9,15 @@ export interface ManifestMediaItemDto {
   downloadUrl: string;
   fileSize: number;
   duration: number;
+  /**
+   * Tipo do conteudo, para o player escolher entre `<img>` e `<video>`.
+   *
+   * Sem este campo o tablete tratava todo item como video e punha o arquivo num `<video>`.
+   * Como a frota inteira de criativos e JPEG/PNG, nenhum deles decodificava e a tela ficava
+   * num retangulo preto. Vem sempre preenchido: quando o documento nao tem `mimeType`
+   * (upload antigo), e deduzido da extensao do `filename`.
+   */
+  mimeType: string;
   /** Denormalized from media placement; campaign-level targeting is separate from media bytes. */
   campaignId?: string;
 }

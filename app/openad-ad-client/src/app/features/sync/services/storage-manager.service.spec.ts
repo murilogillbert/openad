@@ -30,6 +30,20 @@ describe('SyncStorageManagerService (features/sync)', () => {
     svc = TestBed.inject(SyncStorageManagerService);
   });
 
+  /**
+   * `recursive: true` e o que cria `media/` na primeira sincronizacao de um aparelho novo.
+   * Sem ele o plugin recusa a gravacao com "Missing parent directory", o download e perdido e
+   * a sincronizacao aborta a cada ciclo — foi o ultimo defeito entre o manifesto e a tela.
+   */
+  it('writeMediaFile cria o diretorio pai', async () => {
+    await svc.writeMediaFile('abc', new ArrayBuffer(4));
+    const chamada = (Filesystem.writeFile as unknown as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as { path: string; recursive?: boolean };
+    expect(chamada.path).toBe('media/abc');
+    expect(chamada.recursive).toBe(true);
+    expect(cache.registerDownload).toHaveBeenCalledWith('abc', 4);
+  });
+
   it('pruneLowestPriorityFirst deletes lowest priority entries first', async () => {
     await svc.pruneLowestPriorityFirst(
       [

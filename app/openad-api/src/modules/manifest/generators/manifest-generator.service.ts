@@ -26,6 +26,40 @@ export interface GeneratedManifestPayload {
   spatial: { version: string; entries: SpatialEntryContract[] };
 }
 
+const TIPO_POR_EXTENSAO: Record<string, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+  gif: 'image/gif',
+  mp4: 'video/mp4',
+  m4v: 'video/mp4',
+  webm: 'video/webm',
+  mkv: 'video/x-matroska',
+  mov: 'video/quicktime',
+};
+
+/**
+ * Tipo do conteudo do criativo, sempre com um valor utilizavel.
+ *
+ * `mediaassets.mimeType` e opcional no schema: uploads anteriores a rota de presign nao
+ * gravavam o campo. Como o player usa este valor para decidir entre `<img>` e `<video>`,
+ * devolver `undefined` reintroduziria o defeito que esta funcao existe para fechar — por
+ * isso a extensao do nome do arquivo e o segundo recurso, e `video/mp4` o terceiro, que
+ * preserva o comportamento historico para a midia que de fato e video.
+ */
+export function tipoDeConteudo(asset: {
+  mimeType?: string;
+  filename?: string;
+}): string {
+  const declarado = asset.mimeType?.trim();
+  if (declarado) {
+    return declarado;
+  }
+  const ext = asset.filename?.toLowerCase().match(/\.([a-z0-9]+)$/)?.[1];
+  return (ext && TIPO_POR_EXTENSAO[ext]) || 'video/mp4';
+}
+
 @Injectable()
 export class ManifestGeneratorService {
   constructor(
@@ -143,6 +177,7 @@ export class ManifestGeneratorService {
         downloadUrl,
         fileSize: row.fileSize,
         duration: row.duration,
+        mimeType: tipoDeConteudo(row),
       };
       if (campaignId) {
         item.campaignId = campaignId;

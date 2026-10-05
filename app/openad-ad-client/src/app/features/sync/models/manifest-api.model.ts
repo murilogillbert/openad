@@ -9,6 +9,14 @@ export interface ManifestMediaItem {
   downloadUrl: string;
   fileSize: number;
   duration: number;
+  /**
+   * `image/jpeg`, `video/mp4`, ... Decide entre `<img>` e `<video>` na tela.
+   *
+   * Opcional porque o manifesto em cache no IndexedDB pode ter sido gravado por uma versao
+   * do servidor anterior a este campo; ausente equivale a video, que era o comportamento
+   * unico antes.
+   */
+  mimeType?: string;
   campaignId?: string;
 }
 

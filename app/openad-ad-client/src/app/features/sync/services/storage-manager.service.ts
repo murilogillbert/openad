@@ -20,12 +20,23 @@ function arrayBufferToBase64(buf: ArrayBuffer): string {
 export class SyncStorageManagerService {
   private readonly cacheIndex = inject(CacheIndexService);
 
+  /**
+   * Grava o criativo em `media/{mediaId}`.
+   *
+   * `recursive: true` e obrigatorio: o caminho tem um diretorio (`media/`) que nao existe na
+   * primeira sincronizacao de um aparelho novo, e sem a opcao o plugin recusa com
+   * "Missing parent directory - possibly recursive=false was passed or parent directory
+   * creation failed.". Era a ultima barreira entre o manifesto e a tela: o download concluia,
+   * a gravacao falhava, e a sincronizacao inteira abortava a cada ciclo. O mesmo cuidado ja
+   * existia em `play-record-buffer.service.ts`, e tinha ficado de fora aqui.
+   */
   async writeMediaFile(mediaId: string, buffer: ArrayBuffer): Promise<void> {
     const data = arrayBufferToBase64(buffer);
     await Filesystem.writeFile({
       path: `media/${mediaId}`,
       directory: Directory.Data,
       data,
+      recursive: true,
     });
     this.cacheIndex.registerDownload(mediaId, buffer.byteLength);
   }

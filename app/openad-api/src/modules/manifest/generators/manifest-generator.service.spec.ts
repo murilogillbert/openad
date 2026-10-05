@@ -1,7 +1,10 @@
 import { getModelToken } from '@nestjs/mongoose';
 import { Test } from '@nestjs/testing';
 import { PinoLogger } from 'nestjs-pino';
-import { ManifestGeneratorService } from './manifest-generator.service';
+import {
+  ManifestGeneratorService,
+  tipoDeConteudo,
+} from './manifest-generator.service';
 import { SpatialManifestBuilderService } from './spatial-manifest-builder.service';
 import {
   CampaignEligibilityService,
@@ -33,6 +36,8 @@ interface MediaRow {
   mediaId: string;
   campaignId?: string;
   storageUrl: string;
+  mimeType?: string;
+  filename?: string;
 }
 
 const mediaRow = (over: MediaRow): Record<string, unknown> => ({
@@ -239,5 +244,64 @@ describe('ManifestGeneratorService', () => {
     ]);
     expect(r.media[0]?.priority).toBeGreaterThan(r.media[1]!.priority);
     expect(r.media[1]?.priority).toBeGreaterThan(r.media[2]!.priority);
+  });
+
+  /**
+   * O tablete escolhe `<img>` ou `<video>` por este campo. Sem ele, todo criativo ia para um
+   * `<video>` — e como a plataforma so tem JPEG/PNG, nenhum decodificava e a tela ficava
+   * preta. Por isso `mimeType` e obrigatorio na saida, nao opcional.
+   */
+  it('leva o mimeType do criativo para o item do manifesto', async () => {
+    const { svc } = await buildService(
+      [
+        mediaRow({
+          mediaId: 'm-img',
+          storageUrl: 'memory:i',
+          mimeType: 'image/jpeg',
+          filename: 'arte.jpg',
+        }),
+      ],
+      eligibleWith()
+    );
+
+    const r = await svc.build(DEVICE_ID, {});
+
+    expect(r.media[0]?.mimeType).toBe('image/jpeg');
+  });
+
+  it('deduz o mimeType da extensao quando o documento nao tem o campo', async () => {
+    const { svc } = await buildService(
+      [
+        mediaRow({
+          mediaId: 'm-legado',
+          storageUrl: 'memory:l',
+          filename: 'arte-antiga.PNG',
+        }),
+      ],
+      eligibleWith()
+    );
+
+    const r = await svc.build(DEVICE_ID, {});
+
+    expect(r.media[0]?.mimeType).toBe('image/png');
+  });
+});
+
+describe('tipoDeConteudo', () => {
+  it('prefere o campo gravado', () => {
+    expect(
+      tipoDeConteudo({ mimeType: 'image/webp', filename: 'x.mp4' })
+    ).toBe('image/webp');
+  });
+
+  it('ignora campo em branco e cai para a extensao', () => {
+    expect(tipoDeConteudo({ mimeType: '   ', filename: 'x.jpeg' })).toBe(
+      'image/jpeg'
+    );
+  });
+
+  it('resolve para video/mp4 sem campo e sem extensao conhecida', () => {
+    expect(tipoDeConteudo({ filename: 'sem-extensao' })).toBe('video/mp4');
+    expect(tipoDeConteudo({})).toBe('video/mp4');
   });
 });

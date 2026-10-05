@@ -31,6 +31,37 @@ import { LoopManagerService } from './loop-manager.service';
 import { PriorityQueueService } from './priority-queue.service';
 import { PlayRecordBufferService } from '../../analytics/services/play-record-buffer.service';
 
+/** Elemento que o criativo precisa na tela. */
+export type MediaKind = 'image' | 'video';
+
+/** Intervalo antes de trocar de criativo depois de uma falha de decodificacao. */
+const RECUO_APOS_FALHA_MS = 1_000;
+
+/** Exibicao de imagem quando o manifesto nao traz `duration` utilizavel. */
+const EXIBICAO_PADRAO_S = 10;
+
+const EXTENSAO_DE_IMAGEM = /\.(jpe?g|png|webp|gif|bmp|avif)(\?|#|$)/i;
+
+/**
+ * Imagem ou video, a partir do `mimeType` do manifesto.
+ *
+ * Ausencia de `mimeType` resolve para `video`: e o que o manifesto gravado em cache por
+ * servidores anteriores a este campo contem, e era o unico comportamento do player antes.
+ */
+export function kindOf(ad: QueuedAd): MediaKind {
+  if (ad.kind === 'factory') {
+    return EXTENSAO_DE_IMAGEM.test(ad.url) ? 'image' : 'video';
+  }
+  return ad.item.mimeType?.startsWith('image/') ? 'image' : 'video';
+}
+
+/** Quanto tempo uma imagem fica na tela antes do proximo item. */
+export function duracaoDeExibicaoMs(ad: QueuedAd): number {
+  const d = ad.kind === 'factory' ? 0 : ad.item.duration;
+  const segundos = typeof d === 'number' && d > 0 ? d : EXIBICAO_PADRAO_S;
+  return segundos * 1000;
+}
+
 /**
  * Manifest loop + factory fallback + MQTT priority with resume (T103–T105).
  */
@@ -54,14 +85,43 @@ export class PlaybackEngineService {
   readonly nextAd = signal<QueuedAd | null>(null);
   readonly currentSrc = signal<string | null>(null);
   readonly nextSrc = signal<string | null>(null);
+  /**
+   * Como o item atual deve ser renderizado. Imagem num `<video>` nao decodifica.
+   *
+   * Todo criativo da plataforma hoje e JPEG/PNG, e o player montava um `<video>` para
+   * qualquer item do manifesto: o elemento nunca produzia quadro e a tela ficava num
+   * retangulo preto. Este sinal e o que a tela consulta para escolher o elemento.
+   */
+  readonly currentKind = signal<MediaKind>('video');
+  readonly nextKind = signal<MediaKind>('video');
   readonly playbackStatus = signal<PlaybackStatus>('idle');
   readonly lastError = signal<string | null>(null);
 
   private filteredManifest: ManifestMediaItem[] = [];
   private factoryUrls: string[] = [];
   private interruptedNormalMediaId: string | null = null;
+  /**
+   * Transicao pendente — exibicao de imagem ou recuo apos falha.
+   *
+   * Um unico identificador para os dois casos porque so pode haver uma transicao agendada:
+   * cada chamada de {@link applySrcSignals} cancela a anterior, o que impede que um
+   * `advance()` atrasado de um item ja substituido corte o item que esta na tela.
+   */
+  private transicaoPendente: ReturnType<typeof setTimeout> | null = null;
+  /**
+   * Comando prioritario que ja recebeu `failed` e nao deve receber `played` no avanco.
+   *
+   * `onPlaybackError` reconhece a falha e **depois** chama o avanco, que reconhece o item
+   * atual como tocado — o servidor recebia `failed` e `played` para o mesmo `commandId` e o
+   * ultimo a chegar ganhava, marcando como exibido um anuncio que nao apareceu na tela.
+   */
+  private prioridadeJaReconhecida: string | null = null;
 
   constructor() {
+    this.destroyRef.onDestroy(() => {
+      this.cancelarTransicao();
+    });
+
     if (isPlatformBrowser(this.platformId)) {
       this.mqtt.priorityCommand$
         .pipe(takeUntilDestroyed(this.destroyRef))
@@ -275,11 +335,39 @@ export class PlaybackEngineService {
   }
 
   private async applySrcSignals(): Promise<void> {
+    this.cancelarTransicao();
+
     const cur = this.currentAd();
     const nxt = this.nextAd();
     this.currentSrc.set(cur ? await this.resolveSrc(cur) : null);
     this.nextSrc.set(nxt ? await this.resolveSrc(nxt) : null);
+    this.currentKind.set(cur ? kindOf(cur) : 'video');
+    this.nextKind.set(nxt ? kindOf(nxt) : 'video');
     this.playbackStatus.set(cur ? 'playing' : 'idle');
+
+    /**
+     * Imagem nao tem fim proprio: `<img>` nao emite `ended`, entao sem este temporizador o
+     * primeiro criativo ficaria na tela para sempre e o laco nunca giraria — nem haveria
+     * `play_record`, porque o registro e gravado em {@link advance}.
+     */
+    if (cur && this.currentKind() === 'image') {
+      this.agendarTransicao(duracaoDeExibicaoMs(cur));
+    }
+  }
+
+  private agendarTransicao(ms: number): void {
+    this.cancelarTransicao();
+    this.transicaoPendente = setTimeout(() => {
+      this.transicaoPendente = null;
+      void this.advance();
+    }, ms);
+  }
+
+  private cancelarTransicao(): void {
+    if (this.transicaoPendente !== null) {
+      clearTimeout(this.transicaoPendente);
+      this.transicaoPendente = null;
+    }
   }
 
   private async resolveSrc(ad: QueuedAd): Promise<string | null> {
@@ -305,7 +393,10 @@ export class PlaybackEngineService {
       this.loop.commitPlayed(cur.item);
       void this.recordManifestPlayCommitted(cur.item);
     } else if (cur?.kind === 'priority') {
-      await this.ack(cur.command, 'played');
+      if (this.prioridadeJaReconhecida !== cur.command.commandId) {
+        await this.ack(cur.command, 'played');
+      }
+      this.prioridadeJaReconhecida = null;
       if (this.interruptedNormalMediaId) {
         this.loop.setLastPlayedId(this.interruptedNormalMediaId);
         this.interruptedNormalMediaId = null;
@@ -324,14 +415,24 @@ export class PlaybackEngineService {
     await this.applySrcSignals();
   }
 
+  /**
+   * Falha de decodificacao do item atual: registra, reconhece e passa para o proximo.
+   *
+   * O avanco e **agendado**, nao imediato. Com todo item do manifesto quebrado — o que
+   * aconteceu de fato quando imagens iam para um `<video>` — o caminho `erro -> advance ->
+   * erro` girava sem pausa, consumindo CPU e bateria do tablete em laco fechado. Um
+   * segundo de intervalo nao desiste do criativo (a proxima sincronizacao pode reparar um
+   * download parcial) e tira o laco do caminho quente.
+   */
   async onPlaybackError(): Promise<void> {
     this.lastError.set('playback_error');
     this.playbackStatus.set('error');
     const cur = this.currentAd();
     if (cur?.kind === 'priority') {
+      this.prioridadeJaReconhecida = cur.command.commandId;
       await this.ack(cur.command, 'failed');
     }
-    await this.advance();
+    this.agendarTransicao(RECUO_APOS_FALHA_MS);
   }
 
   /**
