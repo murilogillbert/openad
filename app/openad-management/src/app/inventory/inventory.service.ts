@@ -152,4 +152,38 @@ export class InventoryService {
       body
     );
   }
+
+  /**
+   * `DELETE /admin/devices/:deviceId` — remove o registro do aparelho.
+   *
+   * Responde 409 `DEVICE_BOUND` quando o aparelho ainda está vinculado a um veículo:
+   * desvincular é ação separada e deliberada, porque apagar antes deixaria o veículo
+   * apontando para um `deviceId` inexistente.
+   */
+  deleteDeviceRegistration(
+    deviceId: string
+  ): Observable<{ deviceId: string; solicitacoesRemovidas: number }> {
+    return this.http.delete<{ deviceId: string; solicitacoesRemovidas: number }>(
+      `${environment.apiBaseUrl}/admin/devices/${encodeURIComponent(deviceId)}`
+    );
+  }
+
+  /**
+   * `POST /admin/devices/:deviceId/pairing-reset` — devolve o aparelho para `Pending`.
+   *
+   * É o caso de campo: tablet reinstalado ou com dados limpos. Sem isto ele fica preso em
+   * `Active`, e a geração de código exige `Pending`.
+   */
+  resetDevicePairing(
+    deviceId: string
+  ): Observable<{ deviceId: string; lifecycleState: 'Pending'; anterior: string }> {
+    return this.http.post<{
+      deviceId: string;
+      lifecycleState: 'Pending';
+      anterior: string;
+    }>(
+      `${environment.apiBaseUrl}/admin/devices/${encodeURIComponent(deviceId)}/pairing-reset`,
+      {}
+    );
+  }
 }

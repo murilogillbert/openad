@@ -117,6 +117,26 @@
     </div>
   }
 
+  @if (actionError(); as err) {
+    <div
+      class="mb-6 rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-800"
+      role="alert"
+      aria-live="polite"
+    >
+      {{ err }}
+    </div>
+  }
+
+  @if (actionOk(); as msg) {
+    <div
+      class="mb-6 rounded-xl border border-green-300 bg-green-50 p-4 text-sm text-green-800"
+      role="status"
+      aria-live="polite"
+    >
+      {{ msg }}
+    </div>
+  }
+
   <!-- Toolbar -->
   <div
     class="mb-6 flex flex-col items-stretch justify-between gap-4 md:flex-row md:items-center"
@@ -246,19 +266,48 @@
             }
           </td>
           <td class="text-right">
-            @if (row.boundVehicleId) {
+            <div class="flex items-center justify-end gap-1">
+              @if (row.boundVehicleId) {
+                <button
+                  pButton
+                  type="button"
+                  class="p-button-text p-button-sm"
+                  (click)="openVehicle(row.boundVehicleId)"
+                  aria-label="Abrir veículo"
+                  pTooltip="Abrir veículo"
+                >
+                  <span class="material-symbols-outlined text-[20px]">visibility</span>
+                </button>
+              }
+
+              <!-- Reiniciar pareamento: só faz sentido fora de Pending, porque é
+                   exatamente o estado que a geração de código exige. -->
+              @if (row.lifecycleState !== 'Pending') {
+                <button
+                  pButton
+                  type="button"
+                  class="p-button-text p-button-sm"
+                  [disabled]="busyDeviceId() === row.deviceId"
+                  (click)="resetPairing(row)"
+                  [attr.aria-label]="'Reiniciar pareamento de ' + row.serialNumber"
+                  pTooltip="Reiniciar pareamento (volta para Pendente)"
+                >
+                  <span class="material-symbols-outlined text-[20px]">restart_alt</span>
+                </button>
+              }
+
               <button
                 pButton
                 type="button"
-                class="p-button-text p-button-sm"
-                (click)="openVehicle(row.boundVehicleId)"
-                aria-label="Open vehicle"
+                class="p-button-text p-button-sm p-button-danger"
+                [disabled]="busyDeviceId() === row.deviceId"
+                (click)="deleteRegistration(row)"
+                [attr.aria-label]="'Excluir registro de ' + row.serialNumber"
+                pTooltip="Excluir registro do aparelho"
               >
-                <span class="material-symbols-outlined text-[20px]">visibility</span>
+                <span class="material-symbols-outlined text-[20px]">delete</span>
               </button>
-            } @else {
-              <span class="text-muted-color text-sm">—</span>
-            }
+            </div>
           </td>
         </tr>
       </ng-template>
