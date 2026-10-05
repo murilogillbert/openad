@@ -27,13 +27,18 @@ import {
 import { MqttClientService } from '../features/mqtt/services/mqtt-client.service';
 
 /** Ponte para `OpenAdKioskStatePlugin.kt` — estado real do Lock Task, lido do sistema. */
+interface EstadoDeQuiosque {
+  mode: 'none' | 'pinned' | 'locked' | 'unknown';
+  locked: boolean;
+  deviceOwner: boolean;
+  requested?: boolean;
+  error?: string;
+}
+
 interface OpenAdKioskStatePlugin {
-  state(): Promise<{
-    mode: 'none' | 'pinned' | 'locked' | 'unknown';
-    locked: boolean;
-    deviceOwner: boolean;
-    error?: string;
-  }>;
+  state(): Promise<EstadoDeQuiosque>;
+  enter(): Promise<EstadoDeQuiosque>;
+  exit(): Promise<void>;
 }
 
 const KioskState = registerPlugin<OpenAdKioskStatePlugin>('OpenAdKioskState');
@@ -162,6 +167,38 @@ export class TabletNativeIntegrationService {
   }
 
   /**
+   * Reentra na fixacao de tela ao voltar para o primeiro plano.
+   *
+   * Sem Device Owner o melhor que se consegue e `mode: pinned`, e a fixacao comum **se
+   * perde** quando o usuario sai pelo botao de recentes. Medido no aparelho: depois de
+   * recentes, `mLockTaskModeState` volta a `NONE` e o `moveTaskToFront` do plugin traz o
+   * player de volta — mas destravado. Sem reentrar aqui, o primeiro escape do dia deixaria o
+   * tablete livre pelo resto do dia.
+   *
+   * Nao reentra durante a janela de liberacao: o gesto de destravamento (toque mantido junto
+   * com volume para baixo) existe para que alguem possa mexer no aparelho, e retravar no
+   * primeiro retorno ao primeiro plano anularia o gesto.
+   */
+  private async reentrarQuiosqueSeNecessario(): Promise<void> {
+    try {
+      const liberadoAte = await this.getKioskDisabledUntilMs();
+      if (liberadoAte && liberadoAte > Date.now()) {
+        return;
+      }
+      const { value } = await Preferences.get({ key: KIOSK_PREFS_KEY });
+      if (value === 'false') {
+        return;
+      }
+      const atual = await KioskState.state();
+      if (atual.mode === 'none') {
+        await KioskState.enter();
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  /**
    * Neutraliza o botao voltar.
    *
    * O Capacitor **encerra o aplicativo** no voltar quando nenhum ouvinte esta registrado, e
@@ -189,6 +226,7 @@ export class TabletNativeIntegrationService {
             await PrivacyScreen.disable();
             this.privacyWhenBackgrounded = false;
             await this.reaplicarImersivo();
+            await this.reentrarQuiosqueSeNecessario();
             await this.ensureMqttConnected();
           } else {
             await PrivacyScreen.enable();
@@ -253,28 +291,50 @@ export class TabletNativeIntegrationService {
       const { value } = await Preferences.get({ key: KIOSK_PREFS_KEY });
       // Treat unset as enabled for kiosk deployments; only explicit "false" disables auto-enter.
       if (value !== 'false') {
-        await CapacitorAndroidKiosk.enterKioskMode();
-
         /**
-         * Diz o que de fato aconteceu, porque a chamada acima e silenciosa quando falha.
+         * `startLockTask()` pelo plugin proprio, e nao `CapacitorAndroidKiosk`.
          *
-         * Sem Device Owner, `startLockTask()` nao lanca e nao trava — resolve em `pinned` ou
-         * `none`. Registrar o estado real no arranque e o que separa "o quiosque nao trava"
-         * de "o quiosque nao foi pedido", e aponta a causa: `deviceOwner: false`.
+         * O do fornecedor resolve sem erro mesmo quando nao trava nada, o que torna
+         * impossivel distinguir "travou" de "foi ignorado" — e foi assim que
+         * `isInKioskMode: true` conviveu por horas com `mLockTaskModeState=NONE`.
+         * `OpenAdKioskStatePlugin.enter()` le o estado de volta do sistema e devolve o que
+         * de fato vale.
+         *
+         * Sem Device Owner o Android nao fixa a tela sem confirmacao do usuario. E decisao
+         * de plataforma, nao limitacao de API: se qualquer aplicativo pudesse se fixar
+         * sozinho, qualquer aplicativo poderia sequestrar o aparelho. Por isso o resultado
+         * esperado num aparelho nao provisionado e `mode: none, deviceOwner: false` — e
+         * registrar isso e o que transforma "o quiosque nao trava" em causa identificada.
          */
+        let estado: EstadoDeQuiosque | null = null;
         try {
-          const estado = await KioskState.state();
-          console.info(
-            JSON.stringify({
-              event: 'kiosk.estado',
-              mode: estado.mode,
-              locked: estado.locked,
-              deviceOwner: estado.deviceOwner,
-            })
-          );
+          estado = await KioskState.enter();
         } catch {
-          /* ignore */
+          /* o plugin proprio pode nao estar disponivel em build antigo */
         }
+
+        // Mantido como segunda tentativa: em aparelho provisionado como Device Owner o
+        // plugin do fornecedor tambem aplica politicas que nao reimplementei.
+        if (!estado?.locked) {
+          await CapacitorAndroidKiosk.enterKioskMode().catch(() => undefined);
+          estado = await KioskState.state().catch(() => estado);
+        }
+
+        console.info(
+          JSON.stringify({
+            event: 'kiosk.estado',
+            mode: estado?.mode ?? 'unknown',
+            locked: estado?.locked ?? false,
+            deviceOwner: estado?.deviceOwner ?? false,
+            /**
+             * Sem Device Owner nao ha travamento garantido. Dizer o proximo passo no proprio
+             * log evita que a investigacao recomece do zero na proxima vez.
+             */
+            dica: estado?.deviceOwner
+              ? undefined
+              : 'sem Device Owner: rode infra/server/74-provisionar-device-owner.ps1 (exige aparelho sem contas)',
+          })
+        );
       }
     } catch {
       /* ignore */
