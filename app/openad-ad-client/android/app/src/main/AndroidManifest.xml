@@ -23,6 +23,25 @@
 
     <!-- Tablet / kiosk operation -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!--
+        REORDER_TASKS: sem ela o aplicativo **morre** a cada vez que sai do primeiro plano.
+
+        `CapacitorAndroidKioskPlugin.handleOnPause` chama `moveTaskToFront()` para trazer o
+        player de volta quando alguem tenta sair dele — e esse e o mecanismo de quiosque que
+        funciona sem Device Owner. A chamada exige esta permissao; sem ela o Android lanca
+        `SecurityException: Permission Denial: moveTaskToFront() ... requires
+        android.permission.REORDER_TASKS` **dentro do ciclo de pausa**, o que vira
+        `RuntimeException: Unable to pause activity` e derruba o processo.
+
+        O sintoma era exatamente "o app nao trava": ao tocar em home o processo morria e o
+        lancador aparecia, em vez de o player voltar para a frente. E o diagnostico era
+        enganoso, porque `isInKioskMode` do plugin devolvia `true` a partir de um sinalizador
+        proprio enquanto o sistema reportava `mLockTaskModeState=NONE`.
+
+        E permissao normal, concedida na instalacao — nao pede dialogo ao usuario.
+    -->
+    <uses-permission android:name="android.permission.REORDER_TASKS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 

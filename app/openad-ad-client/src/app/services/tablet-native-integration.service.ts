@@ -1,7 +1,11 @@
 import { isPlatformBrowser } from '@angular/common';
 import { DestroyRef, inject, Injectable, PLATFORM_ID } from '@angular/core';
 import { App } from '@capacitor/app';
-import { Capacitor, type PluginListenerHandle } from '@capacitor/core';
+import {
+  Capacitor,
+  registerPlugin,
+  type PluginListenerHandle,
+} from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
 import { Network } from '@capacitor/network';
 import { Preferences } from '@capacitor/preferences';
@@ -21,6 +25,18 @@ import {
   VolumeType,
 } from '@odion-cloud/capacitor-volume-control';
 import { MqttClientService } from '../features/mqtt/services/mqtt-client.service';
+
+/** Ponte para `OpenAdKioskStatePlugin.kt` — estado real do Lock Task, lido do sistema. */
+interface OpenAdKioskStatePlugin {
+  state(): Promise<{
+    mode: 'none' | 'pinned' | 'locked' | 'unknown';
+    locked: boolean;
+    deviceOwner: boolean;
+    error?: string;
+  }>;
+}
+
+const KioskState = registerPlugin<OpenAdKioskStatePlugin>('OpenAdKioskState');
 
 const KIOSK_PREFS_KEY = 'openad_kiosk_auto_enter';
 const FULLSCREEN_PREFS_KEY = 'openad_fullscreen_enabled';
@@ -69,6 +85,7 @@ export class TabletNativeIntegrationService {
     await PrivacyScreen.disable().catch(() => undefined);
     this.privacyWhenBackgrounded = false;
     await this.wirePrivacyAndBackgroundTask();
+    await this.wireBackButton();
     await this.wireKioskPolicy();
     await this.startLightSensor();
     await this.startAccelerometer();
@@ -139,6 +156,26 @@ export class TabletNativeIntegrationService {
         return;
       }
       await Fullscreen.activateImmersiveMode();
+    } catch {
+      /* ignore */
+    }
+  }
+
+  /**
+   * Neutraliza o botao voltar.
+   *
+   * O Capacitor **encerra o aplicativo** no voltar quando nenhum ouvinte esta registrado, e
+   * o player nao tem navegacao nenhuma para onde voltar: a tela unica e
+   * `PlayerShellComponent`. Registrar um ouvinte que nao faz nada e o que impede um toque em
+   * voltar de tirar o anuncio do ar — sem Device Owner, essa e uma das poucas saidas do
+   * quiosque que o aplicativo consegue fechar por conta propria.
+   */
+  private async wireBackButton(): Promise<void> {
+    try {
+      const h = await App.addListener('backButton', () => {
+        /* nada de proposito: o painel nao tem para onde voltar */
+      });
+      this.handles.push(h);
     } catch {
       /* ignore */
     }
@@ -217,6 +254,27 @@ export class TabletNativeIntegrationService {
       // Treat unset as enabled for kiosk deployments; only explicit "false" disables auto-enter.
       if (value !== 'false') {
         await CapacitorAndroidKiosk.enterKioskMode();
+
+        /**
+         * Diz o que de fato aconteceu, porque a chamada acima e silenciosa quando falha.
+         *
+         * Sem Device Owner, `startLockTask()` nao lanca e nao trava — resolve em `pinned` ou
+         * `none`. Registrar o estado real no arranque e o que separa "o quiosque nao trava"
+         * de "o quiosque nao foi pedido", e aponta a causa: `deviceOwner: false`.
+         */
+        try {
+          const estado = await KioskState.state();
+          console.info(
+            JSON.stringify({
+              event: 'kiosk.estado',
+              mode: estado.mode,
+              locked: estado.locked,
+              deviceOwner: estado.deviceOwner,
+            })
+          );
+        } catch {
+          /* ignore */
+        }
       }
     } catch {
       /* ignore */
@@ -438,9 +496,18 @@ export class TabletNativeIntegrationService {
       keepAwakeEnabled: this.keepAwakeEnabled,
     };
 
+    /**
+     * O estado de quiosque vem do sistema, nao do plugin do fornecedor.
+     *
+     * `CapacitorAndroidKiosk.isInKioskMode()` devolvia `true` enquanto
+     * `dumpsys activity activities` reportava `mLockTaskModeState=NONE`: o valor sai de um
+     * sinalizador que o plugin mantem quando a entrada **nao lanca**, e `startLockTask()`
+     * sem Device Owner nao lanca — so nao trava. Publicar isso como `kioskModeActive` fazia
+     * o mapa de frota mostrar a frota inteira travada sem nenhum aparelho estar.
+     */
     try {
-      const { isInKioskMode } = await CapacitorAndroidKiosk.isInKioskMode();
-      out.kioskModeActive = isInKioskMode;
+      const { locked } = await KioskState.state();
+      out.kioskModeActive = locked;
     } catch {
       /* ignore */
     }

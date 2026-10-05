@@ -19,6 +19,7 @@ class MainActivity : BridgeActivity() {
     registerPlugin(PowerStatePlugin::class.java)
     registerPlugin(OpenAdSilentInstallPlugin::class.java)
     registerPlugin(OpenAdVolumeKeyPlugin::class.java)
+    registerPlugin(OpenAdKioskStatePlugin::class.java)
     configurarLockTaskSeDeviceOwner()
     super.onCreate(savedInstanceState)
   }
