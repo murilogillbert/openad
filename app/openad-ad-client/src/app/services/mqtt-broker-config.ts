@@ -1,45 +1,62 @@
 /**
- * Traduz a URL do broker para o formato que o `@capgo/capacitor-mqtt` (Paho) espera:
- * `tcp://host` ou `ssl://host` para MQTT puro, `ws://host` ou `wss://host` para WebSocket,
- * sempre com a porta separada.
+ * Normaliza a URL do broker para **MQTT sobre WebSocket**, que e o unico transporte que o
+ * player usa.
  *
- * Para o `mqtt.js` (desenvolvimento no navegador) a string original e usada como esta.
+ * Por que so WebSocket, e nao mais TCP nativo: o cliente nativo era o `@capgo/capacitor-mqtt`,
+ * que embute o Paho Android. O Paho depende de
+ * `android.support.v4.content.LocalBroadcastManager`, classe da Support Library antiga; este
+ * projeto e AndroidX (`android.useAndroidX=true`, sem jetifier), entao a classe nao existe em
+ * tempo de execucao e `MqttAndroidClient.connect` morria com `NoClassDefFoundError` numa
+ * thread Java — matando o processo inteiro, sem passar pelo `try/catch` do JavaScript. Em
+ * seguida a limpeza chamava `disconnect()` sobre um cliente que nunca foi criado e tomava um
+ * `NullPointerException` pelo mesmo caminho. O tablete fechava sozinho logo depois do
+ * pareamento, sem mensagem.
  *
- * **O caminho e preservado.** Isso importa em producao atras do Cloudflare: o proxy dele
- * encaminha HTTP e WebSocket na 443, mas nao TCP bruto na 1883/8883, entao o tablete fala
- * MQTT sobre WebSocket. E o `rabbitmq_web_mqtt` serve em `/ws` por padrao — descartar o
- * caminho faria o handshake bater na raiz e a conexao ser recusada. A versao anterior usava
- * so `u.hostname` e perdia o `/ws`.
+ * A alternativa seria ligar o jetifier para reescrever o bytecode do Paho. Foi recusada: o
+ * jetifier e depreciado e manteria viva uma biblioteca arquivada, para um transporte que o
+ * player nao precisa. Em producao o trafego ja passa por WebSocket de qualquer forma — o
+ * Cloudflare encaminha HTTP e WebSocket na 443, mas nao TCP bruto na 1883/8883.
+ *
+ * O caminho da URL e preservado: o `rabbitmq_web_mqtt` atende em `/ws` por padrao, e perder
+ * esse trecho faz o handshake bater na raiz e a conexao ser recusada.
  */
-export function parseBrokerForCapgo(mqttUrl: string): {
-  serverURI: string;
-  port: number;
-} {
-  const u = new URL(mqttUrl);
-  const defaultPort =
-    u.protocol === 'mqtts:'
-      ? 8883
-      : u.protocol === 'mqtt:'
-        ? 1883
-        : u.protocol === 'wss:'
-          ? 443
-          : u.protocol === 'ws:'
-            ? 80
-            : 1883;
-  const port = u.port ? parseInt(u.port, 10) : defaultPort;
-  const host = u.hostname;
 
-  if (u.protocol === 'mqtt:' || u.protocol === 'mqtts:') {
-    // MQTT puro nao tem caminho: um `/algo` aqui seria sempre erro de configuracao.
-    const scheme = u.protocol === 'mqtts:' ? 'ssl' : 'tcp';
-    return { serverURI: `${scheme}://${host}`, port };
-  }
+/** Porta padrao do plugin `rabbitmq_web_mqtt`. */
+const PORTA_WEB_MQTT = 15675;
+
+export interface BrokerWebSocket {
+  /** URL completa, pronta para `mqtt.connect`. */
+  url: string;
+  /** True quando a URL de entrada era TCP e precisou ser traduzida. */
+  traduzida: boolean;
+}
+
+/**
+ * Devolve uma URL `ws://` ou `wss://`.
+ *
+ * `ws:`/`wss:` passam intactas. `mqtt:`/`mqtts:` sao traduzidas: o esquema vira `ws`/`wss`, a
+ * porta vira {@link PORTA_WEB_MQTT} e o caminho vira `/ws`.
+ *
+ * A porta TCP e **descartada** de proposito. Um `mqtt://host:1883` aponta para o listener TCP,
+ * que nao fala WebSocket; manter a porta produziria uma URL que falha no handshake. Trocar
+ * pela porta padrao do `web_mqtt` e um palpite, mas e o palpite certo em toda instalacao
+ * padrao do RabbitMQ — e vem com `traduzida: true`, para quem chama poder registrar o aviso.
+ */
+export function normalizarBrokerParaWebSocket(mqttUrl: string): BrokerWebSocket {
+  const u = new URL(mqttUrl);
 
   if (u.protocol === 'ws:' || u.protocol === 'wss:') {
-    // `new URL('wss://host').pathname` e `/`, que nao acrescenta nada ao serverURI.
-    const caminho = u.pathname === '/' ? '' : u.pathname;
-    return { serverURI: `${u.protocol}//${host}${caminho}`, port };
+    return { url: u.toString(), traduzida: false };
   }
 
-  throw new Error(`Unsupported MQTT broker URL for native client: ${mqttUrl}`);
+  if (u.protocol === 'mqtt:' || u.protocol === 'mqtts:') {
+    const esquema = u.protocol === 'mqtts:' ? 'wss' : 'ws';
+    const caminho = u.pathname && u.pathname !== '/' ? u.pathname : '/ws';
+    return {
+      url: `${esquema}://${u.hostname}:${PORTA_WEB_MQTT}${caminho}`,
+      traduzida: true,
+    };
+  }
+
+  throw new Error(`URL de broker MQTT nao suportada: ${mqttUrl}`);
 }

@@ -39,7 +39,8 @@ export class DeviceFleetContextService {
     }
     try {
       const res = await this.api.getWithAuth<DeviceSessionResponse>(
-        `/api/v1/devices/${encodeURIComponent(deviceId)}/session`
+        // Sem `/api/v1`: `API_BASE_URL` ja inclui o prefixo. Repetido, dava 404.
+        `/devices/${encodeURIComponent(deviceId)}/session`
       );
       if (res.boundVehicleId) {
         await Preferences.set({

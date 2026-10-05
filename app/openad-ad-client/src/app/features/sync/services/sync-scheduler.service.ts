@@ -115,7 +115,7 @@ export class SyncSchedulerService {
       this.log('sync.ok', null);
     } catch (e) {
       this.lastAttemptFailed = true;
-      this.log('sync.failed', e instanceof Error ? e.message : String(e));
+      this.log('sync.failed', descreverFalha(e));
       this.scheduleRetry();
     }
   }
@@ -134,4 +134,53 @@ export class SyncSchedulerService {
   private log(event: string, detail: string | null): void {
     console.info(JSON.stringify({ event, detail }));
   }
+}
+
+/**
+ * Transforma o que foi lancado numa frase que serve para diagnostico.
+ *
+ * `e instanceof Error ? e.message : String(e)` nao basta, e o custo apareceu no aparelho: o
+ * `HttpErrorResponse` do Angular **nao** estende `Error`, entao a sincronizacao falhava e o
+ * log dizia `"detail":"[object Object]"`. Status, URL e corpo do erro — exatamente o que
+ * identifica a causa — ficavam de fora, e o unico caminho restante era reproduzir a falha com
+ * depurador no WebView.
+ */
+function descreverFalha(e: unknown): string {
+  if (e instanceof Error) {
+    return e.message;
+  }
+  if (e && typeof e === 'object') {
+    const o = e as {
+      status?: number;
+      statusText?: string;
+      url?: string;
+      message?: string;
+      error?: unknown;
+    };
+    const partes: string[] = [];
+    if (typeof o.status === 'number') {
+      partes.push(`HTTP ${o.status}${o.statusText ? ` ${o.statusText}` : ''}`);
+    }
+    if (o.url) {
+      partes.push(o.url);
+    }
+    if (o.message) {
+      partes.push(o.message);
+    }
+    if (o.error !== undefined && o.error !== null) {
+      // O corpo do erro e onde o servidor explica o motivo; cortado para nao inundar o log.
+      const corpo =
+        typeof o.error === 'string' ? o.error : JSON.stringify(o.error);
+      partes.push(corpo.slice(0, 300));
+    }
+    if (partes.length) {
+      return partes.join(' | ');
+    }
+    try {
+      return JSON.stringify(e).slice(0, 300);
+    } catch {
+      return 'objeto nao serializavel';
+    }
+  }
+  return String(e);
 }

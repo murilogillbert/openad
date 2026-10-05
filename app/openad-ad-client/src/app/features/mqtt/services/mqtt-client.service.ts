@@ -1,8 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import type { PluginListenerHandle } from '@capacitor/core';
 import { DestroyRef, inject, Injectable, PLATFORM_ID } from '@angular/core';
-import { Capacitor } from '@capacitor/core';
-import { MqttBridge } from '@capgo/capacitor-mqtt';
 import type {
   CommandAckPayload,
   DeviceConfigPayload,
@@ -28,14 +25,32 @@ import {
   type Subscription,
 } from 'rxjs';
 import { DeviceSessionService } from '../../../services/device-session.service';
-import { parseBrokerForCapgo } from '../../../services/mqtt-broker-config';
+import { normalizarBrokerParaWebSocket } from '../../../services/mqtt-broker-config';
 import { OpenAdMqttTopics } from '../../../services/mqtt-topics';
 import { PairingEventsService } from '../../../services/pairing-events.service';
 import { TABLET_ENV, type TabletEnv } from '../../../services/tablet-env.token';
 
 /**
- * Tablet MQTT — schedules, commands, telemetry, and priority ad delivery.
- * Native: `@capgo/capacitor-mqtt`. Browser: `mqtt` over `ws://` / `wss://`.
+ * MQTT do tablete — agenda, comandos, telemetria e entrega de anuncio prioritario.
+ *
+ * **Um unico transporte: `mqtt.js` sobre WebSocket**, no Android e no navegador.
+ *
+ * Antes havia dois caminhos, e o nativo (`@capgo/capacitor-mqtt`, que embute o Paho Android)
+ * derrubava o aplicativo. O Paho depende de
+ * `android.support.v4.content.LocalBroadcastManager`, da Support Library antiga; o projeto e
+ * AndroidX sem jetifier, entao a classe nao existe em tempo de execucao e
+ * `MqttAndroidClient.connect` lancava `NoClassDefFoundError` numa thread Java — que mata o
+ * processo e **nao** passa pelo `try/catch` do JavaScript. Depois disso a limpeza chamava
+ * `disconnect()` sobre um cliente inexistente e tomava `NullPointerException` pelo mesmo
+ * caminho. Resultado no aparelho: fechava sozinho logo depois do pareamento, sem mensagem.
+ *
+ * Trocar por WebSocket, em vez de ligar o jetifier, remove a dependencia nativa em vez de
+ * remendar uma biblioteca arquivada — e em producao o trafego ja era WebSocket, porque o
+ * Cloudflare encaminha WebSocket na 443 mas nao TCP bruto na 1883.
+ *
+ * O custo conhecido: MQTT em WebView pausa quando o aplicativo vai para segundo plano. Para
+ * um player em quiosque, sempre em primeiro plano, isso nao tem efeito pratico; e a sincronia
+ * de conteudo nao depende so do MQTT, porque o manifesto tambem e buscado por HTTP.
  */
 @Injectable()
 export class MqttClientService {
@@ -51,7 +66,6 @@ export class MqttClientService {
   private intentionalDisconnect = false;
 
   private mqttJs: MqttClient | null = null;
-  private bridgeHandles: PluginListenerHandle[] = [];
 
   private readonly deviceConfigSubject = new ReplaySubject<DeviceConfigPayload>(1);
   private readonly scheduleSubject = new ReplaySubject<SchedulePayload>(1);
@@ -68,7 +82,7 @@ export class MqttClientService {
   readonly serverCommand$: Observable<ServerCommandPayload> =
     this.serverCommandSubject.asObservable();
 
-  /** Validated priority commands (device-specific or broadcast). */
+  /** Comandos de prioridade validados (do aparelho ou broadcast). */
   readonly priorityCommand$: Observable<
     import('@openad/mqtt-contracts').PriorityCommandPayload
   > = this.priorityCommandSubject.asObservable();
@@ -118,26 +132,29 @@ export class MqttClientService {
     this.connecting = true;
     this.intentionalDisconnect = false;
     try {
-      if (this.useNativeBridge()) {
-        await this.connectNative(deviceId, brokerUrl, username, password);
-      } else {
-        let lastErr: unknown;
-        for (let attempt = 0; attempt < 6; attempt++) {
-          try {
-            await this.connectWeb(deviceId, brokerUrl, username, password);
-            lastErr = undefined;
-            break;
-          } catch (e) {
-            lastErr = e;
-            if (attempt < 5) {
-              const delayMs = Math.min(60_000, 1000 * Math.pow(2, attempt));
-              await new Promise((r) => setTimeout(r, delayMs));
-            }
+      /**
+       * Seis tentativas com espera exponencial, e nao uma so.
+       *
+       * O tablete liga junto com o veiculo e a rede movel costuma demorar alguns segundos a
+       * mais que o aplicativo. Uma unica tentativa falharia nesse intervalo e o aparelho
+       * ficaria sem comando remoto ate alguem reiniciar o app.
+       */
+      let ultimoErro: unknown;
+      for (let tentativa = 0; tentativa < 6; tentativa++) {
+        try {
+          await this.connectWeb(deviceId, brokerUrl, username, password);
+          ultimoErro = undefined;
+          break;
+        } catch (e) {
+          ultimoErro = e;
+          if (tentativa < 5) {
+            const esperaMs = Math.min(60_000, 1000 * Math.pow(2, tentativa));
+            await new Promise((r) => setTimeout(r, esperaMs));
           }
         }
-        if (lastErr) {
-          throw lastErr;
-        }
+      }
+      if (ultimoErro) {
+        throw ultimoErro;
       }
       this.connected = true;
     } catch (err) {
@@ -154,16 +171,11 @@ export class MqttClientService {
     }
   }
 
-  private useNativeBridge(): boolean {
-    const p = Capacitor.getPlatform();
-    return p === 'android' || p === 'ios';
-  }
-
   /**
-   * Broker URL: pairing response first; if the server omits it, build-time `MQTT_URL`.
-   * Username/password: always from pairing when present (per-device broker user). Env
-   * `MQTT_USERNAME` / `MQTT_PASSWORD` are only used when there is no stored pairing
-   * (e.g. isolated tests / dev without Preferences).
+   * URL do broker: a resposta do pareamento primeiro; se o servidor omitir, o `MQTT_URL` do
+   * build. Usuario e senha sempre do pareamento quando houver (usuario por aparelho no
+   * broker). `MQTT_USERNAME` / `MQTT_PASSWORD` do ambiente so valem quando nao existe
+   * pareamento guardado (teste isolado, ou desenvolvimento sem Preferences).
    */
   private async resolveBrokerAuth(
     deviceId: string
@@ -193,54 +205,51 @@ export class MqttClientService {
     };
   }
 
-  private async connectNative(
-    deviceId: string,
-    brokerUrl: string,
-    username: string,
-    password: string
-  ): Promise<void> {
-    const { serverURI, port } = parseBrokerForCapgo(brokerUrl);
-
-    const onMsg = await MqttBridge.addListener('onMessageArrived', (evt) => {
-      this.dispatchIncoming(evt.topic, evt.message);
-    });
-    this.bridgeHandles.push(onMsg);
-
-    await MqttBridge.connect({
-      serverURI,
-      port,
-      clientId: `openad-${deviceId}`,
-      username,
-      password,
-      setCleanSession: true,
-      connectionTimeout: 30,
-      keepAliveInterval: 60,
-      setAutomaticReconnect: true,
-    });
-
-    const subs: { topic: string; qos: number }[] = [
-      { topic: OpenAdMqttTopics.deviceConfig(deviceId), qos: 1 },
-      { topic: OpenAdMqttTopics.schedule(deviceId), qos: 1 },
-      { topic: OpenAdMqttTopics.commands(deviceId), qos: 1 },
-      { topic: OpenAdMqttTopics.priorityDevice(deviceId), qos: 1 },
-      { topic: OpenAdMqttTopics.priorityBroadcast(), qos: 1 },
-    ];
-    for (const s of subs) {
-      await MqttBridge.subscribe(s);
-    }
-  }
-
   private async connectWeb(
     deviceId: string,
     brokerUrl: string,
     username: string,
     password: string
   ): Promise<void> {
-    const mqtt = await import('mqtt');
-    const client = mqtt.connect(brokerUrl, {
+    const normalizado = normalizarBrokerParaWebSocket(brokerUrl);
+    if (normalizado.traduzida) {
+      // Aviso, nao erro: a traducao usa a porta padrao do `rabbitmq_web_mqtt`, que acerta em
+      // instalacao padrao mas e um palpite. Registrar deixa rastro quando nao acertar.
+      console.warn(
+        JSON.stringify({
+          event: 'mqtt.broker_url_traduzida',
+          de: brokerUrl,
+          para: normalizado.url,
+        })
+      );
+    }
+
+    /**
+     * `connect` pode estar no namespace ou em `default`.
+     *
+     * O pacote `mqtt` e CommonJS. Com `await import('mqtt')` num bundle ESM, o interop do
+     * empacotador as vezes expoe `module.exports` inteiro no namespace e as vezes o pendura
+     * em `default`. No navegador de desenvolvimento caiu no primeiro caso; no WebView do
+     * tablete, no segundo — e `mqtt.connect(...)` falhou com
+     * `(intermediate value).connect is not a function`, derrubando a conexao MQTT sem que
+     * nada no codigo estivesse logicamente errado.
+     *
+     * Resolver os dois formatos e mais barato que depender do empacotador.
+     */
+    const mod = (await import('mqtt')) as unknown as {
+      connect?: typeof import('mqtt').connect;
+      default?: { connect?: typeof import('mqtt').connect };
+    };
+    const conectar = mod.connect ?? mod.default?.connect;
+    if (typeof conectar !== 'function') {
+      throw new Error('biblioteca mqtt sem funcao connect (interop ESM/CJS)');
+    }
+
+    const client = conectar(normalizado.url, {
       clientId: `openad-${deviceId}`,
       username,
       password,
+      // Reconexao propria, abaixo: a do `mqtt.js` nao tem recuo exponencial.
       reconnectPeriod: 0,
     });
     this.mqttJs = client;
@@ -333,7 +342,7 @@ export class MqttClientService {
         return;
       }
     } catch {
-      /* malformed payload */
+      /* payload malformado */
     }
   }
 
@@ -346,23 +355,6 @@ export class MqttClientService {
       this.mqttJs.removeAllListeners();
       this.mqttJs.end(true);
       this.mqttJs = null;
-    }
-
-    for (const h of this.bridgeHandles) {
-      try {
-        await h.remove();
-      } catch {
-        /* ignore */
-      }
-    }
-    this.bridgeHandles = [];
-
-    if (this.useNativeBridge()) {
-      try {
-        await MqttBridge.disconnect();
-      } catch {
-        /* ignore */
-      }
     }
   }
 
@@ -386,7 +378,7 @@ export class MqttClientService {
     await this.publishJson(OpenAdMqttTopics.deviceHeartbeat, payload, 1, false);
   }
 
-  /** Priority playback lifecycle — `PriorityCommandsGateway` ingests on broker. */
+  /** Ciclo de vida do anuncio prioritario — `PriorityCommandsGateway` consome no broker. */
   async publishPriorityAck(payload: PriorityAckPayload): Promise<void> {
     await this.publishJson(OpenAdMqttTopics.priorityAck, payload, 1, false);
   }
@@ -418,23 +410,14 @@ export class MqttClientService {
     const topic = topicFn(id);
     const body = JSON.stringify(payload);
 
-    if (this.useNativeBridge()) {
-      await MqttBridge.publish({
-        topic,
-        payload: body,
-        qos,
-        retained,
-      });
+    const client = this.mqttJs;
+    if (!client) {
       return;
     }
-
-    const webClient = this.mqttJs;
-    if (webClient) {
-      await new Promise<void>((resolve, reject) => {
-        webClient.publish(topic, body, { qos, retain: retained }, (err) =>
-          err ? reject(err) : resolve()
-        );
-      });
-    }
+    await new Promise<void>((resolve, reject) => {
+      client.publish(topic, body, { qos, retain: retained }, (err) =>
+        err ? reject(err) : resolve()
+      );
+    });
   }
 }

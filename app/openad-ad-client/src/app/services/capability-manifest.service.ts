@@ -1,9 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { App } from '@capacitor/app';
 import { Device } from '@capacitor/device';
-import { Filesystem, Directory } from '@capacitor/filesystem';
 import { take } from 'rxjs';
 import { ApiClientService } from './api-client.service';
+import { emGigabytes, estimarArmazenamento } from './device-storage';
 import { ManifestHealthService } from './manifest-health.service';
 import { PairingEventsService } from './pairing-events.service';
 
@@ -66,23 +66,18 @@ export class CapabilityManifestService {
     const info = await Device.getInfo();
     const appInfo = await App.getInfo();
     const { w, h } = screenDims();
-    let totalStorageGb = 32;
-    let availableStorageGb = 16;
-    try {
-      const st = await Filesystem.stat({
-        path: '',
-        directory: Directory.Data,
-      });
-      const anySt = st as { size?: number; free?: number };
-      if (typeof anySt.size === 'number' && anySt.size > 0) {
-        totalStorageGb = Math.max(1, anySt.size / (1024 ** 3));
-      }
-      if (typeof anySt.free === 'number') {
-        availableStorageGb = Math.max(0, anySt.free / (1024 ** 3));
-      }
-    } catch {
-      /* use defaults */
-    }
+
+    /**
+     * Medicao unica, com a invariante `available <= total` garantida antes do envio.
+     *
+     * A versao anterior tirava `totalStorageGb` do `size` do diretorio (3452 bytes, que o
+     * piso transformava em 1) e deixava `availableStorageGb` no padrao 16. A API respondia
+     * HTTP 400 `availableStorageGb must not exceed totalStorageGb`, em laco, a cada ciclo —
+     * e o aparelho ficava para sempre com `capabilityManifest: null`.
+     */
+    const { totalStorageGb, availableStorageGb } = emGigabytes(
+      await estimarArmazenamento()
+    );
 
     return {
       screenWidthPx: w,

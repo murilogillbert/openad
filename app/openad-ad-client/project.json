@@ -45,12 +45,20 @@
               "maximumError": "8kb"
             }
           ],
-          "outputHashing": "all"
+          "outputHashing": "all",
+          "define": {
+            "__OPENAD_API_BASE_URL__": "\"https://adsapi.opendriver.com.br/api/v1\"",
+            "__OPENAD_MQTT_URL__": "\"\""
+          }
         },
         "development": {
           "optimization": false,
           "extractLicenses": false,
-          "sourceMap": true
+          "sourceMap": true,
+          "define": {
+            "__OPENAD_API_BASE_URL__": "\"http://10.0.2.2:3000/api/v1\"",
+            "__OPENAD_MQTT_URL__": "\"\""
+          }
         }
       },
       "defaultConfiguration": "production"

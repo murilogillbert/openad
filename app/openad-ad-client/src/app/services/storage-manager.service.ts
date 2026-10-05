@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Preferences } from '@capacitor/preferences';
 import { Subject, type Observable } from 'rxjs';
+import { estimarArmazenamento } from './device-storage';
 
 const CACHE_INDEX_KEY = 'openad_cache_index_v1';
 const STORAGE_FULL_EVENT = 'device.storage.full';
@@ -73,26 +74,19 @@ export class StorageManagerService {
     });
   }
 
-  /** Bytes available on device (best-effort via Capacitor Filesystem quota). */
+  /**
+   * Bytes disponiveis no aparelho.
+   *
+   * A versao anterior usava `Filesystem.stat({ path: '', directory: Directory.Data })` e lia
+   * `free`, que **nao existe** no plugin do Capacitor; caia no `size`, que e o tamanho do
+   * proprio diretorio, e devolvia 3452 bytes como espaco livre. Um criativo de 37 KB nao
+   * cabia, `ensureSpace` emitia `storage_full` e a sincronizacao abortava — num tablete com
+   * disco vazio. Ver `device-storage.ts`.
+   */
   async getAvailableBytes(): Promise<number> {
-    try {
-      const stat = await Filesystem.stat({
-        path: '',
-        directory: Directory.Data,
-      });
-      // Capacitor Filesystem may expose size on some platforms; fallback
-      const anyStat = stat as { size?: number; free?: number };
-      if (typeof anyStat.free === 'number') {
-        return anyStat.free;
-      }
-      if (typeof anyStat.size === 'number') {
-        return Math.max(0, anyStat.size);
-      }
-    } catch {
-      /* web / unsupported */
-    }
-    const sumCached = this.index.reduce((a, e) => a + e.sizeBytes, 0);
-    return Math.max(0, 512 * 1024 * 1024 - sumCached);
+    const emCache = this.index.reduce((a, e) => a + e.sizeBytes, 0);
+    const medida = await estimarArmazenamento(emCache);
+    return medida.availableBytes;
   }
 
   /** Evict least-recently-played assets until `requiredBytes` can fit, or emit storage full. */

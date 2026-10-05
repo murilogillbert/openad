@@ -105,7 +105,8 @@ export class PlayBatchUploaderService {
     while (attempt < maxAttempts) {
       try {
         const res = await this.api.postWithAuth<BatchIngestResponse>(
-          `/api/v1/devices/${encodeURIComponent(deviceId)}/analytics/play-batches`,
+          // Sem `/api/v1`: `API_BASE_URL` ja inclui o prefixo. Repetido, dava 404.
+          `/devices/${encodeURIComponent(deviceId)}/analytics/play-batches`,
           body
         );
         const rejectedIdx = new Set((res.rejected ?? []).map((r) => r.index));

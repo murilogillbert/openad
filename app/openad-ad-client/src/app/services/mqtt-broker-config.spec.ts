@@ -1,47 +1,49 @@
 import { describe, expect, it } from 'vitest';
-import { parseBrokerForCapgo } from './mqtt-broker-config';
+import { normalizarBrokerParaWebSocket } from './mqtt-broker-config';
 
-describe('parseBrokerForCapgo', () => {
-  it('traduz mqtt:// para tcp:// com a porta separada', () => {
-    expect(parseBrokerForCapgo('mqtt://broker.local:1884')).toEqual({
-      serverURI: 'tcp://broker.local',
-      port: 1884,
-    });
-  });
-
-  it('traduz mqtts:// para ssl:// e assume 8883', () => {
-    expect(parseBrokerForCapgo('mqtts://broker.local')).toEqual({
-      serverURI: 'ssl://broker.local',
-      port: 8883,
-    });
-  });
-
-  it('preserva o caminho do WebSocket, que e como o rabbitmq_web_mqtt atende', () => {
+describe('normalizarBrokerParaWebSocket', () => {
+  it('mantem wss:// com caminho intacto', () => {
     // Caminho de producao: Cloudflare na 443, `rabbitmq_web_mqtt` servindo em /ws.
     // Perder o `/ws` faz o handshake bater na raiz e a conexao ser recusada.
-    expect(parseBrokerForCapgo('wss://mqtt.opendriver.com.br/ws')).toEqual({
-      serverURI: 'wss://mqtt.opendriver.com.br/ws',
-      port: 443,
+    expect(normalizarBrokerParaWebSocket('wss://mqtt.opendriver.com.br/ws')).toEqual({
+      url: 'wss://mqtt.opendriver.com.br/ws',
+      traduzida: false,
     });
   });
 
-  it('nao acrescenta caminho quando a URL nao tem um', () => {
-    expect(parseBrokerForCapgo('wss://mqtt.opendriver.com.br')).toEqual({
-      serverURI: 'wss://mqtt.opendriver.com.br',
-      port: 443,
+  it('mantem ws:// com porta explicita', () => {
+    expect(normalizarBrokerParaWebSocket('ws://127.0.0.1:15675/ws')).toEqual({
+      url: 'ws://127.0.0.1:15675/ws',
+      traduzida: false,
     });
   });
 
-  it('respeita porta explicita no WebSocket', () => {
-    expect(parseBrokerForCapgo('ws://127.0.0.1:15675/ws')).toEqual({
-      serverURI: 'ws://127.0.0.1/ws',
-      port: 15675,
+  it('traduz mqtt:// para ws:// na porta do web_mqtt, descartando a porta TCP', () => {
+    // A 1883 e o listener TCP e nao fala WebSocket; manter a porta daria uma URL que falha
+    // no handshake.
+    expect(normalizarBrokerParaWebSocket('mqtt://broker.local:1883')).toEqual({
+      url: 'ws://broker.local:15675/ws',
+      traduzida: true,
     });
   });
 
-  it('recusa esquema que o cliente nativo nao sabe falar', () => {
-    expect(() => parseBrokerForCapgo('https://broker.local')).toThrow(
-      /Unsupported MQTT broker URL/
+  it('traduz mqtts:// para wss://', () => {
+    expect(normalizarBrokerParaWebSocket('mqtts://broker.local')).toEqual({
+      url: 'wss://broker.local:15675/ws',
+      traduzida: true,
+    });
+  });
+
+  it('preserva caminho informado ao traduzir', () => {
+    expect(normalizarBrokerParaWebSocket('mqtt://broker.local/mqtt')).toEqual({
+      url: 'ws://broker.local:15675/mqtt',
+      traduzida: true,
+    });
+  });
+
+  it('recusa esquema que nao e MQTT nem WebSocket', () => {
+    expect(() => normalizarBrokerParaWebSocket('https://broker.local')).toThrow(
+      /nao suportada/
     );
   });
 });

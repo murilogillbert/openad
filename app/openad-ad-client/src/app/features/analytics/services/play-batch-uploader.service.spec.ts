@@ -83,7 +83,9 @@ describe('PlayBatchUploaderService', () => {
     await svc.tryFlush();
     expect(postWithAuth).toHaveBeenCalledTimes(1);
     const [path, body] = postWithAuth.mock.calls[0] as [string, unknown];
-    expect(path).toContain('/api/v1/devices/');
+    // Sem `/api/v1`: quem carrega o prefixo e `API_BASE_URL`. Ver `ApiClientService.resolveUrl`.
+    expect(path).toContain('/devices/');
+    expect(path).not.toContain('/api/v1');
     expect(path).toContain('/analytics/play-batches');
     const envelope = body as {
       schemaVersion: number;

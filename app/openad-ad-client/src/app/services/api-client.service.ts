@@ -27,10 +27,34 @@ export class ApiClientService {
     return headers;
   }
 
+  /**
+   * Monta a URL final a partir de `API_BASE_URL`, que **ja inclui** o prefixo da API
+   * (`https://adsapi.opendriver.com.br/api/v1`).
+   *
+   * A normalizacao do prefixo repetido nao e capricho: tres chamadas do player passavam
+   * `/api/v1/...` e a URL resultante era
+   * `https://adsapi.opendriver.com.br/api/v1/api/v1/manifest`, que devolve 404. O manifesto
+   * nunca era buscado, o aparelho ficava com `lastManifestVersion: 0` e a tela vazia — e no
+   * log isso aparecia so como `sync.failed`, porque o erro do Angular nao e `Error` e era
+   * registrado como `[object Object]`.
+   *
+   * As tres chamadas foram corrigidas. Esta normalizacao fica como rede: a convencao
+   * "caminho sem prefixo" nao e obvia olhando so o chamador, e o custo de errar e um 404 em
+   * producao que ninguem ve.
+   */
   private resolveUrl(path: string): string {
-    return path.startsWith('http')
-      ? path
-      : `${this.baseUrl()}${path.startsWith('/') ? path : `/${path}`}`;
+    if (path.startsWith('http')) {
+      return path;
+    }
+    const base = this.baseUrl();
+    let caminho = path.startsWith('/') ? path : `/${path}`;
+
+    const prefixo = new URL(base, 'http://x').pathname.replace(/\/$/, '');
+    if (prefixo && prefixo !== '/' && caminho.startsWith(`${prefixo}/`)) {
+      caminho = caminho.slice(prefixo.length);
+    }
+
+    return `${base}${caminho}`;
   }
 
   async post<T>(path: string, body: unknown): Promise<T> {
