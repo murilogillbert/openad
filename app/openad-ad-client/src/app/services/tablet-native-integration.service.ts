@@ -102,12 +102,43 @@ export class TabletNativeIntegrationService {
     }
   }
 
+  /**
+   * Tela cheia imersiva, ligada por padrao.
+   *
+   * Era `value === 'true'`, ou seja, **opt-in por uma preferencia que nada no aplicativo
+   * escrevia**. O modo imersivo nunca ativava: o player abria com barra de status e barra de
+   * navegacao sobre o anuncio, e a unica forma de ligar era gravar a chave a mao.
+   *
+   * Agora segue a mesma convencao do quiosque em `wireKioskPolicy`: ausente vale como
+   * ligado, e so `'false'` explicito desliga. Para um painel de sinalizacao esse e o padrao
+   * correto — e, sem Device Owner, o imersivo e o que mais aproxima do quiosque, porque o
+   * Lock Task sem allowlist exige confirmacao na tela.
+   */
   private async wireFullscreenFromPreferences(): Promise<void> {
     try {
       const { value } = await Preferences.get({ key: FULLSCREEN_PREFS_KEY });
-      if (value === 'true') {
+      if (value !== 'false') {
         await Fullscreen.activateImmersiveMode();
       }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  /**
+   * Reaplica o imersivo ao voltar para o primeiro plano.
+   *
+   * O Android abandona o modo imersivo quando a Activity perde o foco — notificacao em tela
+   * cheia, chamada, desligar e ligar a tela. Sem reaplicar, o painel volta com as barras do
+   * sistema por cima do anuncio e fica assim ate o proximo reinicio do aplicativo.
+   */
+  private async reaplicarImersivo(): Promise<void> {
+    try {
+      const { value } = await Preferences.get({ key: FULLSCREEN_PREFS_KEY });
+      if (value === 'false') {
+        return;
+      }
+      await Fullscreen.activateImmersiveMode();
     } catch {
       /* ignore */
     }
@@ -120,6 +151,7 @@ export class TabletNativeIntegrationService {
           if (isActive) {
             await PrivacyScreen.disable();
             this.privacyWhenBackgrounded = false;
+            await this.reaplicarImersivo();
             await this.ensureMqttConnected();
           } else {
             await PrivacyScreen.enable();

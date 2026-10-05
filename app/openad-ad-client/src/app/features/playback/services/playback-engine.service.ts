@@ -180,13 +180,34 @@ export class PlaybackEngineService {
     }
     await this.deviceInfo.start();
     void this.fleetContext.refreshBoundVehicle();
-    await this.reloadFromManifest();
+    /**
+     * A reserva institucional carrega **antes** do manifesto.
+     *
+     * A ordem era a inversa, e o efeito era uma janela de tela preta no arranque: o primeiro
+     * `reloadFromManifest` chamava `takeNextAd()` com `factoryUrls` ainda vazio, entao um
+     * tablete cujo manifesto esta vazio nao tinha nada para por na tela ate o `bootstrap`
+     * terminar. Carregar a reserva primeiro custa uma leitura de arquivo local do bundle.
+     */
     await this.loadFactoryFallback();
+    await this.reloadFromManifest();
     this.currentAd.set(await this.takeNextAd());
     this.nextAd.set(await this.peekNextAd());
     await this.applySrcSignals();
   }
 
+  /**
+   * Criativo institucional embarcado no APK, para quando o manifesto vem sem itens.
+   *
+   * Manifesto vazio e situacao **normal**, nao excepcional: acontece quando o orcamento
+   * diario de todas as campanhas se esgota, quando a janela contratada termina, e quando a
+   * segmentacao geografica nao casa com a posicao do veiculo. Por muito tempo
+   * `factory-default-ads/manifest.json` era `{"urls": []}`, e a consequencia era um painel
+   * preto dentro de um carro em circulacao — com `sync.ok` no log e nenhum erro em lugar
+   * nenhum.
+   *
+   * Nao fatura e nao paga: item de reserva nao tem `campaignId`, e `advance()` so grava
+   * play record para `kind: 'manifest'`. A tela nunca fica preta e ninguem e cobrado.
+   */
   private async loadFactoryFallback(): Promise<void> {
     try {
       const data = await firstValueFrom(
@@ -195,6 +216,19 @@ export class PlaybackEngineService {
       this.factoryUrls = data.urls ?? [];
     } catch {
       this.factoryUrls = [];
+    }
+    if (this.factoryUrls.length === 0) {
+      /**
+       * Sem reserva, manifesto vazio volta a significar tela preta. Dizer isso no arranque
+       * e o que transforma "o painel apagou" numa pergunta respondivel.
+       */
+      console.info(
+        JSON.stringify({
+          event: 'playback.fallback.vazio',
+          detail:
+            'factory-default-ads/manifest.json sem urls; manifesto vazio deixara a tela preta',
+        })
+      );
     }
   }
 
@@ -208,6 +242,23 @@ export class PlaybackEngineService {
     this.filteredManifest = doc
       ? this.constraints.filter(doc.media, snap)
       : [];
+
+    if (this.filteredManifest.length === 0) {
+      /**
+       * Nao e erro, e precisa aparecer no log de qualquer forma.
+       *
+       * Foi exatamente este estado que produziu "a midia parou de ser exibida": o orcamento
+       * diario das campanhas se esgotou, o servidor passou a devolver zero itens — correto —
+       * e o unico sinal no aparelho era `sync.ok`. Sem esta linha, "manifesto vazio" e
+       * "download falhou" sao indistinguiveis de fora.
+       */
+      console.info(
+        JSON.stringify({
+          event: 'playback.manifesto.vazio',
+          temReserva: this.factoryUrls.length > 0,
+        })
+      );
+    }
     this.loop.reset();
     this.currentAd.set(await this.takeNextAd());
     this.nextAd.set(await this.peekNextAd());
