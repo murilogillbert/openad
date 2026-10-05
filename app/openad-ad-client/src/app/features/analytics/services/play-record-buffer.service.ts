@@ -34,6 +34,43 @@ export class PlayRecordBufferService {
   /** Numero de linhas gravadas, para decidir compactacao sem reler o arquivo. */
   private rowCount: number | null = null;
 
+  /** Memoiza a criacao de `analytics/`: uma chamada por processo, nao uma por veiculacao. */
+  private pastaPronta: Promise<void> | null = null;
+
+  /**
+   * Garante que `analytics/` existe antes de qualquer escrita.
+   *
+   * `Filesystem.appendFile` **nao aceita** `recursive` — o tipo e
+   * `Omit<WriteFileOptions, 'recursive'>` — entao, ao contrario de `writeFile`, ele nao cria
+   * o diretorio pai e falha com `OS-PLUG-FILE-0011` ("Missing parent directory"). Em um
+   * aparelho novo a pasta nunca existia, porque `writeRows` (que passa `recursive: true`) so
+   * roda na compactacao, e a compactacao depende de ja haver linhas.
+   *
+   * O custo disso foi total: `enqueuePlay` lancava, a excecao morria no `catch` de
+   * `recordManifestPlayCommitted` ("analytics buffer must not break playback"), e **toda**
+   * veiculacao faturavel era perdida. O tablete exibia anuncio, o laco girava, e
+   * `play_records` ficava em zero sem um unico erro visivel — nem no log do aparelho, nem no
+   * servidor.
+   */
+  private async garantirPasta(): Promise<void> {
+    if (!Capacitor.isNativePlatform()) {
+      return;
+    }
+    this.pastaPronta ??= (async () => {
+      try {
+        await Filesystem.mkdir({
+          path: 'analytics',
+          directory: Directory.Data,
+          recursive: true,
+        });
+      } catch {
+        // Ja existe. O plugin nao distingue isso de falha real no codigo de erro, e tentar
+        // criar de novo e inofensivo, entao nao ha o que tratar aqui.
+      }
+    })();
+    return this.pastaPronta;
+  }
+
   async enqueuePlay(record: PlayRecordPayload): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) {
       return;
@@ -131,6 +168,7 @@ export class PlayRecordBufferService {
     const text = rows.map((r) => JSON.stringify(r)).join('\n');
     const data = text.length > 0 ? `${text}\n` : '';
     if (Capacitor.isNativePlatform()) {
+      await this.garantirPasta();
       await Filesystem.writeFile({
         path: PENDING_FILE,
         directory: Directory.Data,
@@ -150,6 +188,7 @@ export class PlayRecordBufferService {
 
   private async appendLine(line: string): Promise<void> {
     if (Capacitor.isNativePlatform()) {
+      await this.garantirPasta();
       await Filesystem.appendFile({
         path: PENDING_FILE,
         directory: Directory.Data,

@@ -110,3 +110,99 @@ describe('PlayRecordBufferService', () => {
     expect(pending[0]?.uniqueEventId).toBe('eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee');
   });
 });
+
+/**
+ * Caminho nativo, separado porque exige fingir `Capacitor.isNativePlatform()`.
+ *
+ * Esta suite existe por um defeito que custou **toda** a receita do aparelho:
+ * `Filesystem.appendFile` nao aceita `recursive` (o tipo e
+ * `Omit<WriteFileOptions, 'recursive'>`), entao ele nao cria `analytics/` e falha com
+ * `OS-PLUG-FILE-0011`. Num tablete novo a pasta nunca existia — `writeFile`, que criaria,
+ * so roda na compactacao, e a compactacao depende de ja haver linhas. A excecao morria no
+ * `catch` de `recordManifestPlayCommitted` e `play_records` ficava em zero com o laco
+ * girando normalmente.
+ */
+describe('PlayRecordBufferService (nativo)', () => {
+  let chamadas: string[];
+
+  beforeEach(() => {
+    chamadas = [];
+    vi.resetModules();
+  });
+
+  it('cria analytics/ antes de anexar, e so uma vez', async () => {
+    vi.doMock('@capacitor/core', () => ({
+      Capacitor: { isNativePlatform: () => true },
+    }));
+    vi.doMock('@capacitor/filesystem', () => ({
+      Directory: { Data: 'DATA' },
+      Encoding: { UTF8: 'utf8' },
+      Filesystem: {
+        mkdir: vi.fn(async (o: { path: string; recursive?: boolean }) => {
+          chamadas.push(`mkdir:${o.path}:${o.recursive}`);
+        }),
+        appendFile: vi.fn(async () => {
+          chamadas.push('append');
+        }),
+        writeFile: vi.fn(async () => {
+          chamadas.push('write');
+        }),
+        readFile: vi.fn(async () => ({ data: '' })),
+      },
+    }));
+
+    const { PlayRecordBufferService: Servico } = await import(
+      './play-record-buffer.service'
+    );
+
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [Servico, { provide: PLATFORM_ID, useValue: 'browser' }],
+    });
+    const svc = TestBed.inject(Servico);
+
+    await svc.enqueuePlay(basePlay());
+    await svc.enqueuePlay({
+      ...basePlay(),
+      uniqueEventId: 'eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee',
+    });
+
+    expect(chamadas[0]).toBe('mkdir:analytics:true');
+    expect(chamadas.filter((c) => c.startsWith('mkdir'))).toHaveLength(1);
+    expect(chamadas.filter((c) => c === 'append')).toHaveLength(2);
+  });
+
+  it('pasta ja existente nao impede a gravacao', async () => {
+    vi.doMock('@capacitor/core', () => ({
+      Capacitor: { isNativePlatform: () => true },
+    }));
+    vi.doMock('@capacitor/filesystem', () => ({
+      Directory: { Data: 'DATA' },
+      Encoding: { UTF8: 'utf8' },
+      Filesystem: {
+        // O plugin nao distingue "ja existe" de falha real no codigo de erro.
+        mkdir: vi.fn(async () => {
+          throw new Error('Directory exists');
+        }),
+        appendFile: vi.fn(async () => {
+          chamadas.push('append');
+        }),
+        writeFile: vi.fn(async () => undefined),
+        readFile: vi.fn(async () => ({ data: '' })),
+      },
+    }));
+
+    const { PlayRecordBufferService: Servico } = await import(
+      './play-record-buffer.service'
+    );
+
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [Servico, { provide: PLATFORM_ID, useValue: 'browser' }],
+    });
+    const svc = TestBed.inject(Servico);
+
+    await expect(svc.enqueuePlay(basePlay())).resolves.toBeUndefined();
+    expect(chamadas).toContain('append');
+  });
+});

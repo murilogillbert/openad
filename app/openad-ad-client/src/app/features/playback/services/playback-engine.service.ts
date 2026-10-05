@@ -578,8 +578,24 @@ export class PlaybackEngineService {
         gpsAccuracyM,
       };
       await this.playRecordBuffer.enqueuePlay(play);
-    } catch {
-      /* analytics buffer must not break playback */
+    } catch (e: unknown) {
+      /**
+       * A veiculacao continua — proof-of-play nunca deve derrubar a tela —, mas a falha e
+       * **dita**.
+       *
+       * O `catch` vazio que estava aqui custou toda a receita do aparelho: `appendFile`
+       * falhava com "Missing parent directory" a cada veiculacao, a excecao morria neste
+       * ponto, e `play_records` ficava em zero com o laco girando normalmente. Nao havia
+       * um unico sinal — nem no aparelho, nem no servidor. Engolir excecao para proteger a
+       * exibicao e correto; engolir sem registrar transforma perda de dinheiro em silencio.
+       */
+      console.info(
+        JSON.stringify({
+          event: 'playrecord.enqueue.failed',
+          mediaId: item.mediaId,
+          detail: e instanceof Error ? e.message : String(e),
+        })
+      );
     }
   }
 
