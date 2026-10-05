@@ -222,6 +222,24 @@ services:
       # Armazenamento: o `hub-minio` que já existe, alcançado pela rede do Coolify.
       MEDIA_STORAGE_BACKEND: s3
       S3_ENDPOINT: http://hub-minio:9000
+
+      # Endereço **público** do mesmo MinIO, usado só para assinar URL.
+      #
+      # Sem isto, `AssetStorageService` assina com o endpoint interno e o manifesto entrega ao
+      # tablet `http://hub-minio:9000/openad-media/…`. O aparelho não resolve esse nome,
+      # nenhum criativo baixa e a tela fica vazia — era exatamente o que estava acontecendo:
+      # 4 criativos aprovados, 3 campanhas ativas, `lastManifestVersion: 0` no aparelho e
+      # zero registros de reprodução.
+      #
+      # A assinatura SigV4 inclui o host, então não dá para assinar com um endereço e servir
+      # por outro: é preciso que o cliente de assinatura aponte para o domínio que o tablet
+      # vai abrir. Leitura e upload servidor-a-servidor continuam pelo endpoint interno.
+      #
+      # `openad-media` é privado (leitura anônima devolve 403, conferido até para objeto
+      # existente), logo expor o caminho no domínio público não expõe criativo: sem assinatura
+      # válida e no prazo, o MinIO recusa.
+      S3_PUBLIC_ENDPOINT: https://storage.opendriver.com.br
+
       S3_REGION: us-east-1
       S3_BUCKET: ${S3_BUCKET:-openad-media}
       S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:?defina S3_ACCESS_KEY_ID}
