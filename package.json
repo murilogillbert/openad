@@ -96,7 +96,6 @@
     "@capgo/capacitor-brightness": "^8.0.8",
     "@capgo/capacitor-compass": "^8.1.11",
     "@capgo/capacitor-light-sensor": "^8.1.6",
-    "@capgo/capacitor-mqtt": "^8.0.0",
     "@capgo/capacitor-wifi": "^8.1.9",
     "@eslint/js": "^9.8.0",
     "@nestjs/bullmq": "^11.0.4",

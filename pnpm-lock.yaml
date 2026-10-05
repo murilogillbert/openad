@@ -114,9 +114,6 @@ importers:
       '@capgo/capacitor-light-sensor':
         specifier: ^8.1.6
         version: 8.1.6(@capacitor/core@8.3.0)
-      '@capgo/capacitor-mqtt':
-        specifier: ^8.0.0
-        version: 8.0.0(@capacitor/core@8.3.0)
       '@capgo/capacitor-wifi':
         specifier: ^8.1.9
         version: 8.1.9(@capacitor/core@8.3.0)
@@ -1827,11 +1824,6 @@ packages:
     resolution: {integrity: sha512-Iv4u5KoRa/iQxku1gvt3qORk2oRvE368po2HHjjbCVQgHuy7p2194Wr5FZzx2/I5TIylWdSnyIZF6xiKCb+ZMg==}
     peerDependencies:
       '@capacitor/core': ^8.0.0
-
-  '@capgo/capacitor-mqtt@8.0.0':
-    resolution: {integrity: sha512-yhO8ATLDmYa3wPEWR5Jho5HBexo+df+VmK0GbS0PqIGCGYaEF8ksO6y8jT3mwgLx89aats96UWtkWdBNZ2CEOg==}
-    peerDependencies:
-      '@capacitor/core': '>=8.0.0'
 
   '@capgo/capacitor-wifi@8.1.9':
     resolution: {integrity: sha512-o6E+qZdQ9f+1ziQEZEeGXX9r2tkVpZsnQhQtFf6jpHh2IJOzNkv/oELzB7H9IwExWXxyEHNYPYYPbMKq9dQVkg==}
@@ -13084,10 +13076,6 @@ snapshots:
       '@capacitor/core': 8.3.0
 
   '@capgo/capacitor-light-sensor@8.1.6(@capacitor/core@8.3.0)':
-    dependencies:
-      '@capacitor/core': 8.3.0
-
-  '@capgo/capacitor-mqtt@8.0.0(@capacitor/core@8.3.0)':
     dependencies:
       '@capacitor/core': 8.3.0
 
