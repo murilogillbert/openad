@@ -90,6 +90,46 @@ describe('createHttpClient', () => {
     await expect(c.get('/coisa')).resolves.toEqual({ x: 1 });
   });
 
+  /**
+   * As tres formas abaixo sao as que o openad devolve de fato, conferidas contra
+   * `advertiser.controller.ts`. Antes desta correcao o cliente desembrulhava qualquer corpo
+   * que tivesse `data`, e o primeiro caso derrubava a tela inicial do app: a lista chegava
+   * como vetor cru, `pagina.data` ficava `undefined` e `pagina.data.length` lancava.
+   */
+  it('NAO desembrulha quando data tem irmao: { data, pagination }', async () => {
+    const { storage } = armazenamentoFalso({ access: 'a' });
+    const corpo = { data: [{ campaignId: 'c1' }], pagination: { total: 1, page: 1, limit: 20 } };
+    const fetchImpl = jest.fn().mockResolvedValue(resposta(200, corpo));
+    const c = createHttpClient({ baseUrl: 'https://ads.teste', storage, fetchImpl });
+
+    await expect(c.get('/advertiser/campaigns')).resolves.toEqual(corpo);
+  });
+
+  it('NAO desembrulha quando data tem irmao: { success, data }', async () => {
+    const { storage } = armazenamentoFalso({ access: 'a' });
+    const corpo = { success: true, data: { sessionId: 's1', maxBytes: 100 } };
+    const fetchImpl = jest.fn().mockResolvedValue(resposta(200, corpo));
+    const c = createHttpClient({ baseUrl: 'https://ads.teste', storage, fetchImpl });
+
+    await expect(c.post('/advertiser/campaigns/c1/media')).resolves.toEqual(corpo);
+  });
+
+  it('desembrulha o envelope puro { data } com vetor dentro', async () => {
+    const { storage } = armazenamentoFalso({ access: 'a' });
+    const fetchImpl = jest.fn().mockResolvedValue(resposta(200, { data: [{ zoneId: 'z1' }] }));
+    const c = createHttpClient({ baseUrl: 'https://ads.teste', storage, fetchImpl });
+
+    await expect(c.get('/advertiser/inventory/zones')).resolves.toEqual([{ zoneId: 'z1' }]);
+  });
+
+  it('vetor no topo passa direto, sem ser confundido com envelope', async () => {
+    const { storage } = armazenamentoFalso({ access: 'a' });
+    const fetchImpl = jest.fn().mockResolvedValue(resposta(200, [1, 2, 3]));
+    const c = createHttpClient({ baseUrl: 'https://api.teste', storage, fetchImpl });
+
+    await expect(c.get('/coisa')).resolves.toEqual([1, 2, 3]);
+  });
+
   it('manda Authorization quando ha token, e nao manda em rota publica', async () => {
     const { storage } = armazenamentoFalso({ access: 'token-abc' });
     const fetchImpl = jest.fn().mockResolvedValue(resposta(200, { data: true }));
@@ -223,6 +263,50 @@ describe('createHttpClient', () => {
     const c = createHttpClient({ baseUrl: 'https://api.teste', storage, fetchImpl });
 
     await expect(c.get('/x')).rejects.toMatchObject({ kind: 'network', status: 0 });
+  });
+
+  /**
+   * A causa tem de sobreviver: sem ela, "Sem conexao com o servidor" cobre DNS, TLS, conexao
+   * cortada e corpo que o runtime nao conseguiu montar, e nao ha como separar os casos a
+   * partir do aparelho.
+   */
+  it('preserva a causa tecnica da falha de rede', async () => {
+    const { storage } = armazenamentoFalso({ access: 'a' });
+    const original = new TypeError('Network request failed');
+    const fetchImpl = jest.fn().mockRejectedValue(original);
+    const c = createHttpClient({ baseUrl: 'https://api.teste', storage, fetchImpl });
+
+    await expect(c.get('/x')).rejects.toMatchObject({
+      kind: 'network',
+      detail: 'TypeError: Network request failed',
+      cause: original,
+    });
+  });
+
+  it('inclui a causa aninhada no detalhe, quando houver', async () => {
+    const { storage } = armazenamentoFalso({ access: 'a' });
+    const raiz = new Error('EACCES open content://media/118227');
+    const fetchImpl = jest
+      .fn()
+      .mockRejectedValue(new TypeError('Network request failed', { cause: raiz }));
+    const c = createHttpClient({ baseUrl: 'https://api.teste', storage, fetchImpl });
+
+    await expect(c.get('/x')).rejects.toMatchObject({
+      detail: 'TypeError: Network request failed (causa: Error: EACCES open content://media/118227)',
+    });
+  });
+
+  it('timeout tambem carrega a causa, e nao vira falha de rede', async () => {
+    const { storage } = armazenamentoFalso({ access: 'a' });
+    const fetchImpl = jest.fn(
+      (_url: string, init: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init.signal?.addEventListener('abort', () => reject(new Error('aborted')));
+        })
+    ) as unknown as typeof fetch;
+    const c = createHttpClient({ baseUrl: 'https://api.teste', storage, fetchImpl, timeoutMs: 20 });
+
+    await expect(c.get('/x')).rejects.toMatchObject({ kind: 'timeout', status: 0 });
   });
 
   it('204 devolve undefined em vez de quebrar no JSON.parse', async () => {

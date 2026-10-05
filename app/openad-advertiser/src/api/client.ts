@@ -1,7 +1,8 @@
 import { env } from '@/config/env';
-import { createHttpClient, type RefreshOutcome } from './http';
+import { createHttpClient, UPLOAD_TIMEOUT_MS, type RefreshOutcome } from './http';
 import { createSecureTokenStorage } from './secureTokenStorage';
 import type { UsuarioDoEcossistema } from './types';
+import { createUploader } from './upload';
 
 /**
  * Os dois clientes do app, sobre **um** armazenamento de tokens.
@@ -61,6 +62,23 @@ export const ads = createHttpClient({
    * válida.
    */
   refreshDelegate: (): Promise<RefreshOutcome> => hub.refreshTokens(),
+});
+
+/**
+ * Terceiro cliente, só para subir arquivo, e não é duplicação.
+ *
+ * O `fetch` que o Expo instala no lugar do global não aceita a parte
+ * `{ uri, name, type }` do React Native e monta o corpo todo em memória — ver o cabeçalho de
+ * `upload.ts`. Então o envio de criativo vai por `XMLHttpRequest`, que faz streaming do
+ * disco. Compartilha o mesmo `tokenStorage` e delega a renovação ao `hub`, igual ao `ads`:
+ * é a mesma sessão, só o transporte é outro.
+ */
+export const adsUpload = createUploader({
+  baseUrl: env.adsBaseUrl,
+  storage: tokenStorage,
+  refreshDelegate: (): Promise<RefreshOutcome> => hub.refreshTokens(),
+  onSessionExpired: () => aoExpirar?.(),
+  timeoutMs: UPLOAD_TIMEOUT_MS,
 });
 
 /** Encerra a sessão nos dois clientes. Chamado pelo logout e pela expiração. */

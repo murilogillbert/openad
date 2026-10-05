@@ -76,6 +76,33 @@ function isFormData(body: unknown): body is FormData {
 }
 
 /**
+ * Desembrulha **apenas** o envelope puro `{ data }` — objeto cuja única chave é `data`.
+ *
+ * O hub sempre responde `{ data: <payload> }` e nada mais (conferido de fora em
+ * `/auth/login` e `/auth/me`). O openad responde o payload direto na maioria das rotas, mas
+ * em três delas `data` é um **campo do payload**, com irmãos:
+ *
+ *   GET  /advertiser/campaigns             -> { data, pagination }
+ *   POST /advertiser/campaigns/:id/media   -> { success, data }
+ *   POST .../media/:sessionId/complete     -> { success, data }
+ *
+ * A regra anterior era "se existe `data`, desembrulhe", e ela engolia o `pagination` da lista
+ * de campanhas: a tela recebia o vetor cru, `pagina.data` virava `undefined` e
+ * `pagina.data.length` lançava TypeError — o app caía no ErrorBoundary em **toda** abertura
+ * da tela inicial. Exigir que `data` seja a única chave distingue envelope de payload sem
+ * adivinhar pelo nome do campo.
+ *
+ * Vetor no topo nunca é envelope, e `Object.keys` de vetor não devolve `data`, então o
+ * caminho é o mesmo: passa direto.
+ */
+function desembrulhar<T>(json: unknown): T {
+  if (json === null || typeof json !== 'object' || Array.isArray(json)) return json as T;
+  const chaves = Object.keys(json);
+  if (chaves.length === 1 && chaves[0] === 'data') return (json as { data: T }).data;
+  return json as T;
+}
+
+/**
  * Extrai mensagem e código de erro dos dois formatos do ecossistema.
  *
  * hub:    `{ "error": "Credenciais invalidas.", "code": "unauthenticated" }`
@@ -146,15 +173,39 @@ export function createHttpClient<TRefreshUser = unknown>(options: HttpClientOpti
     }
     try {
       return await fetchImpl(`${baseUrl}${path}`, { ...init, signal: controller.signal });
-    } catch {
+    } catch (falha) {
+      /**
+       * A causa é propagada, e não descartada.
+       *
+       * Antes era `catch {}` sem binding: DNS, TLS, conexão cortada no meio do envio e corpo
+       * que o runtime não conseguiu montar a partir do arquivo viravam todos a mesma frase,
+       * sem nada que os separasse no aparelho. Num envio de criativo que falha sempre, isso é
+       * a diferença entre diagnosticar e adivinhar.
+       */
       if (timedOut) {
-        throw new ApiError('O servidor demorou para responder. Tente novamente.', 0, 'timeout');
+        throw new ApiError(
+          'O servidor demorou para responder. Tente novamente.',
+          0,
+          'timeout',
+          undefined,
+          falha
+        );
       }
-      if (external?.aborted) throw new ApiError('Requisição cancelada.', 0, 'aborted');
+      if (external?.aborted) {
+        throw new ApiError('Requisição cancelada.', 0, 'aborted', undefined, falha);
+      }
+      // Vai para o logcat (`adb logcat -s ReactNativeJS`) junto com rota e método.
+      console.error('Falha de rede antes da resposta', {
+        url: `${baseUrl}${path}`,
+        metodo: init.method,
+        causa: falha instanceof Error ? `${falha.name}: ${falha.message}` : String(falha),
+      });
       throw new ApiError(
         'Sem conexão com o servidor. Verifique sua internet e tente novamente.',
         0,
-        'network'
+        'network',
+        undefined,
+        falha
       );
     } finally {
       clearTimeout(timer);
@@ -181,8 +232,7 @@ export function createHttpClient<TRefreshUser = unknown>(options: HttpClientOpti
       if (!text) return undefined as T;
       throw new ApiError('Resposta inválida do servidor.', res.status, 'invalid_response');
     }
-    if (typeof json === 'object' && 'data' in (json as object)) return (json as { data: T }).data;
-    return json as T;
+    return desembrulhar<T>(json);
   }
 
   async function expireSession(): Promise<void> {
@@ -234,12 +284,25 @@ export function createHttpClient<TRefreshUser = unknown>(options: HttpClientOpti
     const headers: Record<string, string> = { Accept: 'application/json' };
     let body: BodyInit | undefined;
     if (opts.body !== undefined) {
+      /**
+       * Multipart **não** passa por aqui, e a recusa é explícita de propósito.
+       *
+       * O `fetch` que o Expo instala no lugar do global só aceita partes `string`, `Blob` ou
+       * objeto com `bytes()`; a forma `{ uri, name, type }` do React Native lança
+       * `Unsupported FormDataPart implementation` lá dentro, e esta camada traduzia aquilo
+       * para "Sem conexão com o servidor" — uma falha determinística disfarçada de problema
+       * de internet, que custou horas para ser localizada. Falhar aqui, com o caminho da
+       * alternativa no texto, evita a repetição.
+       */
       if (isFormData(opts.body)) {
-        body = opts.body; // o boundary do multipart é definido pelo runtime
-      } else {
-        headers['Content-Type'] = 'application/json';
-        body = JSON.stringify(opts.body);
+        throw new ApiError(
+          'Envio de arquivo não vai pelo fetch: use o enviador de `api/upload.ts` (`adsUpload`).',
+          0,
+          'invalid_response'
+        );
       }
+      headers['Content-Type'] = 'application/json';
+      body = JSON.stringify(opts.body);
     }
     const generation = sessionGeneration;
     if (auth) {
@@ -280,9 +343,7 @@ export function createHttpClient<TRefreshUser = unknown>(options: HttpClientOpti
       request<T>(path, { method: 'POST', body, auth: false }),
     getPublic: <T>(path: string, signal?: AbortSignal) =>
       request<T>(path, { method: 'GET', auth: false, signal }),
-    /** Envio de arquivo: multipart com teto de espera próprio. */
-    postUpload: <T>(path: string, form: FormData) =>
-      request<T>(path, { method: 'POST', body: form, timeoutMs: UPLOAD_TIMEOUT_MS }),
+
     /** Grava os tokens de um login ou cadastro — invalida refresh de sessões anteriores. */
     async startSession(tokens: TokenPair): Promise<void> {
       sessionGeneration++;

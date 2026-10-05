@@ -1,4 +1,5 @@
-import { ads, hub } from './client';
+import { ads, adsUpload, hub } from './client';
+import type { ArquivoLocal } from './upload';
 import type {
   Campanha,
   NovaCampanha,
@@ -78,14 +79,18 @@ export const campanhas = {
 };
 
 export const inventario = {
+  /**
+   * `GET /advertiser/inventory/zones` responde `{ data: Zona[] }` — envelope **puro**, então
+   * o núcleo HTTP já entrega o vetor. Não há `.data` para ler aqui: ler daria `undefined`, e
+   * o `?? []` que existia antes transformava isso em "nenhuma zona disponível" sem erro
+   * nenhum na tela de nova campanha.
+   */
   zonas: (filtros: { city?: string; tier?: string } = {}, signal?: AbortSignal) => {
     const q = new URLSearchParams();
     if (filtros.city) q.set('city', filtros.city);
     if (filtros.tier) q.set('tier', filtros.tier);
     const sufixo = q.toString() ? `?${q.toString()}` : '';
-    return ads
-      .get<{ data: Zona[] }>(`/advertiser/inventory/zones${sufixo}`, signal)
-      .then((r) => r.data ?? []);
+    return ads.get<Zona[]>(`/advertiser/inventory/zones${sufixo}`, signal);
   },
 };
 
@@ -107,10 +112,24 @@ export const criativo = {
       { filename, contentType }
     ),
 
-  enviarBytes: (campaignId: string, sessionId: string, form: FormData) =>
-    ads.postUpload<void>(
+  /**
+   * Vai por `XMLHttpRequest` (`adsUpload`), não pelo `fetch`.
+   *
+   * O `fetch` que o Expo instala rejeita a parte `{ uri, name, type }` do React Native com
+   * `Unsupported FormDataPart implementation`, o que fazia **todo** envio de criativo falhar.
+   * O campo multipart é `file`, como `FileInterceptor('file', ...)` exige na API.
+   */
+  enviarBytes: (
+    campaignId: string,
+    sessionId: string,
+    arquivo: ArquivoLocal,
+    aoProgresso?: (fracao: number) => void
+  ) =>
+    adsUpload.enviarArquivo<void>(
       `/advertiser/campaigns/${campaignId}/media/${sessionId}/bytes`,
-      form
+      'file',
+      arquivo,
+      aoProgresso
     ),
 
   concluir: (campaignId: string, sessionId: string) =>
