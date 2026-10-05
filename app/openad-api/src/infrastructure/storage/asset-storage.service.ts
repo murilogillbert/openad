@@ -36,6 +36,23 @@ export function storageKeyFromRef(storageUrl: string): string {
 @Injectable()
 export class AssetStorageService {
   private readonly client: S3Client;
+  /**
+   * Cliente usado **só para assinar URL**, apontado para o endereço público do storage.
+   *
+   * Por que dois clientes: a assinatura SigV4 inclui o host, então uma URL assinada com o
+   * endpoint interno (`http://hub-minio:9000`) só é válida naquele host — e quem consome URL
+   * pré-assinada está sempre **fora** da rede Docker. O tablet no carro recebia
+   * `http://hub-minio:9000/openad-media/…` no manifesto, não resolvia o nome, nenhum criativo
+   * era baixado e nada tocava na tela; o `previewUrl` do portal tinha o mesmo defeito, no
+   * navegador do operador.
+   *
+   * Upload e leitura de stream continuam no cliente interno: são servidor-a-servidor, e sair
+   * pela internet para buscar o próprio arquivo seria mais lento e pagaria tráfego.
+   *
+   * Sem `S3_PUBLIC_ENDPOINT` definido, cai no cliente interno — mantém o comportamento
+   * anterior em desenvolvimento, onde os dois endereços coincidem.
+   */
+  private readonly signingClient: S3Client;
   private readonly bucket: string;
 
   constructor() {
@@ -67,6 +84,18 @@ export class AssetStorageService {
     }
 
     this.client = new S3Client(clientConfig);
+
+    const publicEndpoint = (process.env.S3_PUBLIC_ENDPOINT ?? '').trim();
+    if (publicEndpoint && publicEndpoint !== endpoint) {
+      this.signingClient = new S3Client({
+        ...clientConfig,
+        endpoint: publicEndpoint,
+        // O endereço público do MinIO serve por caminho (`/bucket/chave`), igual ao interno.
+        forcePathStyle: endpoint ? forcePathStyle : true,
+      });
+    } else {
+      this.signingClient = this.client;
+    }
   }
 
   async saveCreativeAsset(params: {
@@ -166,7 +195,8 @@ export class AssetStorageService {
       Bucket: this.bucket,
       Key: key,
     });
-    return getSignedUrl(this.client, cmd, { expiresIn: expiresInSeconds });
+    // `signingClient`, não `client`: quem abre esta URL está fora da rede Docker.
+    return getSignedUrl(this.signingClient, cmd, { expiresIn: expiresInSeconds });
   }
 
   async openReadStream(storageUrl: string): Promise<Readable> {

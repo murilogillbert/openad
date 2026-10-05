@@ -70,13 +70,29 @@ export class RabbitmqManagementService implements OnModuleInit {
   }
 
   /**
-   * Create or update a user password. Do not send `tags` unless you intend to replace them:
-   * sending `tags: ''` strips the `administrator` tag from the broker default user and breaks
-   * the management API with 401 `Not management user`.
+   * Cria ou atualiza um usuário do broker.
+   *
+   * `tags` tem de ir no corpo, **sempre**, e isso já custou os dois erros opostos:
+   *
+   *  - Omitir o campo: o RabbitMQ 4 responde `400 bad_request {"reason":"tags_not_present"}`.
+   *    Foi o que travou o pareamento do tablet em produção — o `bind` devolvia 503 depois de
+   *    já ter marcado o aparelho como pareado.
+   *  - Enviar `tags: ''` **no usuário administrador**: apaga a tag `administrator` e a própria
+   *    API de gestão passa a responder 401 `Not management user`, sem caminho de volta pela
+   *    API. Foi por isso que o campo havia sido retirado.
+   *
+   * A saída é o campo existir com o valor certo para cada usuário: vetor vazio para tablet
+   * (nenhum acesso de gestão, que é o desejado) e nunca chamar este método para o usuário
+   * administrador do broker.
    */
-  async putUser(username: string, password: string): Promise<void> {
+  async putUser(
+    username: string,
+    password: string,
+    tags: string[] = []
+  ): Promise<void> {
     const res = await this.req('PUT', `/api/users/${encodeURIComponent(username)}`, {
       password,
+      tags,
     });
     if (!res.ok) {
       const text = await res.text();

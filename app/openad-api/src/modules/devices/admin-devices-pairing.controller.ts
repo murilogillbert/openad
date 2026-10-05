@@ -1,5 +1,6 @@
 import {
   Controller,
+  Delete,
   Get,
   HttpCode,
   Param,
@@ -50,5 +51,50 @@ export class AdminDevicesPairingController {
   generateSecret(@Param('deviceId') deviceId: string, @Req() _req: Request) {
     void _req;
     return this.pairing.generateSecret(deviceId);
+  }
+
+  /**
+   * Devolve o aparelho para `Pending` para poder parear de novo.
+   *
+   * Existe porque `generateSecret` exige `Pending` e nao havia nenhuma saida pela interface:
+   * tablet reinstalado ficava preso em `Active`, sem como receber codigo novo.
+   */
+  @Post(':deviceId/pairing-reset')
+  @HttpCode(200)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('fleet_admin', 'super_admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Devolve o aparelho para Pending, liberando novo pareamento' })
+  reiniciarPareamento(@Param('deviceId') deviceId: string) {
+    return this.pairing.reiniciarPareamento(deviceId);
+  }
+
+  /**
+   * Remove o registro do aparelho. Recusa com 409 se ele estiver vinculado a um veiculo.
+   */
+  @Delete(':deviceId')
+  @HttpCode(200)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('fleet_admin', 'super_admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Exclui o registro do aparelho e os rastros de pareamento' })
+  excluirRegistro(@Param('deviceId') deviceId: string) {
+    return this.pairing.excluirRegistro(deviceId);
+  }
+
+  /**
+   * Manutencao: remove solicitacoes `Pending` que apontam para aparelho inexistente.
+   *
+   * Producao acumulou esses orfaos por um defeito de ordem de insercao no `register`, ja
+   * corrigido; a rota existe para limpar o que ficou e nao depender de acesso ao banco.
+   */
+  @Post('pairing-requests/cleanup-orphans')
+  @HttpCode(200)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('fleet_admin', 'super_admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Limpa solicitacoes de pareamento orfas' })
+  limparOrfas() {
+    return this.pairing.limparSolicitacoesOrfas();
   }
 }
