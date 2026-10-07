@@ -123,6 +123,10 @@ RevenueCat), nenhum webhook de loja (`grep webhook` em `openad-api/src` não ret
 
 ### Alternativa que vale considerar
 
+> **Decidido em 2026-10-07 (PDF de monetização):** a compra de crédito é no **painel web, por Pix**,
+> e o app do anunciante fica só de gestão, sem compra. A compra dentro do app (IAP), e com ela o
+> A.8, sai do escopo. A regra de consumo do crédito está na Frente H.
+
 O Asaas já está integrado no hub, com split por carteira. Cobrar o anunciante por **Pix**, e
 não por in-app purchase, evita a taxa de 15–30% da loja e todo o item 1 e 7 acima. O custo:
 a política de pagamentos do Google exige in-app purchase para "bens digitais consumidos dentro
@@ -436,6 +440,318 @@ antes de ligar.
 
 ---
 
+## Frente F — retomada de download: provar que funciona de ponta a ponta
+
+> Correção de uma versão anterior desta frente, que afirmava que "todo byte passa pela API".
+> Isso vale só para a rota `/file`, que o tablet **não** usa para baixar. O caminho real é outro,
+> descrito abaixo.
+
+### O que já existe
+
+- O tablet foi escrito para retomar download interrompido. `resumable-download.service.ts:14-52`
+  (app `openad-ad-client`): com offset gravado, pede `Range: bytes=<offset>-`, trata `206` e
+  `416` e soma os pedaços até o total do `Content-Range`. O `download-manager.service.ts` guarda o
+  offset no IndexedDB, confere o SHA-256 e repete com espera exponencial.
+- **O manifesto já entrega URL pré-assinada direto do storage.**
+  `manifest-generator.service.ts:169` chama `getPresignedGetUrl(row.storageUrl, 3600)` e o
+  tablet passa exatamente esse `item.downloadUrl` ao downloader
+  (`sync-orchestrator.service.ts:156`). O endpoint público é
+  `S3_PUBLIC_ENDPOINT=https://storage.opendriver.com.br` (`docker-compose.prod.yml:241`), e o
+  MinIO atende `Range` e `ETag` sozinho. A spec previa exatamente isso
+  (`specs/004-media-orchestration-pipeline/spec.md:206`, `research.md:183`).
+
+Ou seja, a base certa já está no caminho principal. O que falta é prová-la.
+
+### O que falta
+
+1. **Ninguém verificou que a retomada funciona.** Ela depende de duas coisas que eu não consegui
+   checar lendo código:
+   - **CORS do storage.** O tablet lê o `Content-Range` por `fetch` em WebView, e não encontrei
+     `CapacitorHttp` no app, então o CORS vale. Sem `Access-Control-Expose-Headers: Content-Range`
+     no `storage.opendriver.com.br`, `res.headers.get('Content-Range')` devolve `null`
+     (`resumable-download.service.ts:48`). O laço então pede `bytes=<tamanho>-`, recebe `416` e
+     recomeça do zero (linhas 26-30). Nada falha visivelmente: o vídeo é baixado de novo por
+     inteiro, e a "retomada" não retoma.
+   - **Validade da URL.** A URL do manifesto vale 1 h. Uma retomada depois disso usa URL vencida
+     e a resposta de erro faz o downloader lançar (`resumable-download.service.ts:33-35`). Não
+     verifiquei se o próximo ciclo de sync renova a URL a tempo.
+2. **A rota `/file` não suporta `Range`.** `GET /campaigns/:campaignId/assets/:assetId/file`
+   (`campaigns.controller.ts:101-120`) faz `stream.pipe(res)` sem `Range`, `206`,
+   `Accept-Ranges`, `Content-Length`, `ETag` nem `Cache-Control`. Hoje as únicas URLs dela saem no
+   push de agenda por MQTT (`schedule-push.service.ts:105`) e no mapa da frota
+   (`fleet-map.service.ts:329`), e **não achei leitor dessa URL no código do tablet**. É uma
+   divergência latente, não um defeito ativo: passa a doer se o push de agenda for usado para
+   baixar mídia.
+3. Relacionado, mas fora desta frente: `downloadToBuffer` junta o arquivo inteiro num
+   `ArrayBuffer` antes de gravar, então vídeo grande pressiona a memória do WebView.
+
+### O que fazer
+
+1. **Medir antes de construir.** Cortar a rede no meio do download de um vídeo grande num tablet
+   real e observar se o pedido seguinte sai com `Range` e volta `206` com `Content-Range`
+   legível. Em paralelo, `curl -I` na URL pré-assinada com `Origin` do WebView e `Range` para
+   conferir `Access-Control-Expose-Headers`. É barato e decide o resto.
+2. **Se o `Content-Range` não for legível:** configurar o CORS do MinIO (`Range` em
+   `Allow-Headers`; `Content-Range`, `Accept-Ranges`, `ETag` e `Content-Length` em
+   `Expose-Headers`), ou fazer o downloader calcular o total por `Content-Length` quando a
+   resposta for `206` sem `Content-Range` legível.
+3. **Renovar a URL na retomada:** tratar `403` do storage como "URL vencida" e buscar o manifesto
+   de novo antes de tentar outra vez, ou subir o TTL para além da janela de sync.
+4. **Rota `/file`:** responder `302` para `getPresignedGetUrl`, que já existe
+   (`asset-storage.service.ts:199`), em vez de reimplementar `Range` no Node. Prioridade baixa
+   enquanto nada a consome para baixar.
+5. **Alinhar a spec 004** ao que ficar de fato verdadeiro.
+
+### Esforço e risco
+
+Pequeno, e em grande parte é verificação. O APK do tablete é instalado por cabo, então qualquer
+ajuste no downloader não passa por loja. Não medi o tamanho típico dos vídeos nem a taxa de queda
+de download na frota; é isso que decide a urgência.
+
+---
+
+## Frente G — rodar mais de uma instância da API
+
+### O que já escala
+
+- **Plays:** entram por fila BullMQ (`playback-batch-ingest.service.ts:154-160`) e têm índice
+  único `(deviceId, uniqueEventId)` (`play-record.schema.ts:99`).
+- **Impressões:** Redis Streams com consumer group (`impression-stream.consumer.ts`) e índice
+  único em `eventId` (`impression-event.schema.ts:72`). Duplicata é ignorada.
+- **URLs de mídia:** assinadas por HMAC, sem estado; qualquer instância valida.
+- **MQTT:** o cliente não fixa `clientId`, então uma instância não derruba a outra no broker.
+- Não achei estado de negócio guardado em memória do processo. A busca foi por campos
+  `Map`/`Set`; é indício, não prova.
+
+### O que não escala hoje
+
+1. **Cobrança do play tem corrida.** `analytics-reconciliation.processor.ts:106-171` detecta a
+   transição "pendente → faturável" lendo o registro, reconciliando e lendo de novo. O
+   `reconcileOne` (`reconciliation.service.ts:62-99`) só retorna cedo se o registro já não estiver
+   `pending` e grava com `updateOne` sem condição, e o `queue.add` não usa `jobId`
+   (`playback-batch-ingest.service.ts:154-160`). Hoje existe um worker, então os lotes se
+   serializam. Com duas instâncias, ou com concorrência maior que 1, o **mesmo lote enviado duas
+   vezes** (retry do tablet depois de timeout, o que é normal) pode ser processado em paralelo, e
+   os dois workers enxergam `pending` e somam `billableCostCents` duas vezes
+   (`pacing-signal.service.ts:86`). O repasse tem a própria trava de idempotência
+   (`referenceId`), mas não verifiquei se ela cobre todo o caminho.
+2. **Socket.IO sem adapter.** `main.ts:19` usa o `IoAdapter` padrão. Um evento emitido numa
+   instância só chega aos clientes conectados nela, então o painel perde atualizações. O `ioredis`
+   já está nas dependências; falta o adapter de Redis.
+3. **Assinaturas MQTT sem `$share`.** Cinco serviços assinam o mesmo tópico em toda instância:
+   `command-ack.handler.ts:20`, `telemetry-ingestor.service.ts:34`,
+   `impression-ingestion.service.ts:20`, `priority-commands.gateway.ts:25`,
+   `spatial-ledger-mqtt.service.ts:17`. Com N instâncias, cada mensagem é processada N vezes.
+   Impressões e plays são idempotentes por índice; nos demais eu não verifiquei. O broker em
+   produção é o RabbitMQ, e **não sei se o plugin MQTT dele suporta assinatura compartilhada**.
+4. **Tarefas `@Cron` rodam em toda instância, sem lock nem líder.** São seis:
+   `heartbeat-monitor.service.ts:25` (a cada 30 s, lê a frota inteira),
+   `command-expiry-sweep.service.ts:18`, `impression-stream.consumer.ts:39`,
+   `dooh-media-revalidation.job.ts:23`, `upload-session-cleanup.job.ts:14` e
+   `object-storage-cleanup.service.ts:26`. Procurei `redlock`, `NX` e eleição de líder: nada. O
+   consumo de impressões é seguro por causa do consumer group; os demais rodam em duplicata, e as
+   limpezas apagam duas vezes.
+5. **Upload do anunciante em memória.** `advertiser.controller.ts:166-168` usa `memoryStorage` com
+   limite de 500 MB: um vídeo grande ocupa 500 MB de RAM por requisição, em qualquer número de
+   instâncias. O caminho do painel de gestão já tem URL pré-assinada de escrita
+   (`getPresignedPutObjectUrl`); este não usa.
+6. **Camada de dados única.** O `docker-compose.prod.yml` sobe um contêiner de Mongo, um de Redis
+   e um de RabbitMQ, e o Postgres é compartilhado com o hub, tudo no mesmo servidor. Mais
+   instâncias de API escalam CPU, não resiliência.
+7. **Menores.** `consumerName = api-${process.pid}` (`impression-stream.consumer.ts:19`): em
+   contêineres o PID costuma ser igual entre réplicas, então duas réplicas dividem o mesmo nome de
+   consumidor. E o segredo de assinatura das URLs cai para um valor fixo
+   (`'dev-asset-url-secret-change-me'`) se faltarem `ASSET_URL_SIGNING_SECRET` e `JWT_SECRET`
+   (`asset-url.service.ts:14`); o correto é falhar no boot.
+
+### O que fazer
+
+1. **G.1 primeiro, antes de qualquer segunda instância ou aumento de concorrência.** `jobId:
+   batchId` no `queue.add` e a transição virar atômica: `findOneAndUpdate` condicionado a
+   `reconciliationStatus: 'pending'`, cobrando e debitando só quando ele devolver o documento.
+   Quando a Frente A.5/A.6 grudar o débito no ledger, é neste mesmo ponto.
+2. Uma flag de ambiente que liga os agendadores (`@Cron`) em uma instância só, ou lock curto no
+   Redis (`SET ... NX PX`). Como o BullMQ já está no projeto, mover os jobs para tarefas
+   repetíveis dele resolve o mesmo problema.
+3. Adapter de Redis no Socket.IO.
+4. Ingestão MQTT numa instância só (mesma flag do item 2), ou consumir por fila AMQP em vez de
+   assinar o tópico em toda instância. Antes de decidir, conferir se o RabbitMQ em uso suporta
+   `$share`.
+5. Upload direto ao storage por URL pré-assinada, como o painel de gestão já faz.
+6. Falhar no boot sem o segredo de assinatura, e trocar o nome do consumidor por algo único por
+   réplica (`hostname`).
+7. **Validar com carga.** Existe `tools/analytics-ingest-load`; não o executei. Rodá-lo contra duas
+   réplicas, reenviando lotes de propósito, é o teste que mostra se o G.1 fechou.
+
+### Esforço e risco
+
+O G.1 é pequeno e é o único que mexe em dinheiro. O resto é médio e independente entre si. Não sei
+o tamanho da frota: para algumas centenas de tablets, uma instância bem configurada provavelmente
+basta, e o G.1 já protege contra a concorrência que surgir por outro motivo (por exemplo, subir a
+concorrência do worker). Escalar na horizontal não elimina o ponto único de falha da camada de
+dados (G.6).
+
+---
+
+## Frente H — preço por segundo e consumo do crédito depositado
+
+> Origem: o PDF "Plano de monetização e uso dos recursos — OpenDriver" (2026-10-07) e as decisões
+> do dono do mesmo dia, listadas abaixo. Esta frente **detalha o A.5/A.6** com a regra de reserva
+> por ciclo e **depende da G.1** (cobrança atômica do play).
+
+### Decisões já tomadas
+
+1. O preço é **R$ 0,003 por segundo de tela**, consumido do crédito depositado pelo anunciante.
+2. **Tudo o que o código faz hoje com repasse e leilão fica**: piso, modelos `percent` e
+   `per_play`, peso do leilão. Muda só o teto: o repasse que o anunciante pede é **limitado a
+   80%**.
+3. Discrepância de centavos: **arredondar para baixo**.
+4. Segundos cobrados: **imagem = 15 s fixos** (o anunciante não escolhe); **vídeo = a própria
+   duração, de 10 a 120 s**.
+5. Só vai ao ar o anúncio que tem crédito **no momento do débito**. O débito é **transação
+   atômica, como em banco**. A análise e o manifest são **refeitos a cada 15 min**. Os anúncios
+   **só ficam ativos quando o motorista inicia a corrida**.
+6. O preço mora em `platform_config.monetization` (editável no admin, sem redeploy), com exceção
+   por campanha para o preço de lançamento.
+
+### O que já existe
+
+- **Preço por exibição, em centavos inteiros.** `ratePerImpressionCents`
+  (`campaign.schema.ts:29`), digitado pelo anunciante (`create-advertiser-campaign.dto.ts:26`,
+  `@Min(1)`). O faturamento lê esse valor em `analytics-reconciliation.processor.ts:170`, e o
+  pacing arredonda com `Math.round` (`pacing-signal.service.ts:86`).
+- **Duração.** Vídeo é validado entre 10 s (`video-validator.service.ts:21`) e 120 s
+  (`platform-config.service.ts:22`). **Imagem entra com `duration: 10` fixo**
+  (`video-validator.service.ts:238`), o manifest repassa esse valor e o tablet o usa para decidir
+  quanto tempo a imagem fica na tela. O tablet ainda tem dois padrões diferentes: 10 s
+  (`playback-engine.service.ts:41`) e 15 s ao registrar o play (`:594`). Ou seja, **hoje a imagem
+  fica 10 s na tela, não 15 s** (por leitura de código; não vi em aparelho).
+- **Faturável.** Um play só fatura se tocou pelo menos `reconFullPlayMinRatio` (0,9) da duração do
+  criativo, ou 3 s quando a duração é desconhecida (`reconciliation.service.ts`, `classifyPlay`).
+  É sim/não; o tempo exato não entra no preço.
+- **Repasse e leilão.** Piso de 30% (`platform-config.service.ts:43`). `percent` ou `per_play` por
+  campanha (`driver-payout.policy.ts`). O teto de 100% só é verificado no `per_play`; para
+  `percent` o limite é o `@Max(1)` do DTO (`create-advertiser-campaign.dto.ts:73`). O peso do
+  leilão é `1 + k·(repasse/piso − 1)`, entre 0,5 e 3, multiplicando a prioridade do item
+  (`internal/driver-payout.policy.ts:86`, `manifest-generator.service.ts:164`).
+- **Crédito do anunciante.** `AdCreditLedger` existe, append-only, em centavos inteiros, e
+  **nada escreve nele**. Não tem chave de idempotência por lançamento. A elegibilidade
+  (`campaign-eligibility.service.ts:77-130`) não consulta saldo.
+- **Ciclo.** O tablet sincroniza a cada 15 min (`sync-scheduler.service.ts:10`).
+- **Corrida iniciada.** Procurei por nomes de sinal de corrida iniciada em `openad-api` e no app
+  do tablet e não encontrei. A busca é por nome e não é exaustiva.
+
+### O que muda
+
+**H.1 — Unidade do preço.** R$ 0,003 é 0,3 centavo por segundo, e uma imagem de 15 s custa 4,5
+centavos: não cabe em centavo inteiro. Guardar preço e custo em **micro-reais (µR$)**, inteiros:
+R$ 0,003/s = 3.000 µR$/s; imagem de 15 s = 45.000 µR$. Chaves novas em `platform_config.monetization`:
+`pricePerSecondMicros` (3000), `imageDisplaySeconds` (15), `driverPayoutMaxPercent` (0,8) e
+`creditCycleMinutes` (15). Exceção por campanha em `budget.pricePerSecondMicros` (opcional).
+Campanhas existentes continuam em `per_impression`; só as novas nascem `per_second`, com o preço
+**gravado na campanha** na criação, para um reajuste futuro não reprecificar campanha no ar.
+
+**H.2 — Segundos cobrados.** Imagem: `imageDisplaySeconds` (15), vindo do `platform_config`, e não
+do `duration` gravado no asset (que vale 10 nas imagens já enviadas). Vídeo: `floor(asset.duration)`
+(a duração vem do ffprobe, em fracionário). Alinhar o `duration: 10` de
+`video-validator.service.ts:238` para a constante, o manifest para enviar 15 nas imagens, e os dois
+padrões do tablet (`playback-engine.service.ts:41` e `:594`) para o mesmo valor. A tabela de
+preço, a R$ 0,003/s, fica: imagem 15 s = R$ 0,045; vídeo 10 s = R$ 0,03; 30 s = R$ 0,09; 60 s =
+R$ 0,18; 120 s = R$ 0,36. Os pacotes do PDF fecham exatamente (15 s × 20 mil = R$ 900; 30 s × 30
+mil = R$ 2.700; 60 s × 50 mil = R$ 9.000).
+
+**H.3 — Teto de 80% no repasse.** Aplicar nos dois modelos e em três pontos:
+- `validarRepasse` (`advertiser/driver-payout.policy.ts:58`): recusar acima do teto com a mesma
+  mensagem exata do piso (`DRIVER_PAYOUT_ABOVE_CAP`, "Repasse de X% está acima do teto de 80%").
+  O `@Max(1)` do DTO fica como limite sintático; a política é o `platform_config`.
+- `repasseEmCentavos` e `percentEfetivoDoRepasse` (`internal/driver-payout.policy.ts:31`, `:100`):
+  limitar ao teto, como rede de segurança para campanha gravada antes da regra existir (hoje
+  `percent` pode estar em qualquer valor até 100%).
+- Efeito no leilão: com piso 0,30, `k` 0,5 e teto 0,8, o peso máximo é 1 + 0,5·(0,8/0,3 − 1) ≈
+  **1,83**; o limite de 3 do código nunca é atingido, e a plataforma retém pelo menos 20% de cada
+  exibição.
+
+**H.4 — Reserva e débito atômicos por ciclo de 15 min.** É o padrão de "retenção e captura" de
+cartão: reservar antes de mostrar, capturar o que foi mostrado, devolver o resto.
+
+1. **Tabela nova** `ad_credit_holds` (Postgres, aditiva): `advertiserId`, `campaignId`, `cycleId`,
+   `amountMicros`, `capturedMicros`, `status` (`open`/`closed`), `closesAt`. O ledger fica só
+   com dinheiro que entrou e saiu (é registro fiscal, como o comentário do schema diz). Saldo
+   disponível = soma do ledger − o que ainda resta em retenções abertas.
+2. **Início do ciclo**, num único job (uma instância só — ver G.4): para cada anunciante, uma
+   transação com `SELECT … FOR UPDATE` na linha do anunciante calcula o disponível e abre as
+   retenções, campanha por campanha, na ordem de prioridade. **Só entra no manifest a campanha com
+   retenção aberta.** Sem crédito, sai do manifest no ciclo seguinte.
+3. **Cota por tablet.** O manifest ganha dois campos opcionais por item, `maxPlaysInCycle` e
+   `cycleEndsAt` (aditivos em `ManifestMediaItemDto`, `manifest-response.dto.ts`), e o tablet para
+   de tocar o item ao atingir a cota. **Sem a cota, a retenção não limita nada**: é ela que
+   impede "exibir a mais". A cota é o pacing com teto duro.
+4. **Captura.** No instante em que o play vira faturável (a transição atômica da G.1), debitar o
+   ledger com `referenceId = campaignId:uniqueEventId` **único** (coluna nova no ledger). Repetir o
+   débito é inofensivo, como já é no repasse. Mongo e Postgres **não compartilham transação**, então
+   a atomicidade vem de três coisas juntas: transição única no Mongo (G.1), débito idempotente no
+   Postgres e um job de conciliação que refaz o débito de qualquer play faturável sem lançamento
+   (o padrão *outbox*).
+5. **Fechamento.** No fim do ciclo, mais uma janela de tolerância, a retenção fecha e o que não foi
+   capturado volta ao saldo (a quantia reservada que não foi usada deixa de contar como retida).
+   Play enviado depois da janela (tablet ficou offline) precisa de regra: sugestão, lançar como
+   ajuste absorvido pela plataforma e não debitar o anunciante.
+6. **Arredondamento.** O custo de uma exibição é exato em µR$. A conversão para centavos acontece só
+   ao lançar no ledger e ao creditar o motorista, e arredonda **para baixo**. Aplicar o "para baixo"
+   por exibição perderia 0,5 centavo dos 4,5 de uma imagem de 15 s (11%), sempre contra o mesmo
+   lado; por isso ele vale sobre o **acumulado do lote/ciclo**, com o resto (< 1 centavo) carregado para o lançamento seguinte. O viés nunca
+   acumula. O crédito ao motorista segue a mesma regra, com resto por motorista (não li o lado do
+   hub que recebe esse crédito).
+
+**H.5 — Anúncio só com corrida iniciada.** Não existe sinal de corrida iniciada no que li. O botão
+"iniciar corrida" do plano do PDF precisa chegar ao tablet (e, de preferência, ao servidor, para
+dimensionar a cota pelos tablets realmente ativos). Esta frente não o especifica; ela só depende
+dele. Até existir, a cota é dividida entre os tablets pareados.
+
+### Os 7 lugares que leem a tarifa por exibição
+
+Para cada um: o que mudar e o que cada público passa a ver. As telas do app do anunciante eu não
+li; a sugestão é de contrato de dados, não de layout.
+
+| # | Lugar | Mudança | Quem ganha visibilidade |
+| --- | --- | --- | --- |
+| 1 | **Faturamento** — `analytics-reconciliation.processor.ts:170` e `pacing-signal.service.ts:86` | Custo = `pricePerSecondMicros × segundos` (H.2). Gravar no play `seconds`, `pricePerSecondMicros`, `costMicros`, `driverMicros`, `platformMicros`. O acumulador de gasto diário passa a `billableCostMicros` (campo novo, aditivo), sem o `Math.round`. | Admin: em cada play, "15 s × R$ 0,003 = R$ 0,045; motorista R$ x; plataforma R$ y". Contestação futura tem o preço da época. |
+| 2 | **Relatório do anunciante** — `reporting-aggregation.service.ts:61-93` | Somar o `costMicros` gravado em vez de `plays × tarifa × multiplicador de zona` (a faixa está fixa em `'T4'`, fator 1,0, então hoje o multiplicador não faz nada). Devolver: exibições, **segundos exibidos**, custo médio por exibição, gasto no período, **saldo restante**, "crédito dura até ~dd/mm" no ritmo atual, e a quebra **por criativo** (imagem de 15 s × cada vídeo). | Anunciante: vê para onde foi o dinheiro e quando acaba. |
+| 3 | **Estimativa de inventário** — `advertiser-inventory.service.ts:143-160` | Hoje `maxBillablePlays = total / tarifa`. Passar a `maxBillableSeconds = totalMicros / pricePerSecondMicros` e, por criativo anexado, `floor(totalMicros / (preço × segundos))` exibições. Avisos novos: "seu crédito cobre N exibições de 15 s" e "o saldo não cobre um ciclo de 15 min". | Anunciante, antes de ativar. |
+| 4 | **Validação do repasse** — `advertiser/driver-payout.policy.ts:58-153` | Teto de 80% (H.3). O `per_play` passa a ser validado contra os **criativos da campanha**, não contra uma tarifa única (ver "Riscos"). Mensagens com o número exato que falta ou sobra. | Anunciante: "entre 30% e 80%". |
+| 5 | **Ciclo de vida da campanha** — `campaign-lifecycle.service.ts:91` e `:211`, mais `create-campaign.dto.ts:31` | `ratePerImpressionCents` vira **opcional e ignorado** nas campanhas novas (o app do anunciante já aprovado ainda o envia, e a API só pode mudar de forma aditiva). Persistir o `pricing` gravado na criação. A resposta devolve `pricePerSecondMicros` e a tabela de preço por duração. A campanha não vai para `active` sem crédito para ao menos um ciclo. | Anunciante vê "seu anúncio de 15 s custa R$ 0,045 por exibição". |
+| 6 | **Peso do leilão** — `campaign-eligibility.service.ts:106-113` e `manifest-generator.service.ts:164` | Lógica mantida (decisão 2). Mudar só o insumo: usar o repasse já limitado a 80%, e para `per_play` calcular o percentual efetivo **por item** (`valueCents ÷ custo daquele criativo`), não por campanha, porque o custo agora depende da duração. Expor o peso final e a prioridade resultante no detalhe da campanha no admin. | Admin e anunciante entendem por que uma campanha toca mais ("repasse maior = prioridade até +83%"). |
+| 7 | **Criação de campanha** — `create-advertiser-campaign.dto.ts:26` e a tela do app/painel | Trocar o campo de tarifa por uma **tabela de preço somente leitura** e uma calculadora de pacote: duração do criativo × exibições = preço (15 s × 20 mil = R$ 900), com saldo atual e se cobre. Mostrar o repasse numa faixa 30%–80% com o efeito no leilão. Motorista/tablet: ganho por exibição em R$ e em segundos. | Anunciante e motorista. |
+
+### Riscos e perguntas em aberto
+
+- **`per_play` não tem percentual fixo com preço por segundo.** Um valor fixo precisa ficar entre
+  30% do preço do criativo **mais caro** (120 s: 36 centavos → 10,8) e 80% do **mais barato** (10 s:
+  3 centavos → 2,4). Numa campanha que mistura os dois, **não existe valor que valha para todos**.
+  A decisão de manter o código fica de pé; a proposta é validar contra os criativos da campanha
+  quando eles são anexados e recusar, sugerindo `percent`, nos casos impossíveis.
+- **O PDF projeta 50/50; o código, sem `driverPayout`, repassa o piso de 30%.** Mantido o código, o
+  motorista recebe 30% por padrão: o teto de R$ 405/mês com tela 100% vendida do PDF vira R$ 243
+  nesse padrão. Vale reconferir a projeção, ou subir o piso para 0,5 no admin.
+- **A cota uniforme subentrega** quando poucos tablets estão em corrida: a cota dos parados fica
+  sem uso até o ciclo seguinte. Refinamento: ponderar a cota pelo histórico de plays do ciclo
+  anterior (e, quando existir, pelo sinal de corrida iniciada).
+- **Tablet com APK antigo ignora a cota** e toca além da retenção. A captura fica limitada ao que
+  foi retido; o excedente não fatura. Como o APK é instalado por cabo, dá para atualizar a frota
+  antes de ligar a regra.
+- **Reajuste de preço depois dos 30 dias** (PDF): vale para campanhas novas e renovações, nunca
+  para a que está no ar, por causa do preço gravado na criação.
+
+### Esforço e risco
+
+H.1 a H.3 são médios e só de servidor; é o que define *o que* se debita e precisa vir antes do H.4.
+O H.4 é o maior: tabela nova, job de ciclo, campos novos no manifest e mudança no tablet (APK por
+cabo, sem loja). O risco principal é dinheiro, então: testar a conciliação reenviando lotes de
+propósito (`tools/analytics-ingest-load` existe; não o executei) e ligar primeiro com crédito
+lançado à mão no admin, como o PDF prevê enquanto o Asaas está em `mock`.
+
+---
+
 ## 4. Ordem sugerida
 
 Ordenada por valor dividido por atrito, não por importância isolada.
@@ -444,12 +760,17 @@ Ordenada por valor dividido por atrito, não por importância isolada.
 | --- | --- | --- |
 | 1 | **B** — provedor de pagamento no catálogo + aviso de `mock` | Pequeno, só servidor, e hoje o sistema pode estar fingindo que cobra. Nada mais importa se o dinheiro não entra. |
 | 2 | **E.7** — ligar a Infosimples de verdade | Uma configuração. Sem ela, todo o resto da Frente E opera sobre dados do mock. |
-| 3 | **A.5/A.6** — portão de saldo e débito no ledger | Fecha o vazamento de receita. Só servidor. Mesmo antes de existir forma de comprar crédito, bloquear veiculação sem saldo é o comportamento correto. |
-| 4 | **E.1 a E.5** — tabela de categoria, classificação, reclassificação, reprocessamento | Servidor e web, sem submissão. Resolve o que você pediu e corrige um buraco operacional. |
-| 5 | **A.1 a A.4, A.7** — validação de recibo, rotas de crédito, webhooks de estorno | Grande, com dependência de loja. Decidir antes IAP ou painel web (ver a alternativa na Frente A). |
-| 6 | **D** — gestão de produto no app + estoque por unidade | Média, custa submissão. Agrupar com a Frente C. |
-| 7 | **C** — foto de perfil nos apps | Pequena, custa submissão. Entra junto com a D na mesma leva. |
-| 8 | **A.8** — tela de compra no app do anunciante | Última, porque depende de 5 estar pronto e testado. |
+| 3 | **G.1** — cobrança do play atômica e sem lote duplicado | Pequeno, só servidor, e é o único item de escala que mexe em dinheiro. Também é pré-requisito do H.4. |
+| 4 | **H.1 a H.3** — preço por segundo em micro-reais, imagem de 15 s, teto de 80% no repasse | Médio, só servidor. Define *o que* se debita, então vem antes do débito. |
+| 5 | **A.5/A.6 = H.4** — reserva e débito atômicos por ciclo de 15 min, cota por tablet | Fecha o vazamento de receita com a regra definida em 2026-10-07. Servidor e APK do tablete (por cabo, sem loja). Funciona antes de existir compra de crédito: o crédito pode ser lançado à mão no admin. |
+| 6 | **F.1 a F.3** — provar a retomada de download (CORS do storage, validade da URL) | Sobretudo verificação, sem submissão. Hoje ninguém sabe se a retomada retoma. |
+| 7 | **E.1 a E.5** — tabela de categoria, classificação, reclassificação, reprocessamento | Servidor e web, sem submissão. Resolve o que você pediu e corrige um buraco operacional. |
+| 8 | **A.1 a A.4, A.7** — crédito por **painel web com Pix** (decisão do PDF, não compra no app), rotas de crédito, estornos | Grande. O PDF fechou a dúvida que a Frente A deixava aberta: IAP fica fora. |
+| 9 | **H (telas e relatórios, lugares 2, 3, 5 e 7)** — saldo, tabela de preço e calculadora de pacote no app do anunciante | O lado servidor (relatório, estimativa) sai junto do H.1. A tela custa submissão: agrupar com C e D. |
+| 10 | **D** — gestão de produto no app + estoque por unidade | Média, custa submissão. Agrupar com a Frente C. |
+| 11 | **C** — foto de perfil nos apps | Pequena, custa submissão. Entra junto com a D na mesma leva. |
+| 12 | **A.8** — tela de compra de crédito | Só se houver compra no app; pelo PDF a compra é no painel web, então pode nem existir. |
+| 13 | **G.2 a G.7** — adapter do Socket.IO, agendadores e ingestão MQTT em uma instância, upload direto | Só quando for subir a segunda instância. Médio e independente entre si. |
 
 ---
 
@@ -479,6 +800,16 @@ Para ser útil, um plano precisa dizer o que fica fora.
 - Dos arquivos `asaas.ts` do hub e do opendriver vi os trechos relevantes por busca com números
   de linha, não a leitura integral. A estrutura e as chamadas HTTP estão confirmadas; não
   revisei cada tratamento de erro.
+- Nas Frentes F e G li código e specs; não executei nada em produção nem em aparelho. Na F,
+  não verifiquei o CORS de `storage.opendriver.com.br`, a validade da URL na retomada nem o
+  tamanho dos vídeos. Na G, não rodei carga nem sei o tamanho da frota, e não sei se o RabbitMQ em
+  uso suporta `$share`. Uma versão anterior da F estava errada ao dizer que o tablet baixa pela
+  rota `/file`: ele baixa pela URL pré-assinada do manifesto.
+- Na Frente H li o código do servidor e do tablet e o PDF de monetização; não executei nada. Não
+  li as telas do app do anunciante (a seção dos 7 lugares é contrato de dados, não layout), nem o
+  lado do hub que recebe o crédito do motorista. Que a imagem hoje fica 10 s na tela vem de
+  leitura de código, não de um aparelho. A ausência de um sinal de "corrida iniciada" vem de busca
+  por nome, que não é exaustiva.
 - Na web do hub confirmei que existe wrapper de API para as 28 rotas de parceiro, mas não abri
   cada página para verificar qual wrapper cada tela chama. "Tudo consumido pela web" vale no
   nível da camada de API, não necessariamente por tela.
