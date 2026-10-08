@@ -7,14 +7,67 @@ const TTL_MS = 24 * 60 * 60 * 1000;
  * HMAC-signed, time-limited URLs for creative assets (MQTT schedule payloads).
  * Devices fetch without JWT using ?exp=&sig= query params.
  */
+/**
+ * Segredo de assinatura, exigido **no boot**.
+ *
+ * ============================================================================
+ * O que havia aqui, e por que era grave
+ * ============================================================================
+ *
+ * O segredo caía para a constante `'dev-asset-url-secret-change-me'` quando faltavam
+ * `ASSET_URL_SIGNING_SECRET` e `JWT_SECRET`. Essa constante está no repositório: qualquer pessoa
+ * que o leia pode assinar uma URL de criativo válida por 24 h, e essas URLs são buscadas
+ * **sem JWT** pelos aparelhos. A falha era silenciosa — o serviço subia, assinava e servia.
+ *
+ * Item G.7 do plano v2: o correto é falhar no boot.
+ *
+ * ============================================================================
+ * Por que no boot, e não na primeira assinatura
+ * ============================================================================
+ *
+ * Porque na primeira assinatura já é tarde: o push de agenda por MQTT acontece dentro de um
+ * fluxo que não tem a quem reclamar, e o erro apareceria como criativo que não baixa. Falhar no
+ * boot troca um problema silencioso e permanente por um contêiner que não sobe — que é ruidoso,
+ * imediato e corrigível com uma variável.
+ *
+ * Em teste o segredo é fixo e previsível: as suítes não definem variável de ambiente para isto,
+ * e exigir a variável faria 100+ suítes falharem na construção do módulo por um motivo que não
+ * é o que elas verificam.
+ */
+function segredoDeAssinatura(): string {
+  const explicito = (process.env.ASSET_URL_SIGNING_SECRET ?? '').trim();
+  if (explicito) return explicito;
+
+  /**
+   * Queda para `JWT_SECRET` é intencional e **não** é um atalho: o `JWT_SECRET` é obrigatório em
+   * produção (o `FederatedJwtStrategy` lança no boot sem ele) e tem a mesma classe de segredo.
+   * O que não existe mais é a queda para uma constante do repositório.
+   */
+  const jwt = (process.env.JWT_SECRET ?? '').trim();
+  if (jwt) return jwt;
+
+  if (process.env.OPENAD_JEST === '1' || process.env.NODE_ENV === 'test') {
+    return 'asset-url-secret-de-teste';
+  }
+
+  throw new Error(
+    'ASSET_URL_SIGNING_SECRET (ou JWT_SECRET) e obrigatorio: as URLs de criativo sao buscadas pelos aparelhos SEM JWT, e assinar com um segredo do repositorio deixaria qualquer pessoa emitir URL valida por 24 h.'
+  );
+}
+
 @Injectable()
 export class AssetUrlService {
+  /**
+   * Resolvido na construção, e não a cada assinatura.
+   *
+   * É o que faz a ausência do segredo derrubar o **boot**: o Nest instancia este serviço ao
+   * montar o módulo. Resolver dentro de `secret()` adiaria o erro para a primeira URL assinada,
+   * que acontece num push de MQTT sem ninguém olhando.
+   */
+  private readonly segredo = segredoDeAssinatura();
+
   private secret(): string {
-    return (
-      (process.env.ASSET_URL_SIGNING_SECRET ?? '').trim() ||
-      (process.env.JWT_SECRET ?? '').trim() ||
-      'dev-asset-url-secret-change-me'
-    );
+    return this.segredo;
   }
 
   private baseUrl(): string {

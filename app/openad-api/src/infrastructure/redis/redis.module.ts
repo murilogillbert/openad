@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { RedisService } from './redis.service';
+import { SchedulerLockService } from './scheduler-lock.service';
 
 @Global()
 @Module({
@@ -16,7 +17,13 @@ import { RedisService } from './redis.service';
         return new RedisService(url);
       },
     },
+    SchedulerLockService,
   ],
-  exports: [RedisService],
+  /**
+   * `@Global()`, então quem injeta `SchedulerLockService` não precisa importar nada — é o mesmo
+   * tratamento que o `RedisService` já tinha, e o lock de agendador é usado em seis módulos
+   * diferentes.
+   */
+  exports: [RedisService, SchedulerLockService],
 })
 export class RedisModule {}

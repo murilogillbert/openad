@@ -1,8 +1,21 @@
 import { PinoLogger } from 'nestjs-pino';
+import type { SchedulerLockService } from '../../infrastructure/redis/scheduler-lock.service';
 import type { AssetStorageService } from '../../infrastructure/storage/asset-storage.service';
 import type { RemoteCommandsRepository } from '../fleet-monitor/remote-commands.repository';
 import { ObjectStorageCleanupService } from './object-storage-cleanup.service';
 import type { ReportJobsRepository } from './report-jobs.repository';
+
+/**
+ * Lock de agendador que **sempre executa**.
+ *
+ * Estes casos verificam a limpeza, não a coordenação entre réplicas — essa tem teste próprio em
+ * `scheduler-lock.service.spec.ts`. Um falso que sempre executa mantém os casos existentes
+ * medindo o que mediam antes do lock entrar.
+ */
+const lockQueSempreExecuta = {
+  desligado: false,
+  comLock: async (_chave: string, _ttl: number, tarefa: () => Promise<void>) => tarefa(),
+} as unknown as SchedulerLockService;
 
 describe('ObjectStorageCleanupService', () => {
   const makeService = (opts: {
@@ -42,7 +55,8 @@ describe('ObjectStorageCleanupService', () => {
       logger,
       storage,
       reportJobs,
-      remoteCommands
+      remoteCommands,
+      lockQueSempreExecuta
     );
     return {
       svc,
@@ -132,7 +146,8 @@ describe('ObjectStorageCleanupService', () => {
       logger,
       storage,
       reportJobs,
-      remoteCommands
+      remoteCommands,
+      lockQueSempreExecuta
     );
 
     const r = await svc.purgeReportExports();

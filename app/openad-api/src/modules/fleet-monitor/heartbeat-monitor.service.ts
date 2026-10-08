@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PinoLogger } from 'nestjs-pino';
+import { SchedulerLockService } from '../../infrastructure/redis/scheduler-lock.service';
 import { DeviceStateMachineService } from '../devices/device-state-machine.service';
 import { DevicesRepository } from '../devices/devices.repository';
 import { FleetStatusRepository } from '../vehicles/fleet-status.repository';
@@ -17,13 +18,29 @@ export class HeartbeatMonitorService {
     private readonly notifications: NotificationService,
     private readonly devices: DevicesRepository,
     private readonly fsm: DeviceStateMachineService,
-    private readonly gateway: FleetGateway
+    private readonly gateway: FleetGateway,
+    private readonly lock: SchedulerLockService
   ) {
     this.logger.setContext(HeartbeatMonitorService.name);
   }
 
+  /**
+   * Varredura de heartbeat, em **uma** instância por vez.
+   *
+   * É a tarefa em que a duplicação mais custa: lê a frota inteira a cada 30 s e, para cada
+   * aparelho vencido, busca o registro, transiciona o estado e alerta os administradores. Com
+   * duas réplicas sem lock, cada administrador recebia o alerta duas vezes — e `transitionTo`
+   * na segunda réplica falhava (o aparelho já não está `Active`), enchendo o log de avisos de
+   * "transition skipped" que não indicam problema nenhum.
+   *
+   * Lock de 25 s para um cron de 30 s: cobre a sobreposição e expira antes da execução seguinte.
+   */
   @Cron('*/30 * * * * *')
   async sweepStaleHeartbeats(): Promise<void> {
+    await this.lock.comLock('openad:cron:heartbeat-sweep', 25_000, () => this.varrer());
+  }
+
+  private async varrer(): Promise<void> {
     const flaggedAfterMs = this.cfg.get().fleetHealth.heartbeatFlaggedThresholdMs;
     const cutoff = new Date(Date.now() - flaggedAfterMs);
     const docs = await this.fleetStatus.findAll();

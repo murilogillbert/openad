@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PinoLogger } from 'nestjs-pino';
+import { SchedulerLockService } from '../../infrastructure/redis/scheduler-lock.service';
 import { AssetStorageService } from '../../infrastructure/storage/asset-storage.service';
 import { RemoteCommandsRepository } from '../fleet-monitor/remote-commands.repository';
 import { ReportJobsRepository } from './report-jobs.repository';
@@ -18,13 +19,28 @@ export class ObjectStorageCleanupService {
     private readonly logger: PinoLogger,
     private readonly storage: AssetStorageService,
     private readonly reportJobs: ReportJobsRepository,
-    private readonly remoteCommands: RemoteCommandsRepository
+    private readonly remoteCommands: RemoteCommandsRepository,
+    private readonly lock: SchedulerLockService
   ) {
     this.logger.setContext(ObjectStorageCleanupService.name);
   }
 
+  /**
+   * Limpeza diária do bucket, em **uma** instância por vez.
+   *
+   * Duas réplicas sem lock percorreriam o mesmo acervo às 3h: cada uma faria até 50 rodadas de
+   * 200 objetos, e a segunda tentaria apagar o que a primeira já apagou — somando erros de
+   * "não encontrado" no contador e no log, que é justamente onde se procuraria um problema real
+   * de storage.
+   *
+   * Lock de 30 min: a varredura pode demorar, e o cron só volta em 24 h.
+   */
   @Cron('0 3 * * *')
   async scheduledPurge(): Promise<void> {
+    await this.lock.comLock('openad:cron:storage-cleanup', 30 * 60_000, () => this.limpar());
+  }
+
+  private async limpar(): Promise<void> {
     const reports = await this.purgeReportExports();
     const shots = await this.purgeScreenshots();
     if (reports.purged > 0 || shots.purged > 0) {

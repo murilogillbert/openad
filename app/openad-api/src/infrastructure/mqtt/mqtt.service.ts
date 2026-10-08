@@ -126,11 +126,62 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
+  /**
+   * `true` quando esta instância **não** deve consumir tópicos MQTT.
+   *
+   * ============================================================================
+   * O problema (item G.2 do plano v2)
+   * ============================================================================
+   *
+   * Cinco serviços assinam o mesmo tópico em **toda** instância da API: ack de comando,
+   * telemetria, impressões, comandos prioritários e o livro espacial. Com N réplicas, cada
+   * mensagem é entregue e processada N vezes.
+   *
+   * Impressões e plays são idempotentes por índice único, então ali o efeito é só trabalho
+   * duplicado. Nos outros três não: o ack de comando e os comandos prioritários produzem
+   * escrita e notificação por mensagem.
+   *
+   * ============================================================================
+   * Por que a flag, e não `$share`
+   * ============================================================================
+   *
+   * `$share/<grupo>/<tópico>` do MQTT 5 resolveria isso no broker, distribuindo cada mensagem a
+   * um só assinante do grupo. Mas o broker em produção é o RabbitMQ 4.3.6 com `rabbitmq_mqtt`, e
+   * **o suporte a assinatura compartilhada não está confirmado**: a issue 8936 do
+   * rabbitmq-server pediu o recurso e o MQTT 5.0 que entrou no 3.13 deixou shared subscriptions
+   * de fora. Usar `$share` sem confirmar significaria assinar um tópico literal chamado
+   * `$share/...`, que nunca casa com nada — e a ingestão pararia **em silêncio**.
+   *
+   * A flag é a primeira opção do próprio plano ("ingestão MQTT numa instância só") e funciona
+   * independentemente do broker. O custo é operacional: ao subir a segunda réplica, ela precisa
+   * de `OPENAD_MQTT_INGEST_DISABLED=true`.
+   *
+   * Padrão **ligado**, para o comportamento de hoje (uma instância) não mudar.
+   */
+  private get ingestaoDesligada(): boolean {
+    return process.env.OPENAD_MQTT_INGEST_DISABLED === 'true';
+  }
+
   subscribe(
     topicPattern: string,
     handler: MqttMessageHandler,
     qos: 0 | 1 | 2 = 1
   ): void {
+    if (this.ingestaoDesligada) {
+      /**
+       * Nem registra o handler, nem assina.
+       *
+       * Registrar o handler sem assinar seria pior do que parece: o `ensureMessageListener`
+       * despacha por correspondência de padrão sobre `this.subscriptions`, então um handler
+       * registrado passaria a receber mensagem de **outra** assinatura cujo padrão casasse.
+       */
+      this.logger.warn(
+        { event: 'mqtt.ingestao_desligada', topicPattern },
+        'OPENAD_MQTT_INGEST_DISABLED=true: esta instancia nao consome este topico'
+      );
+      return;
+    }
+
     this.ensureMessageListener();
     this.subscriptions.push({ pattern: topicPattern, handler });
     this.connected.subscribe(topicPattern, { qos }, (err) => {

@@ -282,6 +282,29 @@ services:
       # função, não motivo para o serviço não subir.
       HUB_API_URL: ${HUB_API_URL:-https://hubapi.opendriver.com.br}
 
+      # ----------------------------------------------------------------- mais de uma instancia
+      #
+      # As tres variaveis abaixo so importam quando houver uma SEGUNDA replica da API. Com uma
+      # instancia, os padroes atuais sao os corretos e nada precisa ser definido.
+      #
+      # `ASSET_URL_SIGNING_SECRET` e a excecao: ela nao e sobre escala, e passou a ser exigida no
+      # boot. Antes caia para uma constante do repositorio
+      # (`dev-asset-url-secret-change-me`), e as URLs de criativo sao buscadas pelos aparelhos
+      # SEM JWT — qualquer pessoa que lesse o repositorio podia assinar uma URL valida por 24 h.
+      # Como ela cai para `JWT_SECRET` (que ja e obrigatorio), nao e preciso definir aqui.
+      #
+      #   OPENAD_SCHEDULERS_DISABLED=true   a replica nao roda @Cron. Alternativa ao lock de
+      #                                     Redis, que ja cobre os seis agendadores.
+      #   OPENAD_MQTT_INGEST_DISABLED=true  a replica nao assina topico MQTT. Necessario porque
+      #                                     o suporte a `$share` no RabbitMQ 4.3 nao esta
+      #                                     confirmado; sem isso, cada mensagem e processada N
+      #                                     vezes (ack de comando e comando prioritario
+      #                                     escrevem e notificam por mensagem).
+      #   REDIS_URL                         ja definida; com ela o Socket.IO usa o adapter de
+      #                                     Redis e o painel recebe evento de qualquer replica.
+      OPENAD_SCHEDULERS_DISABLED: ${OPENAD_SCHEDULERS_DISABLED:-false}
+      OPENAD_MQTT_INGEST_DISABLED: ${OPENAD_MQTT_INGEST_DISABLED:-false}
+
       RABBITMQ_PROVISION_DEVICE_MQTT_USERS: 'true'
 
       # Primeiro `super_admin` do portal. `UsersService.seedAdminUser` só age quando a coleção

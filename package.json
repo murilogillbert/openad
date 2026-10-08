@@ -131,6 +131,7 @@
     "@primeuix/themes": "^2.0.3",
     "@prisma/client": "^6.19.3",
     "@schematics/angular": "~21.2.7",
+    "@socket.io/redis-adapter": "8.3.0",
     "@tailwindcss/postcss": "^4.2.2",
     "@turf/boolean-point-in-polygon": "^7.3.4",
     "@turf/buffer": "^7.3.4",

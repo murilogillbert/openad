@@ -16,7 +16,22 @@ const GROUP = 'impression-workers';
 
 @Injectable()
 export class ImpressionStreamConsumer implements OnModuleInit {
-  private readonly consumerName = `api-${process.pid}`;
+  /**
+   * Nome do consumidor no consumer group, por **hostname** e não só por PID.
+   *
+   * Item G.7 do plano v2. Em contêiner o PID é quase sempre `1`, então `api-${process.pid}`
+   * dava o **mesmo** nome para todas as réplicas — e duas réplicas com o mesmo nome de
+   * consumidor dividem a mesma lista de pendências do Redis Streams.
+   *
+   * O efeito não é perda de evento (o `XACK` e o índice único em `eventId` cuidam disso), mas
+   * sim: uma réplica podia reivindicar como "sua" uma entrega pendente da outra, e `XAUTOCLAIM`
+   * ou inspeção por `XPENDING` deixava de distinguir quem estava atrasado. Diagnóstico cego num
+   * caminho de faturamento.
+   *
+   * `HOSTNAME` é definido pelo Docker com o id curto do contêiner, e é único por réplica. O PID
+   * fica junto para distinguir reinícios dentro do mesmo contêiner.
+   */
+  private readonly consumerName = `api-${process.env.HOSTNAME ?? 'local'}-${process.pid}`;
 
   constructor(
     private readonly logger: PinoLogger,

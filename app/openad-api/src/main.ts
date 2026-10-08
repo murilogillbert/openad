@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app/app.module';
 import { aplicarPrefixoGlobal } from './app/global-prefix';
+import { RedisIoAdapter } from './infrastructure/websocket/redis-io.adapter';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -16,7 +17,28 @@ async function bootstrap() {
   app.useLogger(app.get(Logger));
   app.use(helmet({ contentSecurityPolicy: false }));
   app.enableCors({ origin: true, credentials: true });
-  app.useWebSocketAdapter(new IoAdapter(app));
+
+  /**
+   * Socket.IO com adapter de Redis quando houver `REDIS_URL` (item G.3 do plano v2).
+   *
+   * Com o adapter padrão, um evento emitido numa instância só chega aos clientes conectados
+   * **nela** — o painel de um operador na instância A não recebe a mudança de estado emitida
+   * pela instância B. Ver a nota longa em `RedisIoAdapter`.
+   *
+   * O registro acontece **antes** do `listen`: `useWebSocketAdapter` depois do servidor de pé
+   * não reconfigura o gateway já criado.
+   */
+  const logger = app.get(Logger);
+  const ioRedis = new RedisIoAdapter(app, (m) => logger.warn(m));
+  const comRedis = await ioRedis.conectar();
+  app.useWebSocketAdapter(comRedis ? ioRedis : new IoAdapter(app));
+  if (comRedis) {
+    logger.log('Socket.IO com adapter de Redis: eventos chegam a clientes de qualquer instancia.');
+    // Fecha as conexões de pub/sub no encerramento, para `SIGTERM` não deixar socket pendurado.
+    app.enableShutdownHooks();
+    process.once('SIGTERM', () => void ioRedis.fechar());
+    process.once('SIGINT', () => void ioRedis.fechar());
+  }
 
   // Prefixo e exclusões vêm de `app/global-prefix.ts`, compartilhado com o factory de teste:
   // as duas configurações têm de ser idênticas, senão uma rota responde num caminho no teste

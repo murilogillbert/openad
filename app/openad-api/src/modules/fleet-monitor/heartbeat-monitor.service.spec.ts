@@ -1,4 +1,5 @@
 import { PinoLogger } from 'nestjs-pino';
+import type { SchedulerLockService } from '../../infrastructure/redis/scheduler-lock.service';
 import { DeviceStateMachineService } from '../devices/device-state-machine.service';
 import { DevicesRepository } from '../devices/devices.repository';
 import { FleetStatusRepository } from '../vehicles/fleet-status.repository';
@@ -6,6 +7,17 @@ import { FleetGateway } from './fleet-gateway';
 import { HeartbeatMonitorService } from './heartbeat-monitor.service';
 import { NotificationService } from './notification.service';
 import type { PlatformConfig } from '@openad/api-contracts';
+
+/**
+ * Lock de agendador que **sempre executa**.
+ *
+ * Estes casos verificam a varredura de heartbeat, não a coordenação entre réplicas — essa tem
+ * teste próprio em `scheduler-lock.service.spec.ts`.
+ */
+const lockQueSempreExecuta = {
+  desligado: false,
+  comLock: async (_chave: string, _ttl: number, tarefa: () => Promise<void>) => tarefa(),
+} as unknown as SchedulerLockService;
 import type { PlatformConfigRuntimeService } from '../platform-config/platform-config-runtime.service';
 import { platformConfigDefaults } from '../platform-config/platform-config.service';
 
@@ -89,7 +101,8 @@ describe('HeartbeatMonitorService', () => {
       notifications,
       devices,
       fsm,
-      gateway
+      gateway,
+      lockQueSempreExecuta
     );
     await svc.sweepStaleHeartbeats();
 
@@ -120,7 +133,8 @@ describe('HeartbeatMonitorService', () => {
       notifications,
       devices,
       fsm,
-      gateway
+      gateway,
+      lockQueSempreExecuta
     );
     await svc.sweepStaleHeartbeats();
 
@@ -151,7 +165,8 @@ describe('HeartbeatMonitorService', () => {
       notifications,
       devices,
       fsm,
-      gateway
+      gateway,
+      lockQueSempreExecuta
     );
     await svc.sweepStaleHeartbeats();
 
