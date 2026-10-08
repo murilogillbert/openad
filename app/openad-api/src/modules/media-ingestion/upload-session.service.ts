@@ -17,6 +17,8 @@ import {
 import { AssetStorageService } from '../../infrastructure/storage/asset-storage.service';
 import { PlatformConfigRuntimeService } from '../platform-config/platform-config-runtime.service';
 import { UploadSession, UploadSessionDocument } from './schemas/upload-session.schema';
+import { createReadStream } from 'fs';
+import { unlink } from 'fs/promises';
 const DEFAULT_TTL_SEC = 3600;
 const DEFAULT_ALLOWED_MIME = ['video/mp4', 'image/jpeg', 'image/png'] as const;
 
@@ -264,11 +266,43 @@ export class UploadSessionService {
       });
     }
 
-    await this.assets.putObjectAtKey(
-      session.storageKey,
-      file.buffer,
-      session.contentType
-    );
+    /**
+     * Grava do **disco** quando o multer escreveu em arquivo temporário, e da memória quando
+     * não (item G.5 do plano v2).
+     *
+     * O criativo pode ter centenas de megabytes, e com `memoryStorage` o arquivo inteiro ficava
+     * na RAM do processo durante toda a requisição — 500 MB por envio simultâneo, em qualquer
+     * número de instâncias. Com `diskStorage`, o pico de memória passa a ser o tamanho do
+     * pedaço que o stream move.
+     *
+     * Os dois caminhos continuam suportados porque outros controladores ainda usam
+     * `memoryStorage` para arquivo pequeno (avatar, por exemplo), e ali a troca não paga.
+     */
+    if (file.path) {
+      const stream = createReadStream(file.path);
+      try {
+        await this.assets.putObjectAtKey(
+          session.storageKey,
+          stream,
+          session.contentType,
+          file.size
+        );
+      } finally {
+        /**
+         * O temporário é apagado **sempre**, inclusive quando o envio ao storage falha: o
+         * multer não limpa o que escreveu, e sem isto cada falha deixaria centenas de megabytes
+         * no disco do contêiner até ele ser recriado.
+         */
+        stream.destroy();
+        await unlink(file.path).catch(() => undefined);
+      }
+    } else {
+      await this.assets.putObjectAtKey(
+        session.storageKey,
+        file.buffer,
+        session.contentType
+      );
+    }
     void this.logger.info(
       { sessionId, storageKey: session.storageKey },
       'VFS upload bytes stored via API'

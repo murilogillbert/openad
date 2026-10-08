@@ -14,7 +14,8 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
+import { diskStorage } from 'multer';
+import { tmpdir } from 'os';
 import { Throttle } from '@nestjs/throttler';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
@@ -170,9 +171,24 @@ export class AdvertiserController {
   @HttpCode(204)
   @Throttle({ mediaUpload: { limit: 60, ttl: 60_000 } })
   @ApiOperation({ summary: 'Envia os bytes do criativo (campo multipart: file)' })
+  /**
+   * `diskStorage`, e **não** `memoryStorage` (item G.5 do plano v2).
+   *
+   * Com `memoryStorage`, um vídeo de 500 MB ocupava 500 MB de RAM do processo durante toda a
+   * requisição — por envio simultâneo, em qualquer número de instâncias. Dois anunciantes
+   * subindo criativo grande ao mesmo tempo derrubavam a API por memória, e o sintoma seria o
+   * contêiner sendo morto pelo orquestrador sem nada no log da aplicação.
+   *
+   * Com disco, o pico de memória passa a ser o pedaço que o stream move. O temporário é apagado
+   * em `finally` dentro de `receiveProxiedUpload`, inclusive quando o envio ao storage falha —
+   * o multer não limpa o que escreveu.
+   *
+   * O limite de 500 MB e o contrato da rota não mudam: o app publicado continua enviando os
+   * mesmos três passos, e nada aqui exige nova submissão.
+   */
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: memoryStorage(),
+      storage: diskStorage({ destination: tmpdir() }),
       limits: { fileSize: 524_288_000 },
     })
   )
@@ -184,7 +200,15 @@ export class AdvertiserController {
   ): Promise<void> {
     const anunciante = anuncianteDaRequisicao(req);
     await this.campanhas.obterOuFalhar(campaignId, anunciante);
-    if (!file?.buffer) {
+    /**
+     * A checagem é por `file`, e não por `file.buffer`.
+     *
+     * Com `diskStorage` o multer preenche `path` e deixa `buffer` **indefinido** — a condição
+     * anterior (`!file?.buffer`) recusaria todo envio com `FILE_REQUIRED`, mesmo com o arquivo
+     * no disco. `path` ou `buffer`: um dos dois tem de existir, e qual deles depende só da
+     * estratégia de armazenamento configurada acima.
+     */
+    if (!file || (!file.path && !file.buffer)) {
       throw new BadRequestException({
         error: {
           code: 'FILE_REQUIRED',

@@ -43,6 +43,9 @@ $apps = @(
       APP_VARIANT                = 'preview'
       EXPO_PUBLIC_API_URL        = 'https://api-app.opendriver.com.br'
       EXPO_PUBLIC_HUB_URL        = 'https://opendriver.com.br'
+      # API do hub: e para la que a foto de perfil e enviada. O storage do opendriver e privado
+      # e cifrado (documento de motorista), e avatar e publico - ja e LIDO do hub.
+      EXPO_PUBLIC_HUB_API_URL    = 'https://hubapi.opendriver.com.br'
       EXPO_PUBLIC_MAP_STYLE_URL  = 'https://tiles.opendriver.com.br/style.json'
     }
     Dominios = @('api-app.opendriver.com.br')

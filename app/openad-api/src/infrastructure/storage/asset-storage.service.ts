@@ -109,17 +109,35 @@ export class AssetStorageService {
     return this.putObjectAtKey(key, params.buffer, params.mimeType);
   }
 
+  /**
+   * Grava um objeto numa chave conhecida. Aceita `Buffer` **ou** stream.
+   *
+   * O stream existe para o upload de criativo do anunciante, que pode ter centenas de megabytes
+   * (item G.5 do plano v2): com `Buffer`, o arquivo inteiro fica na memória do processo durante
+   * toda a requisição.
+   *
+   * `contentLength` é **obrigatório** quando o corpo é stream, e não é zelo: o S3 e o MinIO
+   * precisam do tamanho adiantado para um `PutObject` de uma só parte. Sem ele o SDK tentaria
+   * carregar o stream em memória para medir — desfazendo exatamente o que o stream resolve.
+   */
   async putObjectAtKey(
     key: string,
-    body: Buffer,
-    contentType: string
+    body: Buffer | Readable,
+    contentType: string,
+    contentLength?: number
   ): Promise<string> {
+    if (!Buffer.isBuffer(body) && contentLength === undefined) {
+      throw new Error(
+        'putObjectAtKey com stream exige contentLength: sem ele o SDK carrega o stream em memoria para medir.'
+      );
+    }
     await this.client.send(
       new PutObjectCommand({
         Bucket: this.bucket,
         Key: key,
         Body: body,
         ContentType: contentType,
+        ContentLength: Buffer.isBuffer(body) ? body.byteLength : contentLength,
       })
     );
     return `${R2_PREFIX}${key}`;
