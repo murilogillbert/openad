@@ -8,8 +8,12 @@ O que entra aqui: o que **depende de uma ação externa** ou de uma decisão que
 credencial de terceiro, permissão em console de loja, aparelho físico, decisão de custo. O que é
 só trabalho de código vive no `plano-v2-ecossistema.md`, não aqui.
 
-Última revisão: 2026-10-08 (itens 12 e 13 acrescentados: migrations ensaiadas e à espera de
-autorização para produção; tablete bloqueado por PIN).
+Última revisão: 2026-10-08. A leva v2 **está em produção**: migrations, scripts de dados,
+deploy dos três serviços, chave de serviço rotacionada e smoke verde. O resumo do que subiu e
+do que continua aberto está na última seção, "Fechamento da leva v2" — ela existe para esta
+lista não precisar ser lida inteira para responder "o que falta".
+
+Itens 6, 8, 9, 10 e 12 fecharam. Continuam abertos: 1, 2, 3, 4b, 5, 7, 11 (em parte) e 13.
 
 ---
 
@@ -174,7 +178,7 @@ ocorreu.
 
 ---
 
-## 6. Scripts de migração a rodar junto com o deploy do openad-api — **Pendente**
+## 6. Scripts de migração a rodar junto com o deploy do openad-api — **Concluído em 2026-10-08**
 
 Dois scripts de **execução única** que precisam rodar no deploy. Nenhum dos dois é opcional, e
 os dois são idempotentes (rodar de novo não faz nada).
@@ -255,7 +259,7 @@ Duas saídas, as duas legítimas: reconferir a projeção do PDF, ou subir o pis
 
 ---
 
-## 8. Escopos novos na chave de serviço, para a compra de crédito por Pix — **Pendente**
+## 8. Escopos novos na chave de serviço, para a compra de crédito por Pix — **Concluído em 2026-10-08**
 
 A Frente A (compra de crédito por Pix) atravessa os dois serviços, e cada direção precisa de um
 escopo que **ainda não existe nas chaves cadastradas**. Sem eles o fluxo responde `403` nas duas
@@ -295,7 +299,7 @@ anunciante não vai ao ar. O contorno existe e é o item 6: lançar crédito à 
 
 ---
 
-## 9. `HUB_API_URL` no ambiente do openad-api — **Pendente**
+## 9. `HUB_API_URL` no ambiente do openad-api — **Concluído em 2026-10-08**
 
 Variável nova, acrescentada em `docker-compose.prod.yml` e em
 `infra/server/15-provisionar.sh` com o padrão `https://hubapi.opendriver.com.br`. O contêiner em
@@ -314,7 +318,7 @@ docker exec openad-api printenv HUB_API_URL
 
 ---
 
-## 10. `VITE_OPENAD_API_URL` no build do painel do hub — **Pendente**
+## 10. `VITE_OPENAD_API_URL` no build do painel do hub — **Concluído em 2026-10-08**
 
 O painel de compra de crédito vive no SPA do hub, em `/conta/credito-de-anuncio`, e fala com a
 API do OpenAd direto do navegador — mesmo padrão das telas de Admin → OpenDriver, que usam
@@ -336,7 +340,7 @@ Conferir depois do deploy do `hub-frontend` (UUID `krqsjubqpzils0nij3atnekp`): a
 
 ---
 
-## 11. APK novo do app do anunciante, com `EXPO_PUBLIC_HUB_WEB_URL` — **Pendente**
+## 11. APK novo do app do anunciante, com `EXPO_PUBLIC_HUB_WEB_URL` — **Concluído em parte**
 
 O app ganhou o cartão de saldo de crédito e o botão que abre o painel web. As duas coisas estão
 no código, e **nenhuma está no APK instalado** — `EXPO_PUBLIC_*` é embutido em tempo de build.
@@ -450,7 +454,7 @@ tablete — por isso fica registrado em vez de corrigido no meio desta frente.
 
 ---
 
-## 12. Aplicar as quatro migrations da v2 em produção — **Pendente (aguarda autorização)**
+## 12. Aplicar as quatro migrations da v2 em produção — **Concluído em 2026-10-08**
 
 Entra aqui, e não no plano, porque é a única etapa da leva que **não é trabalho de código**: é
 uma escrita irreversível no banco que três aplicativos publicados leem, e a decisão de quando
@@ -580,3 +584,107 @@ O que foi possível confirmar sem desbloquear, por `88-conferir-apps-tablet.ps1`
 
 Para fechar: desbloquear o tablete (ou informar o PIN). Com ele desbloqueado a captura volta a
 funcionar e as três telas podem ser conferidas por imagem.
+
+---
+
+## Fechamento da leva v2 — 2026-10-08
+
+O que subiu, o que foi medido, e o que **continua** aberto. Esta seção existe para a lista
+acima não precisar ser lida inteira para responder "o que falta".
+
+### Aplicado em produção
+
+| Etapa | Resultado |
+| --- | --- |
+| 4 migrations (itens 6 e 12) | `public` em `20261009140000_sem_avatar_de_terceiro` (14), `openad` em `20261008170000_credito_por_pix` (3). Diff de `public` **só aditivo**, nada removido |
+| `marcar-cobranca-aplicada.ts` | 1.387 encontradas, 1.387 alteradas, 0 restantes |
+| `semear-gasto-em-micros.ts` | 6 de 6 |
+| hub-backend e hub-frontend | `b775575` |
+| openad-api | imagem nova, contêiner saudável |
+| chave de serviço (item 8) | nova com os 6 escopos; a antiga revogada **depois** do smoke |
+| `HUB_API_URL` (item 9) | presente no contêiner |
+| `VITE_OPENAD_API_URL` (item 10) | no bundle publicado, em `/assets/CreditoDeAnuncioPage-zVqJHPgh.js` |
+| 18 commits em 4 repositórios | enviados |
+
+Conferido depois: `95-smoke-v2.sh` todo verde, `23-fim-a-fim.sh` todo verde, e o manifesto do
+aparelho respondendo `200` com 4 itens — a prova de que o portão de crédito entrou **sem**
+tirar campanha do ar, que era o risco de aplicar `ad_credit_holds` na ordem errada.
+
+### Um defeito de produção achado pelo smoke
+
+`AssetDownloadGuard` estendia `AuthGuard('jwt')`, e **não existe** estratégia passport com esse
+nome neste serviço — as registradas são `jwt-internal`, `jwt-federated` e `jwt-ecosystem`. A
+rota `/campaigns/:id/assets/:id/file` respondia **500** em vez de 401, e o caminho de JWT da
+guarda nunca funcionou: operador logado no portal clicando para baixar um criativo recebia 500.
+Corrigido, com 9 testes que falam com o passport de verdade — conferido que eles pegam o
+defeito restaurando-o (6 dos 9 quebram).
+
+Não era regressão da v2: a linha estava assim desde que a guarda foi escrita, e nenhum teste
+cobria o arquivo. Apareceu porque o smoke novo exige `401` onde antes ninguém olhava.
+
+### Quatro erros meus, corrigidos no caminho
+
+Ficam registrados porque os quatro eram do tipo que **passa como "ok"**:
+
+1. A conferência de migrations olhava `public.stores`, tabela que não existe — a do hub é
+   `partner_stores`. O script dizia "a coluna não está lá" por estar olhando o lugar errado.
+2. `07-sandbox.sh` comparava o sandbox com produção **ao vivo** e exigia igualdade; como
+   `driver_earnings` recebe linha a cada repasse, reprovava um sandbox correto em toda
+   execução. Passou a declarar por tabela se ela deve estar `exato` ou se `cresce`.
+3. `93-conferir-bundle-hub.ps1` olhava só os `<script src>` do HTML e reprovou
+   `api-app.opendriver.com.br`, que funcionava havia semanas: o Vite divide por rota e o pedaço
+   da tela de Admin entra por `import()` dinâmico. Agora rastreia os pedaços.
+4. `95-smoke-v2.sh` usou `x-api-key` e levou 401 — o contrato dos três serviços é
+   `Authorization: Bearer`. Conferência com o cabeçalho errado produz exatamente o sintoma que
+   ela deveria detectar.
+
+E um quinto, pego antes de rodar: `94-rotacionar-chave-de-servico.sh` revogava "toda chave
+ativa que não seja a nova", e produção tem também `energia-solar-api`, sem relação com esta
+rotação. Rotação é troca entre duas chaves conhecidas, não limpeza.
+
+### Crédito lançado à mão: **não é necessário agora**
+
+Medido por `97-campanhas-e-credito.sh`: as três campanhas `active` são todas da
+`Conta de demonstracao - Google Play`, que tem **R$ 495,50 disponíveis** (R$ 500 no livro-caixa
+menos R$ 4,50 retidos em três reservas abertas). O outro anunciante está sem saldo, mas a única
+campanha dele está em `draft` e não veicularia de qualquer forma.
+
+Detalhe que quase virou conclusão errada: o único lançamento do livro-caixa tem
+`amount_micros` **vazio** — a coluna entrou na migration `ad_credit_holds`, e a linha é
+anterior. Um `sum(amount_micros)` devolveria R$ 0 para uma conta com R$ 500. O script espelha
+`CreditLedgerService.saldoDoLedgerMicros`, que cai para `amount_cents * 10.000`. Script de
+conferência que calcula diferente do código não confere nada: inventa um segundo número, e na
+divergência ninguém sabe qual dos dois está errado.
+
+### O que continua aberto, e o que cada um bloqueia
+
+| Item | Bloqueia | Depende de |
+| --- | --- | --- |
+| 2. Token do Asaas | compra de crédito por Pix ponta a ponta | credencial do Asaas |
+| 1. Infosimples / gov.br de GO e DF | validação de veículo nesses estados | credencial gov.br |
+| 3. Permissão no Play Console | ver compras financeiras | permissão na conta |
+| 4b. Criativo grande | ensaiar a interrupção do download | subir um vídeo |
+| 5. Sinal de "corrida iniciada" | tablet reagir ao início da corrida | aparelho em corrida real |
+| 7. Projeção de repasse do PDF | nada técnico | decisão de produto |
+| 11. APK do anunciante no celular | ver o cartão de crédito no S21 FE | o celular por cabo |
+| 13. Tablete bloqueado por PIN | conferência **visual** das telas novas | desbloquear o aparelho |
+
+Nenhum deles impede o que subiu de funcionar. O item 2 é o que tem maior alcance: sem o token
+do Asaas, o anunciante não compra crédito sozinho, e o lançamento continua sendo à mão por
+`POST /internal/ads/credits/adjust`.
+
+### Fora da lista, porque é trabalho de código e não dependência externa
+
+- **G.6, camada de dados única.** Mongo, Redis e RabbitMQ rodam um contêiner cada no mesmo
+  servidor, e o Postgres é compartilhado com o hub. Mais instâncias de API escalam CPU, não
+  resiliência. É infraestrutura.
+- **`$share` no MQTT.** A segunda réplica da API hoje precisa de
+  `OPENAD_MQTT_INGEST_DISABLED=true`, porque o suporte a assinatura compartilhada no RabbitMQ
+  4.3 não está confirmado. Confirmar com um broker de teste e trocar a flag continua sendo a
+  solução melhor.
+- **`appId` do player.** `capacitor.config.ts` diz `com.openad.adclient`, o projeto Android diz
+  `com.openad`. Hoje não dá problema porque o `android/` não é regenerado; um `cap add android`
+  do zero produziria um **segundo** aplicativo.
+- **`origin: true` no CORS do openad.** Mais permissivo do que precisa. Não é exploração hoje
+  (a API usa só `Authorization: Bearer`, sem cookie de sessão), mas apertar exige levantar
+  todas as origens que já consomem a API.
