@@ -195,6 +195,19 @@ MONGODB_URI=... pnpm exec ts-node -P app/openad-api/tsconfig.app.json \
   app/openad-api/scripts/marcar-cobranca-aplicada.ts --dry-run
 ```
 
+**Medido em produção em 2026-10-08** (`89-ensaio-cobranca-aplicada.sh`, só leitura, as mesmas
+contagens que o `--dry-run` devolve):
+
+```json
+{ "playRecordsNoTotal": 1387, "faturaveisNoTotal": 1387, "faturaveisSemMarca": 1387, "jaMarcados": 0 }
+```
+
+Ou seja: **todas** as 1.387 veiculações do acervo estão faturáveis e **nenhuma** tem a marca.
+O script não é "por precaução" — sem ele, o primeiro reenvio de um lote antigo depois do deploy
+cobra 1.387 veiculações uma segunda vez. O número bate com `opendriver.driver_earnings` (1.389),
+que recebe uma linha por repasse de veiculação, o que é a conferência cruzada de que a contagem
+é do acervo real e não de um recorte.
+
 ### Migration `20261008150000_ad_credit_holds`
 
 Cria `openad.ad_credit_holds` e acrescenta `reference_id`, `amount_micros` e `hold_id` ao
