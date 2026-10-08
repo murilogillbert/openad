@@ -622,6 +622,38 @@ dados (G.6).
 
 ## Frente H — preço por segundo e consumo do crédito depositado
 
+> **Situação: H.1 a H.4 implementadas** (commits `836b63c` e seguintes). O que mudou em relação
+> ao desenho abaixo, e por quê:
+>
+> - **A unidade é micro-real, como planejado**, e a conversão para centavos acontece com o resto
+>   carregado para o lançamento seguinte. `campaign_daily_spend.billableCostCents` deixou de ser
+>   o acumulador e passou a ser **derivado** de `billableCostMicros` — e o valor derivado **só
+>   sobe**, para não apagar gasto de linha gravada antes da mudança.
+> - **O tipo do criativo é derivado do `mimeType`/extensão**, não de um campo novo no schema.
+>   Um campo exigiria preencher o acervo, e um backfill errado mudaria o preço de campanha no
+>   ar. O padrão é `video`, que é o lado conservador: cobra o que tocou, em vez de 15 s fixos.
+> - **O custo da reserva é dimensionado pelo criativo mais caro da campanha**, não pela média.
+>   Subdimensionar faria a captura estourar o `CHECK` da retenção no meio do ciclo — a
+>   veiculação aconteceria e o débito falharia. Superdimensionar apenas retém um pouco mais, e
+>   o fechamento devolve.
+> - **A reserva é múltiplo inteiro do custo de uma exibição.** Reservar R$ 0,07 quando a
+>   exibição custa R$ 0,045 reteria R$ 0,025 que não podem virar exibição nenhuma.
+> - **O rateio entre campanhas do mesmo anunciante é por prioridade, não proporcional.** Rateio
+>   proporcional daria a cada campanha uma fatia que pode não cobrir nem uma exibição, e o
+>   anunciante veria todas no ar entregando quase nada.
+> - **A cota vai inteira para cada tablet**, e não dividida pela frota. Dividir exigiria saber
+>   agora quantos aparelhos vão sincronizar no ciclo, e o número só é conhecido depois. O limite
+>   efetivo continua sendo a reserva. A divisão é o refinamento que depende do sinal de "corrida
+>   iniciada", registrado em `pendencias.md`.
+> - **O lock do job é economia, não correção.** O `cycleId` determinístico e o índice único
+>   `(campaignId, cycleId)` já garantem que duas instâncias produzam as mesmas reservas e não o
+>   dobro. O lock no Redis evita que cada réplica percorra todos os anunciantes para descobrir
+>   no fim que a outra já reservou — e quando o Redis está fora, o job **executa**, porque sem
+>   reserva nenhuma campanha veicula.
+> - **O repasse ao motorista continua em centavos**, com o resto por motorista ficando para
+>   depois. Nada se perde hoje porque toda campanha existente é `per_impression`, onde o custo
+>   já é centavo inteiro.
+
 > Origem: o PDF "Plano de monetização e uso dos recursos — OpenDriver" (2026-10-07) e as decisões
 > do dono do mesmo dia, listadas abaixo. Esta frente **detalha o A.5/A.6** com a regra de reserva
 > por ciclo e **depende da G.1** (cobrança atômica do play).

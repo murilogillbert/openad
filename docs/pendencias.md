@@ -194,6 +194,28 @@ MONGODB_URI=... pnpm exec ts-node -P app/openad-api/tsconfig.app.json \
   app/openad-api/scripts/marcar-cobranca-aplicada.ts --dry-run
 ```
 
+### Migration `20261008150000_ad_credit_holds`
+
+Cria `openad.ad_credit_holds` e acrescenta `reference_id`, `amount_micros` e `hold_id` ao
+`ad_credit_ledger`. Aditiva, como todas as do openad.
+
+Precisa ser aplicada **antes** do deploy do código: o portão de crédito na elegibilidade
+consulta a tabela de reservas, e sem ela toda campanha com anunciante ficaria fora do manifesto
+— a frota pararia de veicular anúncio pago.
+
+### Crédito lançado à mão enquanto não houver compra automática
+
+Com o portão de crédito ativo, campanha de anunciante **só vai ao ar se tiver reserva**, e a
+reserva só existe se houver saldo no ledger. Hoje o ledger está vazio: nada escrevia nele.
+
+Então, logo após o deploy, é preciso lançar crédito para os anunciantes que devem veicular. O
+caminho é `CreditLedgerService.lancarAjuste` (`reason: 'adjustment'`), que registra na auditoria
+compartilhada com `openad.credit.adjustment`. A rota de admin para isso entra junto com a
+Frente A; até lá o lançamento é por script.
+
+As três campanhas ativas hoje são da conta de demonstração, então o efeito prático de não
+lançar é que a demonstração para de veicular — não há anunciante real afetado.
+
 ### `scripts/semear-gasto-em-micros.ts`
 
 `campaign_daily_spend.billableCostCents` era o acumulador e passou a ser derivado de

@@ -1,7 +1,8 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from '../auth/auth.module';
 import { CampaignsModule } from '../campaigns/campaigns.module';
+import { MonetizationModule } from '../monetization/monetization.module';
 import { DevicesModule } from '../devices/devices.module';
 import { GeoZonesModule } from '../geo-zones/geo-zones.module';
 import { InternalModule } from '../internal/internal.module';
@@ -41,6 +42,9 @@ import { ReportingAggregationService } from './services/reporting-aggregation.se
     // que a veiculação vira faturável. `VehiclesModule` resolve `vehicles.driverId`.
     VehiclesModule,
     InternalModule,
+    // Captura do crédito do anunciante no mesmo instante do repasse: o pacing debita o
+    // orçamento e o ledger debita o dinheiro, pela mesma veiculação.
+    forwardRef(() => MonetizationModule),
   ],
   controllers: [
     PlaybackBatchController,

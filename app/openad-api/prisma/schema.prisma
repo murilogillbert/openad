@@ -149,6 +149,13 @@ enum AdLedgerReason {
   @@schema("openad")
 }
 
+enum AdCreditHoldStatus {
+  open
+  closed
+
+  @@schema("openad")
+}
+
 /// Vinculo entre a conta do ecossistema e o parceiro anunciante.
 ///
 /// Nasce `active`: criar conta ja torna a pessoa parceira (decisao de produto 1), entao nao
@@ -175,6 +182,7 @@ model AdAdvertiser {
 
   purchases AdCreditPurchase[]
   ledger    AdCreditLedger[]
+  holds     AdCreditHold[]
 
   @@index([status, createdAt])
   @@map("ad_advertisers")
@@ -239,10 +247,82 @@ model AdCreditLedger {
 
   campaignId String? @map("campaign_id") @db.VarChar(64)
 
+  /// Chave natural do lancamento, para o debito ser idempotente.
+  ///
+  /// `campanha:uniqueEventId` na captura de veiculacao. O unico parcial transforma "repetir o
+  /// debito" num erro de unicidade que o chamador trata como sucesso — necessario porque
+  /// Mongo e Postgres nao compartilham transacao, entao a veiculacao vira faturavel de um lado
+  /// e o debito acontece do outro.
+  ///
+  /// Nulo em compra e em ajuste manual: aqueles nao tem referencia natural.
+  referenceId String? @unique(map: "ad_credit_ledger_reference_key") @map("reference_id") @db.VarChar(120)
+
+  /// Valor exato em micro-reais. `amountCents` continua sendo a coluna fiscal, derivada deste
+  /// por `floor`. Os dois convivem para permitir lancamento de 4,5 centavos sem perder meio
+  /// centavo e sem quebrar leitor que ja conta centavos.
+  amountMicros BigInt? @map("amount_micros")
+
+  /// Retencao que originou o debito, quando houver.
+  holdId String?       @map("hold_id") @db.Uuid
+  hold   AdCreditHold? @relation(fields: [holdId], references: [id], onDelete: Restrict)
+
   createdAt DateTime @default(now()) @map("created_at")
 
   @@index([advertiserId, createdAt])
   @@index([campaignId])
+  @@index([holdId])
   @@map("ad_credit_ledger")
+  @@schema("openad")
+}
+
+/// Reserva de credito por campanha, valida por um ciclo.
+///
+/// Existe porque conferir o saldo no instante da elegibilidade nao resolve: entre a
+/// conferencia e a veiculacao passam ate 15 minutos (o ciclo de sincronizacao do tablet), e
+/// nesse intervalo o mesmo saldo seria prometido a varias campanhas e a varios tablets. O
+/// saldo diria "tem dinheiro" para todos, e o debito chegaria depois para descobrir que nao
+/// tinha.
+///
+/// O padrao e o de cartao: retem antes de mostrar, captura o que foi mostrado, devolve o resto.
+/// A retencao e o compromisso; a captura e o fato.
+///
+/// Fica **fora** do ledger de proposito. O ledger e registro fiscal e deve conter dinheiro que
+/// entrou e saiu; retencao e compromisso. Reserva que expira sem captura nao e lancamento, e
+/// gravá-la exigiria um lancamento compensatorio para desfazer algo que nunca aconteceu.
+///
+/// Saldo disponivel = soma do ledger − o que resta nas retencoes abertas.
+model AdCreditHold {
+  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  advertiserId String       @map("advertiser_id") @db.Uuid
+  advertiser   AdAdvertiser @relation(fields: [advertiserId], references: [id], onDelete: Restrict)
+
+  /// `campaigns.campaignId` do MongoDB, sem FK — a campanha nao vive no Postgres.
+  campaignId String @map("campaign_id") @db.VarChar(64)
+
+  /// Identificador do ciclo, derivado do instante arredondado para baixo pelo tamanho do
+  /// ciclo. Deterministico de proposito: duas instancias que abram o ciclo ao mesmo tempo
+  /// calculam o mesmo valor, e o unico `(campaignId, cycleId)` faz uma delas perder.
+  cycleId String @map("cycle_id") @db.VarChar(40)
+
+  /// Micro-reais. `BigInt` e nao `Int` porque o teto do inteiro de 32 bits e ~R$ 2.147, e um
+  /// anunciante com R$ 3.000 de credito estouraria a coluna.
+  amountMicros   BigInt @map("amount_micros")
+  capturedMicros BigInt @default(0) @map("captured_micros")
+
+  status AdCreditHoldStatus @default(open)
+
+  opensAt  DateTime  @map("opens_at")
+  closesAt DateTime  @map("closes_at")
+  closedAt DateTime? @map("closed_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  ledger AdCreditLedger[]
+
+  @@unique([campaignId, cycleId], map: "ad_credit_holds_campaign_cycle_key")
+  @@index([advertiserId, status])
+  @@index([status, closesAt])
+  @@map("ad_credit_holds")
   @@schema("openad")
 }

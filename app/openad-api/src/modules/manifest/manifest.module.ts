@@ -9,6 +9,7 @@ import { PlatformConfigModule } from '../platform-config/platform-config.module'
 import { VehiclesModule } from '../vehicles/vehicles.module';
 import { AssetStorageModule } from '../../infrastructure/storage/storage.module';
 import { MediaIngestionModule } from '../media-ingestion/media-ingestion.module';
+import { MonetizationModule } from '../monetization/monetization.module';
 import { CampaignEligibilityService } from './generators/campaign-eligibility.service';
 import { TargetingMatcherService } from './generators/targeting-matcher.service';
 import { DeltaCalculatorService } from './generators/delta-calculator.service';
@@ -37,6 +38,8 @@ import {
     // Segmentacao na entrega: o matcher resolve veiculo e zonas a partir do `deviceState`.
     VehiclesModule,
     PlatformConfigModule,
+    // Portao de credito na elegibilidade: so entra no manifesto a campanha com reserva aberta.
+    forwardRef(() => MonetizationModule),
   ],
   controllers: [ManifestController],
   providers: [

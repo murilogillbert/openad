@@ -181,6 +181,26 @@ export class ManifestGeneratorService {
       };
       if (campaignId) {
         item.campaignId = campaignId;
+        /**
+         * Cota de crédito do ciclo, repassada ao tablet.
+         *
+         * Vem da elegibilidade, que já consultou a reserva aberta — não há consulta nova aqui:
+         * o manifesto é gerado por dispositivo e refazer a conta por item multiplicaria as
+         * leituras por `frota × criativos`.
+         *
+         * A cota vai **inteira** para cada tablet, e não dividida pela frota. A divisão exigiria
+         * saber agora quantos aparelhos vão sincronizar neste ciclo, e o número só é conhecido
+         * depois. O limite efetivo continua sendo a reserva: o excedente de um tablet não
+         * fatura, porque a captura para no `CHECK` da retenção. Dividir a cota entre os
+         * pareados é o refinamento que depende do sinal de "corrida iniciada" (ver pendências).
+         */
+        const campaign = eligible.get(campaignId);
+        if (campaign?.creditPlaysInCycle !== null && campaign?.creditPlaysInCycle !== undefined) {
+          item.maxPlaysInCycle = campaign.creditPlaysInCycle;
+        }
+        if (campaign?.cycleEndsAt) {
+          item.cycleEndsAt = campaign.cycleEndsAt;
+        }
       }
       media.push(item);
     }

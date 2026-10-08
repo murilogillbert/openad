@@ -129,6 +129,13 @@ const eligibleWith = (
         campaignPriority,
         targeting: targeting ?? null,
         payoutBoost: payoutBoost ?? 1,
+        /**
+         * Sem cota de crédito nestes casos: eles exercitam prioridade, segmentação e leilão,
+         * não o portão de crédito. `null` é o que a elegibilidade devolve para inventário
+         * institucional, e é o valor que faz o manifesto omitir os campos de cota.
+         */
+        creditPlaysInCycle: null,
+        cycleEndsAt: null,
       },
     ])
   );

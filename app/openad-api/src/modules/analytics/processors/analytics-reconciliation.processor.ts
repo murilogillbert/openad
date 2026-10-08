@@ -19,6 +19,8 @@ import {
   segundosCobrados,
   tipoDoCriativo,
 } from '../../monetization/pricing.policy';
+import { CreditCycleService } from '../../monetization/credit-cycle.service';
+import { CreditLedgerService } from '../../monetization/credit-ledger.service';
 import { MediaAsset } from '../../media-ingestion/schemas/media-asset.schema';
 import { Vehicle, VehicleDocument } from '../../vehicles/vehicles.schema';
 
@@ -46,7 +48,10 @@ export class AnalyticsReconciliationProcessor extends WorkerHost {
     private readonly pacing: PacingSignalService,
     private readonly campaigns: CampaignsRepository,
     private readonly platform: PlatformConfigRuntimeService,
-    private readonly repasses: DriverEarningClient
+    private readonly repasses: DriverEarningClient,
+    // Captura do crédito do anunciante: o lado que faltava do dinheiro.
+    private readonly ledger: CreditLedgerService,
+    private readonly credito: CreditCycleService
   ) {
     super();
   }
@@ -261,6 +266,58 @@ export class AnalyticsReconciliationProcessor extends WorkerHost {
               },
             }
           );
+
+          /**
+           * Captura: debita o crédito do anunciante por esta veiculação.
+           *
+           * Este é o lado que faltava. O `ad_credit_ledger` existia, append-only e bem
+           * modelado, e **nada escrevia nele** — a campanha veiculava de graça enquanto o
+           * motorista era creditado de verdade.
+           *
+           * Mongo e Postgres não compartilham transação: a veiculação virou faturável acima (no
+           * Mongo) e o débito acontece aqui (no Postgres). A atomicidade vem de três peças
+           * juntas — a reivindicação única de `billingAppliedAt`, o débito idempotente por
+           * `referenceId`, e o job de conciliação que refaz o débito de qualquer veiculação
+           * faturável sem lançamento. É o padrão *outbox*.
+           *
+           * Falha aqui **não** derruba o lote, pelo mesmo motivo do repasse: reprocessá-lo
+           * recontaria o pacing das veiculações já contadas, trocando um débito atrasado
+           * (recuperável pela conciliação) por faturamento duplicado (não recuperável).
+           */
+          if (custoMicros > 0 && campaign?.advertiserId) {
+            try {
+              const reserva = await this.credito.reservaAberta(
+                claimed.campaignId,
+                new Date(claimed.timestampEnd)
+              );
+              const r = await this.ledger.debitarCaptura({
+                advertiserId: campaign.advertiserId,
+                campaignId: claimed.campaignId,
+                holdId: reserva?.id ?? null,
+                // Única por veiculação: `uniqueEventId` já é único por dispositivo e por
+                // exibição. É a mesma chave que o repasse ao motorista usa do outro lado.
+                referenceId: `${claimed.campaignId}:${claimed.uniqueEventId}`,
+                amountMicros: custoMicros,
+              });
+              if (r.jaLancado) {
+                this.log.log(
+                  JSON.stringify({
+                    event: 'analytics.credito.debito_ja_lancado',
+                    uniqueEventId: claimed.uniqueEventId,
+                  })
+                );
+              }
+            } catch (e: unknown) {
+              this.log.warn(
+                JSON.stringify({
+                  event: 'analytics.credito.debito_falhou',
+                  uniqueEventId: claimed.uniqueEventId,
+                  campaignId: claimed.campaignId,
+                  err: e instanceof Error ? e.message : String(e),
+                })
+              );
+            }
+          }
 
           // O repasse continua em centavos: é o que o opendriver recebe e lança no extrato do
           // motorista, e aquele lado conta em centavos.

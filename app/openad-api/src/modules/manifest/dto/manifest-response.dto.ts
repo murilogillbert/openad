@@ -20,6 +20,25 @@ export interface ManifestMediaItemDto {
   mimeType: string;
   /** Denormalized from media placement; campaign-level targeting is separate from media bytes. */
   campaignId?: string;
+
+  /**
+   * Cota dura de exibicoes deste item **no ciclo atual**, e quando ela expira.
+   *
+   * **Sem a cota, a reserva de credito nao limita nada.** O tablet recebe o manifesto e toca
+   * em laco: e ele que decide quantas vezes exibe. A reserva garante que so se captura o que
+   * foi reservado, mas sem a cota o aparelho exibe alem dela — e a exibicao excedente nao
+   * fatura, entao o anunciante recebe entrega que nao pagou e o motorista nao e creditado por
+   * ela. A cota e o pacing com teto duro.
+   *
+   * Os dois campos sao **opcionais e aditivos**: APK antigo os ignora e segue tocando em laco,
+   * como antes. A captura continua limitada ao que foi reservado, entao o excedente nao vira
+   * cobranca — o que se perde e so a precisao da entrega, ate a frota ser atualizada (o APK do
+   * tablete e instalado por cabo, sem loja).
+   *
+   * Ausentes em inventario institucional, que toca sem faturar e sem limite de credito.
+   */
+  maxPlaysInCycle?: number;
+  cycleEndsAt?: string;
 }
 
 export interface ManifestSpatialSectionDto {

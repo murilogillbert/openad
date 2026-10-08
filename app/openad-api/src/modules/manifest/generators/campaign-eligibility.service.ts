@@ -7,6 +7,7 @@ import {
   boostDeRepasse,
   percentEfetivoDoRepasse,
 } from '../../internal/driver-payout.policy';
+import { CreditCycleService } from '../../monetization/credit-cycle.service';
 import type { Segmentacao } from './targeting-matcher.service';
 
 /** Campanha apta a veicular agora. */
@@ -24,6 +25,15 @@ export interface EligibleCampaign {
    * piso de virar so um custo fixo que ninguem tem motivo para superar.
    */
   payoutBoost: number;
+  /**
+   * Cota dura de exibicoes no ciclo, do que resta na reserva de credito.
+   *
+   * Nulo em inventario institucional (campanha sem anunciante), que toca sem faturar e sem
+   * limite de credito.
+   */
+  creditPlaysInCycle: number | null;
+  /** Quando a cota expira, em ISO. Nulo junto com a cota. */
+  cycleEndsAt: string | null;
 }
 
 /**
@@ -62,6 +72,9 @@ export class CampaignEligibilityService {
     private readonly campaigns: CampaignsRepository,
     private readonly pacing: PacingSignalService,
     private readonly platform: PlatformConfigRuntimeService,
+    // O portão de crédito. Era o critério que faltava: a elegibilidade não injetava nada que
+    // soubesse de dinheiro, então não tinha como consultar saldo.
+    private readonly credito: CreditCycleService,
     private readonly logger: PinoLogger
   ) {
     this.logger.setContext(CampaignEligibilityService.name);
@@ -83,6 +96,7 @@ export class CampaignEligibilityService {
 
     const eligible = new Map<string, EligibleCampaign>();
     let pausedByPacing = 0;
+    let semCredito = 0;
 
     for (const campaign of active) {
       const snapshot = await this.pacing.getSnapshot(campaign.campaignId);
@@ -90,10 +104,48 @@ export class CampaignEligibilityService {
         pausedByPacing += 1;
         continue;
       }
+
+      /**
+       * Portão de crédito: **só vai ao ar o anúncio que tem reserva aberta neste ciclo.**
+       *
+       * É o critério que faltava. Os três que existiam — status, janela contratada e pacing —
+       * nunca consultaram saldo, e o serviço nem injetava o Prisma: não tinha como. O teto que
+       * pausava a campanha era `budget`, um valor **declarado pelo anunciante na criação**, não
+       * dinheiro recebido. Enquanto isso o motorista era creditado de verdade.
+       *
+       * A reserva é consultada, e não o saldo: entre esta decisão e a veiculação passam até 15
+       * minutos, e o saldo diria "tem dinheiro" para todas as campanhas e todos os tablets ao
+       * mesmo tempo. A reserva é o compromisso já firmado para este ciclo.
+       *
+       * **Campanha sem anunciante não é bloqueada.** É inventário institucional criado pelo
+       * operador: toca sem faturar, e não há crédito a reservar. Exigir reserva dela tiraria do
+       * ar justamente o conteúdo que existe para preencher a grade.
+       */
+      let hold: Awaited<ReturnType<CreditCycleService['reservaAberta']>> = null;
+      if (campaign.advertiserId) {
+        hold = await this.credito.reservaAberta(campaign.campaignId, now);
+        if (!hold || hold.playsRestantes <= 0) {
+          semCredito += 1;
+          continue;
+        }
+      }
+
       const monetizacao = this.platform.get().monetization;
       eligible.set(campaign.campaignId, {
         campaignId: campaign.campaignId,
         campaignPriority: campaign.priority,
+        /**
+         * Cota dura do ciclo e quando ela expira, repassados ao tablet pelo manifesto.
+         *
+         * **Sem a cota, a reserva não limita nada.** O tablet toca em laço: é ele que decide
+         * quantas vezes exibe. A reserva garante que só se captura o que foi reservado, mas sem
+         * a cota o aparelho exibe além dela — e a exibição excedente não fatura, então o
+         * anunciante recebe entrega que não pagou e o motorista não é creditado por ela.
+         *
+         * Nulos em inventário institucional, que não tem reserva nem limite.
+         */
+        creditPlaysInCycle: hold?.playsRestantes ?? null,
+        cycleEndsAt: hold?.closesAt?.toISOString() ?? null,
         targeting: campaign.targeting
           ? {
               cities: campaign.targeting.cities ?? [],
@@ -129,6 +181,9 @@ export class CampaignEligibilityService {
         activeInWindow: active.length,
         eligible: eligible.size,
         pausedByPacing,
+        // Separado do pacing de propósito: "pausada por orçamento do dia" e "sem crédito
+        // reservado" são problemas diferentes e levam a ações diferentes do operador.
+        semCredito,
       },
       'campanhas aptas resolvidas'
     );
