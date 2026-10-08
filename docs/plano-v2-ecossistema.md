@@ -320,6 +320,33 @@ pública do catálogo, que é o caminho mais quente do hub.
 
 Esta é a frente que você pediu com mais precisão, então vai mais detalhada.
 
+> **Situação: implantada em produção em 08/10/2026.** Commits `20b0955` (opendriver),
+> `c370430` (hub) e `a9eb0a6` (openad, scripts de ensaio).
+>
+> O que mudou em relação ao que está escrito abaixo, e por quê:
+>
+> - **A lista de UFs foi para o banco** (`opendriver.detran_providers`), em vez de ficar numa
+>   constante no código. A sondagem dos endereços da Infosimples foi **inconclusiva**: sem
+>   token a resposta é `601 não foi possível se autenticar` **antes** de a rota ser validada,
+>   então 601 não prova que o endpoint existe, e varrer com token válido poderia gerar
+>   cobrança por consulta executada. Com a tabela, corrigir um endereço é edição no admin e um
+>   clique em "testar", não deploy.
+> - **GO entrou desativado**, porque exige login do gov.br (CPF + senha) ou certificado A1, que
+>   ainda não existe. Desativado cai em revisão manual com motivo explícito.
+> - **DF usa `detran/df/veiculo-mobile`**: o `detran-df-veiculo` foi descontinuado quando o
+>   site oficial mudou. O caminho ainda **não foi confirmado por consulta real**.
+> - **Política de divergência: a menor categoria vence.** Econômico ganha de Conforto, com
+>   `category_divergence` gravado para medir quantos casos existem antes de endurecer.
+> - **`category_source = 'admin'` tem precedência** e não é desfeito por revalidação.
+> - **`VEHICLE_VALIDATION_PROVIDER` continua em `mock` nos dois backends.** Enquanto estiver
+>   assim a consulta ao Detran não acontece: o mock ecoa o que o motorista digitou, o que
+>   exercita a tabela de regras mas não descobre nada. Ligar o provedor real passa a gastar
+>   crédito da Infosimples por cadastro de veículo — é decisão de custo, e está em aberto.
+>
+> Estado conferido em produção: 4 UFs cadastradas, 137 regras em 28 marcas, os 5 veículos
+> existentes intactos (`Economy` / `Pending` / `category_source = driver`), 30 casos de
+> classificação conferidos em SQL contra a tabela gravada e 3 confirmados sem regra.
+
 ### O que já existe
 
 - Enum `VehicleCategory { Economy, Comfort }` (`opendriver/backend/prisma/schema.prisma:196-201`),
