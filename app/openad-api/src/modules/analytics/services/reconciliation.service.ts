@@ -96,8 +96,26 @@ export class ReconciliationService {
       mediaId: doc.mediaId,
     });
 
+    /**
+     * A escrita é condicionada a o registro **ainda** estar `pending`.
+     *
+     * A versão anterior gravava sem condição, e a leitura de `pending` lá em cima acontece
+     * bem antes: entre as duas há a consulta ao asset e a verificação de geocerca. Duas coisas
+     * podiam dar errado nessa janela, e as duas são silenciosas.
+     *
+     * Primeiro, dois trabalhadores reconciliando o mesmo registro: os dois leriam `pending`,
+     * os dois gravariam, e o processor enxergaria duas transições "pendente → faturável" para
+     * a mesma veiculação.
+     *
+     * Segundo, e pior: as regras de antifraude escrevem no mesmo documento. Um veredito de
+     * fraude gravado nessa janela seria **sobrescrito** por este `$set`, e a veiculação
+     * voltaria a ser faturável sem ninguém ter revisto nada.
+     *
+     * Com o status no filtro, a segunda escrita simplesmente não encontra documento e não faz
+     * nada — que é o resultado certo.
+     */
     await this.playRecords.updateOne(
-      { deviceId, uniqueEventId },
+      { deviceId, uniqueEventId, reconciliationStatus: 'pending' },
       { $set: { reconciliationStatus: status, billable } }
     );
   }

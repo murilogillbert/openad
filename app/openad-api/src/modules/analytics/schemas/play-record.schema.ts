@@ -92,6 +92,28 @@ export class PlayRecord {
 
   @Prop({ type: Number, default: null })
   heartbeatRatio!: number | null;
+
+  /**
+   * Quando a cobrança desta veiculação foi aplicada. `null` significa "ainda não cobrada".
+   *
+   * **É o que torna a cobrança exatamente-uma-vez.** O índice único `(deviceId,
+   * uniqueEventId)` garante uma *linha* por veiculação, não uma *cobrança*: o processor
+   * detectava a transição "pendente → faturável" lendo o registro, reconciliando e lendo de
+   * novo, e dois trabalhadores que lessem `pending` antes de qualquer um escrever enxergavam
+   * os dois a mesma transição e somavam o custo duas vezes. O repasse ao motorista já estava
+   * protegido pelo `referenceId`; o gasto da campanha não tinha proteção nenhuma.
+   *
+   * O campo é reivindicado por `findOneAndUpdate` condicionado a `billingAppliedAt: null`, que
+   * no Mongo é atômico no documento. Quem recebe o documento de volta cobra; os demais não.
+   *
+   * Campo novo e anulável: registro antigo tem `undefined` aqui, e o filtro de reivindicação
+   * usa `$in: [null, undefined]`... na verdade usa `{ billingAppliedAt: null }`, que no Mongo
+   * casa tanto com nulo explícito quanto com ausente. Então veiculação já cobrada antes desta
+   * mudança poderia ser cobrada uma vez a mais — e é por isso que a migração de dados marca o
+   * que já é `billable` como aplicado (ver `scripts/`), em vez de deixar a dúvida.
+   */
+  @Prop({ type: Date, default: null })
+  billingAppliedAt!: Date | null;
 }
 
 export const PlayRecordSchema = SchemaFactory.createForClass(PlayRecord);
@@ -100,3 +122,16 @@ PlayRecordSchema.index({ deviceId: 1, uniqueEventId: 1 }, { unique: true });
 PlayRecordSchema.index({ campaignId: 1, timestampStart: -1 });
 PlayRecordSchema.index({ vehicleId: 1, campaignId: 1, timestampStart: -1 });
 PlayRecordSchema.index({ reconciliationStatus: 1, ingestedAt: -1 });
+/**
+ * Fila do padrão *outbox*: veiculação faturável que ainda não teve a cobrança aplicada.
+ *
+ * Mongo e Postgres não compartilham transação, então o débito do crédito do anunciante (que
+ * vive no Postgres) nunca é atômico com a reivindicação aqui. A garantia vem de três coisas
+ * juntas: reivindicação única neste documento, débito idempotente do outro lado, e um job que
+ * varre esta fila refazendo o que ficou pela metade. Sem o índice, essa varredura seria uma
+ * leitura da coleção inteira.
+ */
+PlayRecordSchema.index(
+  { billingAppliedAt: 1, timestampEnd: 1 },
+  { partialFilterExpression: { billable: true } }
+);

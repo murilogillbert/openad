@@ -137,26 +137,49 @@ export class AnalyticsReconciliationProcessor extends WorkerHost {
           { upsert: true }
         );
 
-        const pre = await this.playRecords
-          .findOne({ deviceId, uniqueEventId: p.uniqueEventId })
-          .lean()
-          .exec();
-
         await this.reconciliation.reconcileOne(deviceId, p.uniqueEventId);
         await this.fraud.applyFraudRules(deviceId, p.uniqueEventId);
 
-        const updated = await this.playRecords
-          .findOne({ deviceId, uniqueEventId: p.uniqueEventId })
+        /**
+         * Reivindica o direito de cobrar esta veiculação, **uma vez**.
+         *
+         * O que havia antes: lia o registro, reconciliava, lia de novo e cobrava quando a
+         * primeira leitura dizia `pending` e a segunda dizia `billable`. A condição descrevia
+         * uma transição, mas era calculada sobre duas leituras separadas por três chamadas de
+         * I/O. Dois trabalhadores processando o mesmo lote — o que é normal, porque o tablet
+         * reenvia o lote depois de um timeout — liam `pending` os dois antes de qualquer um
+         * escrever, enxergavam a mesma transição, e somavam o custo duas vezes no
+         * `campaign_daily_spend`. O repasse ao motorista escapava por ter `referenceId`
+         * próprio; o gasto da campanha não tinha proteção nenhuma.
+         *
+         * Hoje existe uma concorrência só porque há um trabalhador e o BullMQ roda um job por
+         * vez por processo. Bastava subir a concorrência, ou uma segunda réplica da API, para
+         * o defeito acordar — e os dois são mudanças que ninguém associaria a faturamento.
+         *
+         * `findOneAndUpdate` é atômico no documento no Mongo, então exatamente um chamador
+         * recebe o documento de volta. Quem recebe, cobra. É a mesma ideia do `referenceId` do
+         * repasse, aplicada ao lado que faltava.
+         */
+        const claimed = await this.playRecords
+          .findOneAndUpdate(
+            {
+              deviceId,
+              uniqueEventId: p.uniqueEventId,
+              reconciliationStatus: 'billable',
+              billable: true,
+              // `null` no Mongo casa com nulo explícito e com campo ausente, então registro
+              // gravado antes deste campo existir também é reivindicável.
+              billingAppliedAt: null,
+            },
+            { $set: { billingAppliedAt: new Date() } },
+            { new: true }
+          )
           .lean()
           .exec();
 
-        if (
-          pre?.reconciliationStatus === 'pending' &&
-          updated?.billable &&
-          updated.reconciliationStatus === 'billable'
-        ) {
+        if (claimed) {
           const campaign = await this.campaigns.findByCampaignId(
-            updated.campaignId
+            claimed.campaignId
           );
           /**
            * A tarifa ja esta em centavos inteiros, entao nao ha conversao nem arredondamento
@@ -169,16 +192,15 @@ export class AnalyticsReconciliationProcessor extends WorkerHost {
            */
           const costCents = campaign?.budget?.ratePerImpressionCents ?? 0;
           await this.pacing.recordBillablePlayCost({
-            campaignId: updated.campaignId,
+            campaignId: claimed.campaignId,
             costCents,
-            at: new Date(updated.timestampEnd),
+            at: new Date(claimed.timestampEnd),
           });
 
           /**
            * Este é o único instante em que o repasse pode ser creditado.
            *
-           * A condição acima (`pre.reconciliationStatus === 'pending'` e agora `billable`) é
-           * a transição, não o estado: ela acontece **uma vez** por play record, depois de a
+           * A reivindicação acima acontece **uma vez** por veiculação, depois de a
            * reconciliação de duração e as regras de antifraude terem passado. Creditar em
            * cima do estado `billable` pagaria de novo a cada reprocessamento do lote.
            *
@@ -187,10 +209,25 @@ export class AnalyticsReconciliationProcessor extends WorkerHost {
            * em caminhos diferentes criaria o estado em que uma aconteceu e a outra não, sem
            * nada que o relacione.
            */
-          await this.creditarRepasse(updated, costCents);
+          await this.creditarRepasse(claimed, costCents);
         }
 
-        const status = updated?.reconciliationStatus;
+        /**
+         * Estado final, só para o registro de log.
+         *
+         * A reivindicação devolve o documento quando cobra, mas o log precisa do estado em
+         * **todos** os casos — inclusive veredito de fraude e veiculação parcial, que são
+         * justamente os que interessam diagnosticar. Uma leitura aqui custa o mesmo que o par
+         * `pre`/`updated` que existia antes.
+         */
+        const final =
+          claimed ??
+          (await this.playRecords
+            .findOne({ deviceId, uniqueEventId: p.uniqueEventId })
+            .lean()
+            .exec());
+
+        const status = final?.reconciliationStatus;
         const fraudSignal =
           status === 'blackout' ||
           status === 'fraud_velocity' ||
@@ -201,9 +238,11 @@ export class AnalyticsReconciliationProcessor extends WorkerHost {
             deviceId,
             uniqueEventId: p.uniqueEventId,
             status,
-            billable: updated?.billable,
-            impliedSpeedKmh: updated?.impliedSpeedKmh ?? null,
-            heartbeatRatio: updated?.heartbeatRatio ?? null,
+            billable: final?.billable,
+            // Deixa explícito no log se esta execução cobrou ou se outra já tinha cobrado.
+            cobradoAgora: claimed !== null,
+            impliedSpeedKmh: final?.impliedSpeedKmh ?? null,
+            heartbeatRatio: final?.heartbeatRatio ?? null,
             fraudSignal,
           })
         );

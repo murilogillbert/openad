@@ -157,7 +157,27 @@ export class PlaybackBatchIngestService {
           batchId: envelope.batchId,
           plays: accepted,
         } satisfies PlayBatchJobData,
-        { removeOnComplete: true, removeOnFail: false }
+        {
+          removeOnComplete: true,
+          removeOnFail: false,
+          /**
+           * `jobId` derivado do lote: reenvio em rajada não vira um segundo job.
+           *
+           * O caso real é o tablet reenviar o lote depois de um timeout — normal numa frota
+           * com rede ruim. Sem `jobId`, cada reenvio enfileirava um job independente.
+           *
+           * **Isto não substitui a trava no banco**, e é importante não confundir as duas. O
+           * BullMQ descarta o `add` duplicado só enquanto o job existe, e aqui
+           * `removeOnComplete: true` libera o id assim que o job termina — um reenvio depois
+           * disso volta a ser enfileirado. A garantia de cobrar uma vez só está em
+           * `billingAppliedAt`, reivindicado por `findOneAndUpdate` no processor. Este
+           * `jobId` mata o caso frequente e barato; a trava mata o caso que custa dinheiro.
+           *
+           * O `deviceId` entra no id porque `batchId` é escolhido pelo dispositivo: sem o
+           * prefixo, dois aparelhos que sorteassem o mesmo valor se anulariam.
+           */
+          jobId: `play-batch:${envelope.deviceId}:${envelope.batchId}`,
+        }
       );
       enqueued = true;
     }

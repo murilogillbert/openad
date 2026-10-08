@@ -85,11 +85,20 @@ describe('rotas do anunciante (integration)', () => {
   }, 30_000);
 
   function corpoDeCampanha(overrides: Record<string, unknown> = {}) {
+    /**
+     * Instante lido **uma vez**.
+     *
+     * Antes eram duas leituras do relógio (`new Date()` e depois `Date.now()`), e a janela
+     * saía com 30 dias **mais** a diferença entre as duas — às vezes 0 ms, às vezes 1. O teto
+     * diário é `floor(total / ceil(dias))`, então 30 dias davam 333 e 30 dias e 1 ms davam
+     * 322. O teste passava ou falhava pelo relógio, e a falha parecia defeito de produto.
+     */
+    const agora = Date.now();
     return {
       name: 'Promo manha',
       priority: 1,
-      scheduledStart: new Date().toISOString(),
-      scheduledEnd: new Date(Date.now() + 86_400_000 * 30).toISOString(),
+      scheduledStart: new Date(agora).toISOString(),
+      scheduledEnd: new Date(agora + 86_400_000 * 30).toISOString(),
       budget: {
         totalAmountCents: 100_000,
         ratePerImpressionCents: 10,
