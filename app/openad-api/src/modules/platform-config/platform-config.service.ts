@@ -40,7 +40,13 @@ export function platformConfigDefaults(): PlatformConfig {
         fraudHeartbeatMinRatio: 0.25,
       },
       monetization: {
+        // R$ 0,003 por segundo de tela. Ver `monetization/pricing.policy.ts` para por que a
+        // unidade e micro-real e nao centavo.
+        pricePerSecondMicros: 3_000,
+        imageDisplaySeconds: 15,
         driverPayoutMinPercent: 0.3,
+        driverPayoutMaxPercent: 0.8,
+        creditCycleMinutes: 15,
         driverPayoutAuctionWeight: 0.5,
         // Conservador: sem risco de caixa ate alguem decidir antecipar pelo painel.
         driverPayoutSettlement: 'store_cycle',

@@ -19,6 +19,7 @@ import type { PatchCampaignStatusDto } from './dto/patch-campaign-status.dto';
 import { SchedulePushService } from '../schedule-rules/schedule-push.service';
 import { MediaFolderProvisioningService } from '../media-ingestion/media-folder-provisioning.service';
 import { CampaignReadinessService } from './campaign-readiness.service';
+import { PlatformConfigRuntimeService } from '../platform-config/platform-config-runtime.service';
 
 @Injectable()
 export class CampaignLifecycleService {
@@ -27,7 +28,10 @@ export class CampaignLifecycleService {
     private readonly campaigns: CampaignsRepository,
     private readonly schedulePush: SchedulePushService,
     private readonly mediaFolders: MediaFolderProvisioningService,
-    private readonly readiness: CampaignReadinessService
+    private readonly readiness: CampaignReadinessService,
+    // O preço por segundo é gravado na campanha na criação, para reajuste futuro não
+    // reprecificar o que já está no ar.
+    private readonly platform: PlatformConfigRuntimeService
   ) {
     this.logger.setContext(CampaignLifecycleService.name);
   }
@@ -90,6 +94,13 @@ export class CampaignLifecycleService {
         currency: dto.budget.currency,
         ratePerImpressionCents: dto.budget.ratePerImpressionCents,
         dailyBudgetCents: dto.budget.dailyBudgetCents ?? null,
+        /**
+         * Campanha criada pelo operador nasce `per_second`, com o preço da plataforma gravado
+         * — igual à do anunciante. Duas regras de preço conforme quem cria a campanha seria
+         * uma divergência difícil de explicar depois.
+         */
+        pricingModel: 'per_second',
+        pricePerSecondMicros: this.platform.get().monetization.pricePerSecondMicros,
       },
       scheduledStart: new Date(dto.scheduledStart),
       scheduledEnd: new Date(dto.scheduledEnd),

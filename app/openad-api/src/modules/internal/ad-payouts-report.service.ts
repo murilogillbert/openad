@@ -52,7 +52,11 @@ export class AdPayoutsReportService {
    * sobre o que o tablete reportou, sem esse filtro, é pagar por fraude.
    */
   async porMotorista(from: Date, to: Date): Promise<RelatorioDeRepasse> {
-    const piso = this.platform.get().monetization.driverPayoutMinPercent;
+    const monetizacao = this.platform.get().monetization;
+    const piso = monetizacao.driverPayoutMinPercent;
+    // O relatorio de conferencia tem de reproduzir o mesmo numero que o pagamento, senao a
+    // conferencia acusa divergencia onde nao ha. Por isso o teto entra aqui tambem.
+    const teto = monetizacao.driverPayoutMaxPercent;
 
     const linhas = (await this.playRecords.aggregate([
       {
@@ -126,6 +130,7 @@ export class AdPayoutsReportService {
           valorFaturavelCents: campanha.rateCents,
           repasse: campanha.repasse,
           piso,
+          teto,
         }) * linha.plays;
 
       grossCents += bruto;
@@ -204,7 +209,11 @@ export class AdPayoutsReportService {
       payoutCents: number;
     }>;
   }> {
-    const piso = this.platform.get().monetization.driverPayoutMinPercent;
+    const monetizacao = this.platform.get().monetization;
+    const piso = monetizacao.driverPayoutMinPercent;
+    // O relatorio de conferencia tem de reproduzir o mesmo numero que o pagamento, senao a
+    // conferencia acusa divergencia onde nao ha. Por isso o teto entra aqui tambem.
+    const teto = monetizacao.driverPayoutMaxPercent;
 
     const veiculos = await this.vehicles
       .find({ driverId: driverUserId })
@@ -260,6 +269,7 @@ export class AdPayoutsReportService {
             valorFaturavelCents: c?.budget?.ratePerImpressionCents ?? 0,
             repasse: this.lerRepasse(c?.driverPayout),
             piso,
+            teto,
           })
         );
       }

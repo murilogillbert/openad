@@ -235,7 +235,26 @@ export class VideoValidatorService {
       width,
       height,
       codec: VideoCodec.H264,
-      duration: 10,
+      /**
+       * Segundos que a imagem fica na tela, da configuração da plataforma.
+       *
+       * Era `10` cravado aqui, e isso produzia uma divergência real: a regra de monetização
+       * cobra 15 s por imagem, o manifesto repassa este `duration` ao tablet, e o tablet o usa
+       * para decidir quanto tempo exibir. Com 10 gravado, a imagem ficava 10 s na tela e seria
+       * cobrada por 15 — ou cobrada por 10, dependendo de qual dos dois números se olhasse.
+       *
+       * Agora os dois lados saem da mesma chave (`monetization.imageDisplaySeconds`), então
+       * mudar o tempo de exibição é uma edição no admin e não um deploy.
+       *
+       * As imagens enviadas **antes** desta mudança continuam com 10 gravado. O faturamento
+       * não depende disso: ele deriva o tipo do criativo e usa a configuração para imagem (ver
+       * `monetization/pricing.policy.ts`). O que essas imagens antigas têm de errado é só o
+       * tempo de tela, até serem reenviadas.
+       */
+      duration: Math.max(
+        1,
+        Math.floor(this.platform.get().monetization.imageDisplaySeconds)
+      ),
     };
   }
 }

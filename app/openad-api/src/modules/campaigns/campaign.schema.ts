@@ -34,6 +34,28 @@ export class CampaignBudgetSubdoc {
    */
   @Prop({ type: Number, default: null })
   dailyBudgetCents!: number | null;
+
+  /**
+   * Como esta campanha e precificada.
+   *
+   * `per_impression` — tarifa fixa por veiculacao, em `ratePerImpressionCents`. E o que todas
+   * as campanhas existentes usam, e continua sendo o **padrao**: o app do anunciante publicado
+   * envia `ratePerImpressionCents` e a API so pode mudar de forma aditiva.
+   *
+   * `per_second` — preco por segundo de tela. So campanha nova nasce assim.
+   */
+  @Prop({ type: String, default: 'per_impression', enum: ['per_impression', 'per_second'] })
+  pricingModel!: 'per_impression' | 'per_second';
+
+  /**
+   * Preco por segundo **gravado na campanha**, em micro-reais.
+   *
+   * Gravado na criacao, e nao lido do `platform_config` no momento de cobrar, para um reajuste
+   * futuro nao reprecificar campanha que ja esta no ar. E tambem onde mora a excecao por
+   * campanha — preco de lancamento, por exemplo.
+   */
+  @Prop({ type: Number, default: null })
+  pricePerSecondMicros!: number | null;
 }
 const CampaignBudgetSchema = SchemaFactory.createForClass(CampaignBudgetSubdoc);
 

@@ -94,6 +94,27 @@ export class PlayRecord {
   heartbeatRatio!: number | null;
 
   /**
+   * O que foi cobrado por esta veiculação, gravado no instante da cobrança.
+   *
+   * Sem estes campos, o relatório do anunciante só pode recalcular o custo multiplicando
+   * exibições pela tarifa **atual** — e um reajuste de preço reescreveria o passado. Com eles,
+   * uma contestação futura tem o preço da época, e o relatório soma em vez de recalcular.
+   *
+   * Nulos em veiculação cobrada antes desta mudança. O relatório trata o nulo caindo no
+   * recálculo antigo, em vez de mostrar zero.
+   */
+  @Prop({ type: Number, default: null })
+  billedSeconds!: number | null;
+
+  /** Preço por segundo aplicado, em µR$. Nulo em campanha `per_impression`. */
+  @Prop({ type: Number, default: null })
+  billedPricePerSecondMicros!: number | null;
+
+  /** Custo total desta veiculação, em µR$. */
+  @Prop({ type: Number, default: null })
+  billedCostMicros!: number | null;
+
+  /**
    * Quando a cobrança desta veiculação foi aplicada. `null` significa "ainda não cobrada".
    *
    * **É o que torna a cobrança exatamente-uma-vez.** O índice único `(deviceId,

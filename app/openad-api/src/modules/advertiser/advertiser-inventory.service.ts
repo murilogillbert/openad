@@ -3,6 +3,12 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import type { CampaignDocument } from '../campaigns/campaign.schema';
 import { GeoZone, GeoZoneDocument } from '../geo-zones/geo-zone.schema';
+import {
+  MICROS_POR_CENTAVO,
+  tabelaDePreco,
+  veiculacoesQueOSaldoCobre,
+} from '../monetization/pricing.policy';
+import { PlatformConfigRuntimeService } from '../platform-config/platform-config-runtime.service';
 import { Vehicle, VehicleDocument } from '../vehicles/vehicles.schema';
 
 /** Zona oferecida ao anunciante. Sem geometria nem binding: ele compra alcance, nao mapa. */
@@ -28,6 +34,21 @@ export interface EstimativaDeCampanha {
   maxDailyBillablePlays: number;
   currency: string;
   /**
+   * Campos **aditivos** do preco por segundo. Cliente que nao os conhece ignora.
+   *
+   * Os campos acima descrevem o modelo antigo (orcamento dividido pela tarifa por
+   * veiculacao), que so faz sentido em campanha `per_impression`. Com preco por segundo,
+   * exibicoes da mesma campanha custam valores diferentes — imagem de 15 s e video de 60 s
+   * nao sao a mesma coisa — e "quantas exibicoes cabem" so faz sentido **por duracao**.
+   */
+  pricingModel: 'per_impression' | 'per_second';
+  /** Preco por segundo gravado na campanha, em micro-reais. Nulo em `per_impression`. */
+  pricePerSecondMicros: number | null;
+  /** Teto de segundos de tela que o orcamento cobre. */
+  maxBillableSeconds: number;
+  /** Quantas exibicoes de cada duracao o orcamento cobre. Vazio em `per_impression`. */
+  pricingTable: Array<{ seconds: number; costMicros: number; maxPlays: number }>;
+  /**
    * Avisos acionaveis. Vazio significa que a campanha tem para onde ir; qualquer item aqui
    * explica por que ela nao veicularia como esta.
    */
@@ -43,7 +64,10 @@ export class AdvertiserInventoryService {
     @InjectModel(GeoZone.name)
     private readonly zones: Model<GeoZoneDocument>,
     @InjectModel(Vehicle.name)
-    private readonly vehicles: Model<VehicleDocument>
+    private readonly vehicles: Model<VehicleDocument>,
+    // O preço por segundo e a duração do ciclo de crédito vêm da configuração da plataforma,
+    // com a campanha podendo ter preço próprio gravado.
+    private readonly platform: PlatformConfigRuntimeService
   ) {}
 
   async listarZonas(params: {
@@ -158,6 +182,59 @@ export class AdvertiserInventoryService {
       );
     }
 
+    /**
+     * Estimativa em **segundos de tela**, que é o que a campanha de fato compra.
+     *
+     * `maxBillablePlays` acima divide o orçamento pela tarifa por veiculação, e isso só
+     * descreve a realidade em campanha `per_impression`. Com preço por segundo, exibições da
+     * mesma campanha custam valores diferentes — uma imagem de 15 s e um vídeo de 60 s não são
+     * a mesma coisa —, então "quantas exibições cabem" só faz sentido **por duração**.
+     *
+     * Os campos antigos continuam na resposta, de propósito: o app do anunciante publicado já
+     * os consome, e a API só pode mudar de forma aditiva. Em campanha `per_second` eles
+     * descrevem o modelo antigo e os novos descrevem o atual.
+     */
+    const monetizacao = this.platform.get().monetization;
+    const precoPorSegundo =
+      campanha.budget.pricePerSecondMicros ?? monetizacao.pricePerSecondMicros;
+    const porSegundo = campanha.budget.pricingModel === 'per_second';
+    const totalMicros = total * MICROS_POR_CENTAVO;
+
+    const pricingTable = porSegundo
+      ? tabelaDePreco(precoPorSegundo).map((l) => ({
+          seconds: l.segundos,
+          costMicros: l.custoMicros,
+          /**
+           * Quantas exibições daquela duração o orçamento cobre. É o número que o anunciante
+           * usa para escolher entre "muitas exibições curtas" e "poucas longas".
+           */
+          maxPlays: veiculacoesQueOSaldoCobre({
+            saldoMicros: totalMicros,
+            pricePerSecondMicros: precoPorSegundo,
+            segundos: l.segundos,
+          }),
+        }))
+      : [];
+
+    const maxBillableSeconds =
+      porSegundo && precoPorSegundo > 0
+        ? Math.floor(totalMicros / precoPorSegundo)
+        : 0;
+
+    if (porSegundo) {
+      const segundosDeUmCiclo = monetizacao.creditCycleMinutes * 60;
+      if (maxBillableSeconds < segundosDeUmCiclo) {
+        /**
+         * O crédito não cobre um ciclo de reserva inteiro. Vale avisar antes de ativar: a
+         * campanha entraria no ar e sairia no ciclo seguinte, o que parece defeito.
+         */
+        warnings.push(
+          `O orcamento cobre ${maxBillableSeconds} s de tela, menos que um ciclo de ` +
+            `${monetizacao.creditCycleMinutes} min. A campanha sairia do ar no ciclo seguinte.`
+        );
+      }
+    }
+
     return {
       campaignId: campanha.campaignId,
       zonesMatched: zonas.length,
@@ -168,6 +245,11 @@ export class AdvertiserInventoryService {
       maxDailyBillablePlays,
       currency: campanha.budget.currency,
       warnings,
+      // Aditivos: cliente que não conhece ignora.
+      pricingModel: campanha.budget.pricingModel ?? 'per_impression',
+      pricePerSecondMicros: porSegundo ? precoPorSegundo : null,
+      maxBillableSeconds,
+      pricingTable,
     };
   }
 

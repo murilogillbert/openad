@@ -107,7 +107,15 @@ export class CampaignEligibilityService {
           percentEfetivo: percentEfetivoDoRepasse(
             campaign.driverPayout,
             campaign.budget?.ratePerImpressionCents ?? 0,
-            monetizacao.driverPayoutMinPercent
+            monetizacao.driverPayoutMinPercent,
+            /**
+             * O teto entra também aqui, e não só no pagamento.
+             *
+             * Sem ele, campanha gravada com `percent: 1` antes do teto existir teria o peso
+             * do leilão calculado sobre 100% e atropelaria as outras — comprando entrega com
+             * um repasse que o pagamento já não honra.
+             */
+            monetizacao.driverPayoutMaxPercent
           ),
           piso: monetizacao.driverPayoutMinPercent,
           k: monetizacao.driverPayoutAuctionWeight,

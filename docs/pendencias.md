@@ -173,7 +173,40 @@ ocorreu.
 
 ---
 
-## 6. Projeção de repasse do PDF divergindo do padrão do código — **Pendente**
+## 6. Scripts de migração a rodar junto com o deploy do openad-api — **Pendente**
+
+Dois scripts de **execução única** que precisam rodar no deploy. Nenhum dos dois é opcional, e
+os dois são idempotentes (rodar de novo não faz nada).
+
+### `scripts/marcar-cobranca-aplicada.ts`
+
+A correção da cobrança duplicada do play (G.1), **sozinha, introduz uma cobrança duplicada** no
+acervo existente. O processor passou a reivindicar o direito de cobrar por
+`findOneAndUpdate({ ..., billingAppliedAt: null })`, e `null` no Mongo casa com campo ausente —
+então veiculação gravada antes do campo é reivindicável. No código antigo ela **não** seria
+cobrada de novo, porque a condição olhava a transição a partir de `pending`.
+
+O script copia `timestampEnd` para `billingAppliedAt` nas veiculações já faturáveis, e falha se
+sobrar qualquer documento sem marca.
+
+```
+MONGODB_URI=... pnpm exec ts-node -P app/openad-api/tsconfig.app.json \
+  app/openad-api/scripts/marcar-cobranca-aplicada.ts --dry-run
+```
+
+### `scripts/semear-gasto-em-micros.ts`
+
+`campaign_daily_spend.billableCostCents` era o acumulador e passou a ser derivado de
+`billableCostMicros`, porque o preço por segundo produz fração de centavo. Linha gravada antes
+tem centavos acumulados e micro-reais ausentes.
+
+O serviço tem uma guarda que impede o valor derivado de **descer**, então esquecer o script não
+perde dado — mas deixa o gasto do dia congelado até o acumulador em micro-reais alcançar o que
+já estava lá, e nesse intervalo o pacing compara um número defasado com o orçamento.
+
+---
+
+## 7. Projeção de repasse do PDF divergindo do padrão do código — **Pendente**
 
 Decisão de produto, não defeito.
 

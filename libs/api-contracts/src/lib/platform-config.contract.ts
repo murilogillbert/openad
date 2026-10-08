@@ -30,6 +30,47 @@ export interface PlatformConfig {
   };
   monetization: {
     /**
+     * Preco por segundo de tela, em **micro-reais** (1 R$ = 1.000.000 µR$).
+     *
+     * O preco acordado e R$ 0,003 por segundo, que e 0,3 centavo — nao cabe em centavo
+     * inteiro. Uma imagem de 15 s custa 4,5 centavos, um video de 10 s custa 3 centavos. Em
+     * centavos, 4,5 arredondaria, e arredondar por veiculacao perderia 0,5 centavo de 4,5
+     * (11%), sempre contra o mesmo lado, multiplicado por milhoes de veiculacoes.
+     *
+     * Micro-real e inteiro, entao nao ha fracao escondida: R$ 0,003/s = 3.000 µR$/s. A
+     * conversao para centavos acontece so na fronteira do lancamento, com o resto carregado
+     * para o lancamento seguinte, para o vies nunca acumular.
+     */
+    pricePerSecondMicros: number;
+
+    /**
+     * Segundos cobrados por uma imagem estatica.
+     *
+     * O anunciante nao escolhe: imagem e sempre este valor. Vem daqui e nao do `duration`
+     * gravado no asset, que vale 10 nas imagens enviadas antes desta regra — usar o asset
+     * cobraria 10 s de uma imagem que fica 15 s na tela.
+     */
+    imageDisplaySeconds: number;
+
+    /**
+     * Teto de repasse ao motorista, como fracao do valor faturavel.
+     *
+     * Existe pelo mesmo motivo que o piso, do outro lado: sem teto, `percent` aceita
+     * qualquer valor ate 100% e a plataforma nao retem nada da veiculacao. Com 0,8, ela
+     * retem ao menos 20% de cada exibicao.
+     */
+    driverPayoutMaxPercent: number;
+
+    /**
+     * Duracao do ciclo de credito, em minutos.
+     *
+     * E o periodo entre duas reservas de credito do anunciante, e casa com o intervalo de
+     * sincronizacao do tablet: analise e manifest sao refeitos a cada 15 min, entao a
+     * reserva vale por esse mesmo intervalo.
+     */
+    creditCycleMinutes: number;
+
+    /**
      * Piso de repasse ao motorista, como fracao do valor faturavel da veiculacao.
      *
      * O parceiro define quanto o motorista recebe. Sem piso, o equilibrio natural e todo

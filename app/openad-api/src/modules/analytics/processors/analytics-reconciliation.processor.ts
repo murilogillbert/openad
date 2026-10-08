@@ -13,6 +13,13 @@ import { PacingSignalService } from '../services/pacing-signal.service';
 import { ReconciliationService } from '../services/reconciliation.service';
 import { DriverEarningClient } from '../../internal/driver-earning.client';
 import { repasseEmCentavos } from '../../internal/driver-payout.policy';
+import {
+  custoEmMicros,
+  MICROS_POR_CENTAVO,
+  segundosCobrados,
+  tipoDoCriativo,
+} from '../../monetization/pricing.policy';
+import { MediaAsset } from '../../media-ingestion/schemas/media-asset.schema';
 import { Vehicle, VehicleDocument } from '../../vehicles/vehicles.schema';
 
 export interface PlayBatchJobData {
@@ -30,6 +37,10 @@ export class AnalyticsReconciliationProcessor extends WorkerHost {
     private readonly playRecords: Model<PlayRecord>,
     @InjectModel(Vehicle.name)
     private readonly vehicles: Model<VehicleDocument>,
+    // O criativo diz se a veiculação é imagem (cobra os segundos da configuração) ou vídeo
+    // (cobra a própria duração).
+    @InjectModel(MediaAsset.name)
+    private readonly mediaAssets: Model<MediaAsset>,
     private readonly reconciliation: ReconciliationService,
     private readonly fraud: FraudDetectionService,
     private readonly pacing: PacingSignalService,
@@ -68,10 +79,14 @@ export class AnalyticsReconciliationProcessor extends WorkerHost {
       }
 
       const campanha = await this.campaigns.findByCampaignId(play.campaignId);
+      const monetizacao = this.platform.get().monetization;
       const amountCents = repasseEmCentavos({
         valorFaturavelCents,
         repasse: campanha?.driverPayout ?? null,
-        piso: this.platform.get().monetization.driverPayoutMinPercent,
+        piso: monetizacao.driverPayoutMinPercent,
+        // Rede de segurança: campanha gravada antes do teto existir pode ter `percent` em
+        // qualquer valor até 100%, e a validação de criação não reescreve o que já está lá.
+        teto: monetizacao.driverPayoutMaxPercent,
       });
       if (amountCents <= 0) {
         return;
@@ -182,20 +197,74 @@ export class AnalyticsReconciliationProcessor extends WorkerHost {
             claimed.campaignId
           );
           /**
-           * A tarifa ja esta em centavos inteiros, entao nao ha conversao nem arredondamento
-           * aqui. A versao anterior fazia `Math.max(1, Math.round(rate * 100))`: o `round`
-           * escondia fracao de centavo e o piso em 1 fazia **qualquer** tarifa abaixo de um
-           * centavo faturar um centavo — campanha configurada com tarifa zero cobrava.
+           * Custo da veiculação, em micro-reais.
            *
-           * Tarifa zero agora custa zero, e e a resposta correta: ha inventario institucional
-           * e filler, que toca sem faturar.
+           * Campanha antiga é `per_impression` e continua custando a tarifa fixa que o
+           * anunciante digitou. Campanha nova é `per_second`: preço por segundo × segundos de
+           * tela, com imagem valendo `imageDisplaySeconds` e vídeo a própria duração.
+           *
+           * A unidade é micro-real porque R$ 0,003/s é 0,3 centavo e uma imagem de 15 s custa
+           * 4,5 centavos — não cabe em centavo inteiro. Ver `monetization/pricing.policy.ts`.
+           *
+           * Tarifa zero custa zero, e é a resposta correta: há inventário institucional e
+           * filler, que toca sem faturar.
            */
-          const costCents = campaign?.budget?.ratePerImpressionCents ?? 0;
+          const monetizacao = this.platform.get().monetization;
+          const criativo = claimed.mediaId
+            ? await this.mediaAssets
+                .findOne({ mediaId: claimed.mediaId })
+                .select({ duration: 1, mimeType: 1, filename: 1 })
+                .lean()
+                .exec()
+            : null;
+          const segundos = segundosCobrados(
+            {
+              kind: criativo ? tipoDoCriativo(criativo) : 'video',
+              durationSec: criativo?.duration ?? null,
+            },
+            monetizacao.imageDisplaySeconds
+          );
+          const custoMicros = custoEmMicros({
+            preco: {
+              modelo: campaign?.budget?.pricingModel ?? 'per_impression',
+              pricePerSecondMicros: campaign?.budget?.pricePerSecondMicros ?? null,
+              ratePerImpressionCents: campaign?.budget?.ratePerImpressionCents ?? 0,
+            },
+            segundos,
+            pricePerSecondMicrosPadrao: monetizacao.pricePerSecondMicros,
+          });
+
           await this.pacing.recordBillablePlayCost({
             campaignId: claimed.campaignId,
-            costCents,
+            costMicros: custoMicros,
             at: new Date(claimed.timestampEnd),
           });
+
+          /**
+           * O que foi cobrado fica gravado na própria veiculação.
+           *
+           * Sem isto, o relatório do anunciante só pode recalcular o custo multiplicando
+           * exibições pela tarifa **atual** — e um reajuste de preço reescreveria o passado.
+           * Com os números gravados, uma contestação futura tem o preço da época.
+           */
+          await this.playRecords.updateOne(
+            { deviceId, uniqueEventId: p.uniqueEventId },
+            {
+              $set: {
+                billedSeconds: segundos,
+                billedPricePerSecondMicros:
+                  campaign?.budget?.pricingModel === 'per_second'
+                    ? (campaign?.budget?.pricePerSecondMicros ??
+                      monetizacao.pricePerSecondMicros)
+                    : null,
+                billedCostMicros: custoMicros,
+              },
+            }
+          );
+
+          // O repasse continua em centavos: é o que o opendriver recebe e lança no extrato do
+          // motorista, e aquele lado conta em centavos.
+          const costCents = Math.floor(custoMicros / MICROS_POR_CENTAVO);
 
           /**
            * Este é o único instante em que o repasse pode ser creditado.

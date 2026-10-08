@@ -32,8 +32,17 @@ export function repasseEmCentavos(params: {
   valorFaturavelCents: number;
   repasse: RepasseDaCampanha | null | undefined;
   piso: number;
+  /**
+   * Teto de repasse (`platform_config.monetization.driverPayoutMaxPercent`).
+   *
+   * Opcional, com padrão 1, porque este é o caminho do faturamento: uma configuração gravada
+   * antes desta chave existir não pode fazer o repasse virar zero nem lançar. O padrão 1
+   * reproduz exatamente o comportamento anterior.
+   */
+  teto?: number;
 }): number {
   const { valorFaturavelCents, repasse, piso } = params;
+  const teto = params.teto ?? 1;
 
   // Veiculação que não fatura não reparte: filler e inventário institucional tocam de graça.
   if (valorFaturavelCents <= 0) {
@@ -41,9 +50,17 @@ export function repasseEmCentavos(params: {
   }
 
   const porPiso = Math.floor(valorFaturavelCents * piso);
+  /**
+   * O teto em centavos, e também o teto econômico.
+   *
+   * São dois limites diferentes que acabam no mesmo `min`: o econômico (não pagar mais do que
+   * se recebeu) e o de política (reter ao menos 20%). O menor dos dois vence — se alguém
+   * configurar o teto acima de 1, o econômico ainda protege.
+   */
+  const porTeto = Math.min(Math.floor(valorFaturavelCents * teto), valorFaturavelCents);
 
   if (!repasse) {
-    return Math.min(porPiso, valorFaturavelCents);
+    return Math.min(porPiso, porTeto);
   }
 
   let ofertado: number;
@@ -54,13 +71,18 @@ export function repasseEmCentavos(params: {
   }
 
   /**
-   * O teto é o próprio valor faturável, não o piso.
+   * Rede de segurança para campanha gravada antes de o teto existir.
    *
-   * Sem ele, uma campanha com `valueCents` maior que a tarifa (gravada antes da validação de
-   * teto existir) faria a plataforma pagar mais do que recebeu por aquela veiculação. O
-   * limite é econômico, não de política.
+   * Hoje `percent` pode estar em qualquer valor até 100% no banco, porque o `@Max(1)` do DTO
+   * era o único limite. A validação na criação passou a recusar acima do teto, mas ela não
+   * reescreve o que já está gravado — então o limite também vale aqui, no instante do
+   * pagamento.
+   *
+   * O piso continua vencendo do teto quando os dois se cruzam (`max` antes do `min`): um teto
+   * configurado abaixo do piso é configuração errada, e nesse caso pagar o piso é o
+   * comportamento menos surpreendente.
    */
-  return Math.min(Math.max(ofertado, porPiso), valorFaturavelCents);
+  return Math.min(Math.max(ofertado, porPiso), Math.max(porTeto, porPiso));
 }
 
 /**
@@ -96,20 +118,35 @@ export function boostDeRepasse(params: {
   return Math.min(3, Math.max(0.5, bruto));
 }
 
-/** Fração efetiva do valor faturável que vai para o motorista, nos dois modelos. */
+/**
+ * Fração efetiva do valor faturável que vai para o motorista, nos dois modelos.
+ *
+ * Limitada ao teto, porque é esta fração que alimenta o peso do leilão: sem o limite, uma
+ * campanha gravada com `percent: 1` antes do teto existir teria peso calculado sobre 100% e
+ * atropelaria todas as outras — comprando entrega com um repasse que o pagamento já não
+ * honra. Com piso 0,30, `k` 0,5 e teto 0,8, o peso máximo é
+ * `1 + 0,5 × (0,8/0,3 − 1) ≈ 1,83`, e o limite de 3 de `boostDeRepasse` nunca é atingido.
+ *
+ * `teto` é opcional com padrão 1 pelo mesmo motivo de `repasseEmCentavos`: configuração
+ * gravada antes da chave existir não deve alterar o comportamento.
+ */
 export function percentEfetivoDoRepasse(
   repasse: RepasseDaCampanha | null | undefined,
   ratePerImpressionCents: number,
-  piso: number
+  piso: number,
+  teto = 1
 ): number {
+  // Teto abaixo do piso é configuração errada; nesse caso o piso vence, como no pagamento.
+  const limitar = (fracao: number) => Math.min(Math.max(fracao, piso), Math.max(teto, piso));
+
   if (!repasse) {
-    return piso;
+    return limitar(piso);
   }
   if (repasse.model === 'percent') {
-    return Math.max(repasse.percent ?? 0, piso);
+    return limitar(repasse.percent ?? 0);
   }
   if (ratePerImpressionCents <= 0) {
-    return piso;
+    return limitar(piso);
   }
-  return Math.max((repasse.valueCents ?? 0) / ratePerImpressionCents, piso);
+  return limitar((repasse.valueCents ?? 0) / ratePerImpressionCents);
 }

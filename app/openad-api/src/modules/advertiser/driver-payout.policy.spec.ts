@@ -111,3 +111,96 @@ describe('validarRepasse', () => {
     expect(r.repasse?.percentEfetivo).toBe(0);
   });
 });
+
+describe('validarRepasse: teto de repasse', () => {
+  /**
+   * O teto existe pelo mesmo motivo que o piso, do outro lado.
+   *
+   * Antes, `percent` aceitava qualquer valor até 100% — o `@Max(1)` do DTO era o único limite
+   * — e a plataforma não retinha nada daquela veiculação. O teto é política: mora no
+   * `platform_config` e muda sem deploy.
+   */
+  function configComFaixa(piso: number, teto: number): PlatformConfig {
+    const base = platformConfigDefaults();
+    return {
+      ...base,
+      monetization: {
+        ...base.monetization,
+        driverPayoutMinPercent: piso,
+        driverPayoutMaxPercent: teto,
+      },
+    };
+  }
+
+  it('o padrao da plataforma e piso 30% e teto 80%', () => {
+    const m = platformConfigDefaults().monetization;
+    expect(m.driverPayoutMinPercent).toBe(0.3);
+    expect(m.driverPayoutMaxPercent).toBe(0.8);
+  });
+
+  it('aceita no teto exato', () => {
+    const r = validarRepasse(
+      { model: 'percent', percent: 0.8 },
+      100,
+      configComFaixa(0.3, 0.8)
+    );
+    expect(r.erro).toBeNull();
+    expect(r.repasse?.percentEfetivo).toBe(0.8);
+  });
+
+  it('recusa percent acima do teto, dizendo os dois numeros', () => {
+    const r = validarRepasse(
+      { model: 'percent', percent: 0.9 },
+      100,
+      configComFaixa(0.3, 0.8)
+    );
+    expect(r.erro?.codigo).toBe('DRIVER_PAYOUT_ABOVE_CAP');
+    expect(r.erro?.mensagem).toContain('90.0%');
+    expect(r.erro?.mensagem).toContain('80.0%');
+    expect(r.repasse).toBeNull();
+  });
+
+  it('recusa per_play acima do teto', () => {
+    // 85 centavos sobre uma tarifa de 100 equivale a 85%, acima do teto.
+    const r = validarRepasse(
+      { model: 'per_play', valueCents: 85 },
+      100,
+      configComFaixa(0.3, 0.8)
+    );
+    expect(r.erro?.codigo).toBe('DRIVER_PAYOUT_ABOVE_CAP');
+  });
+
+  it('per_play acima da tarifa recusa por receita, nao por teto', () => {
+    /**
+     * As duas recusas existem e a ordem importa: "excede a tarifa" diz ao anunciante algo
+     * diferente de "acima do teto". Trocar a ordem faria a mensagem falar de política quando o
+     * problema é aritmético.
+     */
+    const r = validarRepasse(
+      { model: 'per_play', valueCents: 150 },
+      100,
+      configComFaixa(0.3, 0.8)
+    );
+    expect(r.erro?.codigo).toBe('DRIVER_PAYOUT_ABOVE_REVENUE');
+  });
+
+  it('teto ausente na configuracao nao recusa nada', () => {
+    /**
+     * Campanha avaliada contra configuração gravada antes desta chave existir. Sem o padrão 1,
+     * `undefined` em toda comparação recusaria qualquer repasse — uma mudança de configuração
+     * derrubaria a criação de campanha inteira.
+     */
+    const base = platformConfigDefaults();
+    const semTeto = {
+      ...base,
+      monetization: {
+        ...base.monetization,
+        driverPayoutMinPercent: 0.3,
+        driverPayoutMaxPercent: undefined as unknown as number,
+      },
+    } as PlatformConfig;
+    const r = validarRepasse({ model: 'percent', percent: 0.95 }, 100, semTeto);
+    expect(r.erro).toBeNull();
+    expect(r.repasse?.percentEfetivo).toBe(0.95);
+  });
+});

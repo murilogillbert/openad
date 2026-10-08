@@ -61,6 +61,17 @@ export function validarRepasse(
   config: PlatformConfig
 ): ResultadoDeRepasse {
   const piso = config.monetization.driverPayoutMinPercent;
+  /**
+   * Teto de repasse, pelo mesmo motivo que o piso, do outro lado.
+   *
+   * Sem teto, `percent` aceitava qualquer valor até 100% — o `@Max(1)` do DTO era o único
+   * limite — e a plataforma não retinha nada daquela veiculação. O teto é política, mora no
+   * `platform_config` e muda sem deploy; o `@Max(1)` continua como limite sintático.
+   *
+   * `?? 1` para campanha avaliada contra configuração gravada antes desta chave existir: sem
+   * ele, `undefined` em toda comparação recusaria qualquer repasse.
+   */
+  const teto = config.monetization.driverPayoutMaxPercent ?? 1;
 
   if (!oferta) {
     /**
@@ -90,6 +101,12 @@ export function validarRepasse(
       return recusar(
         'DRIVER_PAYOUT_BELOW_FLOOR',
         `Repasse de ${pct(percent)} esta abaixo do piso da plataforma, que e ${pct(piso)}`
+      );
+    }
+    if (percent > teto) {
+      return recusar(
+        'DRIVER_PAYOUT_ABOVE_CAP',
+        `Repasse de ${pct(percent)} esta acima do teto de ${pct(teto)}`
       );
     }
     return aceitar({
@@ -134,13 +151,22 @@ export function validarRepasse(
 
   /**
    * Repasse acima da tarifa e recusado: a plataforma pagaria mais do que recebe por
-   * veiculacao. O teto e 1, nao o piso, porque este limite e economico e nao de politica.
+   * veiculacao. Este limite e **economico**, e vem antes do teto de politica porque a
+   * mensagem e outra: "excede a receita" diz ao anunciante algo diferente de "acima do teto".
    */
   if (percentEfetivo > 1) {
     return recusar(
       'DRIVER_PAYOUT_ABOVE_REVENUE',
       `Repasse de ${valueCents} centavos excede a tarifa de ` +
         `${ratePerImpressionCents} centavos por veiculacao`
+    );
+  }
+
+  if (percentEfetivo > teto) {
+    return recusar(
+      'DRIVER_PAYOUT_ABOVE_CAP',
+      `Repasse de ${valueCents} centavos sobre uma tarifa de ${ratePerImpressionCents} ` +
+        `equivale a ${pct(percentEfetivo)}, acima do teto de ${pct(teto)}`
     );
   }
 

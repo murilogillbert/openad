@@ -17,6 +17,7 @@ import { ScheduleRulesModule } from '../schedule-rules/schedule-rules.module';
 import { GeoZonesModule } from '../geo-zones/geo-zones.module';
 import { VehiclesModule } from '../vehicles/vehicles.module';
 import { MediaIngestionModule } from '../media-ingestion/media-ingestion.module';
+import { PlatformConfigModule } from '../platform-config/platform-config.module';
 
 @Module({
   imports: [
@@ -29,6 +30,9 @@ import { MediaIngestionModule } from '../media-ingestion/media-ingestion.module'
     GeoZonesModule,
     forwardRef(() => VehiclesModule),
     MediaIngestionModule,
+    // O preço por segundo é gravado na campanha na criação (`CampaignLifecycleService`), para
+    // reajuste futuro não reprecificar campanha que já está no ar.
+    PlatformConfigModule,
   ],
   controllers: [CampaignsController],
   providers: [

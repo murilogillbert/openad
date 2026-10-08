@@ -7,6 +7,7 @@ import {
   CampaignDailySpend,
   type PacingState,
 } from '../schemas/campaign-daily-spend.schema';
+import { MICROS_POR_CENTAVO } from '../../monetization/pricing.policy';
 
 /** Spend ≥ this fraction of daily budget → near_cap (FR-012 / SC-006). */
 const NEAR_CAP_FRACTION = 0.95;
@@ -59,12 +60,25 @@ export class PacingSignalService {
   /**
    * Increment daily billable cost after a play is classified billable (post fraud).
    */
+  /**
+   * Acumula o custo de uma veiculação faturável no gasto do dia.
+   *
+   * O parâmetro passou de `costCents` para `costMicros`. O motivo é que o preço acordado é
+   * R$ 0,003 por segundo: uma imagem de 15 s custa 4,5 centavos, e o acumulador contava em
+   * centavos inteiros com `Math.round`. Arredondar por veiculação perderia meio centavo de
+   * 4,5 (11%), sempre contra o mesmo lado, multiplicado por milhões de veiculações.
+   *
+   * `billableCostMicros` é o acumulador exato. `billableCostCents` continua sendo mantido,
+   * derivado dele por `floor`, porque é o que o pacing compara com o orçamento e o que telas
+   * e relatórios já leem — mudar os dois ao mesmo tempo quebraria leitores que não têm nada
+   * a ver com esta frente.
+   */
   async recordBillablePlayCost(params: {
     campaignId: string;
-    costCents: number;
+    costMicros: number;
     at: Date;
   }): Promise<void> {
-    if (params.costCents <= 0) {
+    if (params.costMicros <= 0) {
       return;
     }
     const campaign = await this.campaigns.findByCampaignId(params.campaignId);
@@ -83,7 +97,7 @@ export class PacingSignalService {
           budgetCents,
           pacingState: 'normal',
         },
-        $inc: { billableCostCents: Math.round(params.costCents) },
+        $inc: { billableCostMicros: Math.floor(params.costMicros) },
       },
       { upsert: true }
     );
@@ -95,7 +109,37 @@ export class PacingSignalService {
     if (!row) {
       return;
     }
-    const next = this.resolvePacingState(row.billableCostCents, row.budgetCents);
+
+    /**
+     * `billableCostCents` derivado do acumulador em micro-reais, por `floor`.
+     *
+     * Derivado e não incrementado em paralelo: dois acumuladores independentes divergiriam, e
+     * o que divergiria é a base de comparação com o orçamento. Aqui o centavo é sempre
+     * `floor(micros)` do total — o meio centavo não se perde, fica no acumulador exato até
+     * completar o próximo centavo.
+     *
+     * **Só sobe, nunca desce.** Uma linha gravada antes deste campo existir já tem centavos
+     * acumulados e `billableCostMicros` ausente; o acumulador em micro-reais começa do zero
+     * para ela. Sem esta guarda, a primeira veiculação do dia sobrescreveria o gasto
+     * acumulado por um total muito menor — e o pacing voltaria a liberar uma campanha que já
+     * tinha estourado o orçamento.
+     *
+     * A guarda é defesa em profundidade: `scripts/semear-gasto-em-micros.ts` converte o
+     * acervo e torna o número exato. A guarda garante que esquecer o script custe uma
+     * contagem conservadora e não perda de dado.
+     */
+    const centavosDoTotal = Math.floor(
+      (row.billableCostMicros ?? 0) / MICROS_POR_CENTAVO
+    );
+    const centavosVigentes = Math.max(centavosDoTotal, row.billableCostCents ?? 0);
+    if (centavosVigentes !== row.billableCostCents) {
+      await this.dailySpend.updateOne(
+        { campaignId: params.campaignId, dateKey },
+        { $set: { billableCostCents: centavosVigentes } }
+      );
+    }
+
+    const next = this.resolvePacingState(centavosVigentes, row.budgetCents);
     if (next !== row.pacingState) {
       await this.dailySpend.updateOne(
         { campaignId: params.campaignId, dateKey },

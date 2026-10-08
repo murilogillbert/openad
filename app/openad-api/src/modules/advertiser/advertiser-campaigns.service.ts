@@ -121,8 +121,24 @@ export class AdvertiserCampaignsService {
       budget: {
         totalAmountCents: dto.budget.totalAmountCents,
         currency: dto.budget.currency,
+        /**
+         * Continua gravado, mas **não precifica mais** campanha nova.
+         *
+         * O app do anunciante já aprovado nas lojas envia este campo, e a API só pode mudar de
+         * forma aditiva — então ele é aceito e persistido (serve de histórico e ainda é a base
+         * da validação de repasse `per_play`). O que cobra é `pricingModel: 'per_second'`
+         * abaixo.
+         */
         ratePerImpressionCents: dto.budget.ratePerImpressionCents,
         dailyBudgetCents: null,
+        pricingModel: 'per_second',
+        /**
+         * Preço **gravado na criação**, não lido no momento de cobrar.
+         *
+         * É o que impede um reajuste futuro de reprecificar campanha que já está no ar, e é
+         * onde cabe a exceção por campanha (preço de lançamento, por exemplo).
+         */
+        pricePerSecondMicros: this.platform.get().monetization.pricePerSecondMicros,
       },
       targeting: {
         cities: dto.targeting?.cities ?? [],
