@@ -93,8 +93,11 @@ $config = @{
       APP_VARIANT                 = 'production'
       EXPO_PUBLIC_HUB_API_URL     = 'https://hubapi.opendriver.com.br'
       EXPO_PUBLIC_ADS_API_URL     = 'https://adsapi.opendriver.com.br'
+      # Painel web de compra de credito (Pix). A compra nao acontece no app: in-app purchase
+      # custaria 15 a 30% sobre um preco unitario de R$ 0,045 por exibicao.
+      EXPO_PUBLIC_HUB_WEB_URL     = 'https://hub.opendriver.com.br'
     }
-    Dominios = @('adsapi.opendriver.com.br', 'hubapi.opendriver.com.br')
+    Dominios = @('adsapi.opendriver.com.br', 'hubapi.opendriver.com.br', 'hub.opendriver.com.br')
   }
 }
 

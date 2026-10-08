@@ -29,6 +29,14 @@ const PACKAGE = process.env.ANDROID_PACKAGE ?? 'br.com.opendriver.ads';
 const strip = (u: string) => u.replace(/\/+$/, '');
 const HUB_API_URL = strip(process.env.EXPO_PUBLIC_HUB_API_URL ?? '');
 const ADS_API_URL = strip(process.env.EXPO_PUBLIC_ADS_API_URL ?? '');
+/**
+ * Site do hub (SPA), não a API: é onde fica o painel de compra de crédito que o app abre no
+ * navegador. Tem padrão de produção aqui porque não é segredo nem varia por ambiente de dados —
+ * e sem padrão um build sem a variável abriria `undefined/conta/credito-de-anuncio`.
+ */
+const HUB_WEB_URL = strip(
+  process.env.EXPO_PUBLIC_HUB_WEB_URL ?? 'https://hub.opendriver.com.br'
+);
 
 /**
  * Build de loja com URL `http://` é um app que vaza token de sessão em rede aberta. A recusa é
@@ -45,6 +53,13 @@ if (VARIANT !== 'development') {
   }
   if (!/^https:\/\//.test(ADS_API_URL)) {
     problemas.push(`EXPO_PUBLIC_ADS_API_URL deve ser https (recebido: "${ADS_API_URL}")`);
+  }
+  /**
+   * O painel de crédito é aberto no navegador e exige login. Em `http` a senha do anunciante
+   * iria em texto claro — mesmo risco das URLs de API, e mesma recusa em tempo de build.
+   */
+  if (!/^https:\/\//.test(HUB_WEB_URL)) {
+    problemas.push(`EXPO_PUBLIC_HUB_WEB_URL deve ser https (recebido: "${HUB_WEB_URL}")`);
   }
   if (problemas.length) {
     throw new Error(
@@ -173,6 +188,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     variant: VARIANT,
     hubApiUrl: HUB_API_URL,
     adsApiUrl: ADS_API_URL,
+    hubWebUrl: HUB_WEB_URL,
     router: {},
     eas: process.env.EAS_PROJECT_ID ? { projectId: process.env.EAS_PROJECT_ID } : undefined,
   },

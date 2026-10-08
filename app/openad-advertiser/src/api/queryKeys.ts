@@ -23,5 +23,9 @@ export const chaves = {
       ['inventario', 'zonas', city ?? null, tier ?? null] as const,
   },
 
+  credito: {
+    saldo: ['credito', 'saldo'] as const,
+  },
+
   conta: ['conta'] as const,
 } as const;

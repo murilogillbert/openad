@@ -297,3 +297,43 @@ Conferir depois do deploy:
 ```
 docker exec openad-api printenv HUB_API_URL
 ```
+
+---
+
+## 10. `VITE_OPENAD_API_URL` no build do painel do hub — **Pendente**
+
+O painel de compra de crédito vive no SPA do hub, em `/conta/credito-de-anuncio`, e fala com a
+API do OpenAd direto do navegador — mesmo padrão das telas de Admin → OpenDriver, que usam
+`VITE_OPENDRIVER_API_URL`.
+
+`VITE_*` é embutido no bundle em **tempo de build**. Sem a variável, a tela mostra um aviso
+explicando o que falta em vez de falhar calada, mas não funciona. O valor de produção é
+`https://adsapi.opendriver.com.br`.
+
+Conferir depois do deploy do `hub-frontend` (UUID `krqsjubqpzils0nij3atnekp`): abrir
+`https://hub.opendriver.com.br/conta/credito-de-anuncio` logado e ver o saldo, não o aviso.
+
+> CORS não é problema: a API do OpenAd está em `origin: true` (reflete qualquer origem) em
+> `app/openad-api/src/main.ts`. Vale registrar que isso é mais permissivo do que precisa ser —
+> `origin: true` com `credentials: true` seria perigoso com cookie de sessão, e a API usa só
+> `Authorization: Bearer`. Apertar a lista exigiria conhecer todas as origens que já consomem a
+> API (portal, tablet, painel do hub), então fica como item separado, não como parte desta
+> frente.
+
+---
+
+## 11. APK novo do app do anunciante, com `EXPO_PUBLIC_HUB_WEB_URL` — **Pendente**
+
+O app ganhou o cartão de saldo de crédito e o botão que abre o painel web. As duas coisas estão
+no código, e **nenhuma está no APK instalado** — `EXPO_PUBLIC_*` é embutido em tempo de build.
+
+O valor tem padrão de produção no `app.config.ts` (`https://hub.opendriver.com.br`), então um
+build sem a variável funciona; ela existe para apontar homologação a outro lugar. Já está em
+`eas.json`, em `scripts/apk.ps1` e em `infra/server/38-aab.ps1`.
+
+O que falta é gerar e instalar o APK. O aparelho é o Samsung S21 FE, e a instrução que vale
+desde o começo continua valendo: **nada no celular além dos APKs dos quatro aplicativos**.
+
+```
+pwsh app/openad-advertiser/scripts/apk.ps1 -Variante preview
+```

@@ -7,6 +7,7 @@ import type {
   RelatorioDaCampanha,
   RespostaDeAutenticacao,
   ResultadoDeAdesao,
+  SaldoDeCredito,
   SessaoDeUpload,
   SituacaoDeAdesao,
   UsuarioDoEcossistema,
@@ -76,6 +77,22 @@ export const campanhas = {
       signal
     );
   },
+};
+
+/**
+ * Crédito de veiculação. **Somente leitura no app.**
+ *
+ * A compra acontece num painel web (decisão de 2026-10-07): dentro do app ela exigiria in-app
+ * purchase pela política do Google, com taxa de 15 a 30% — e o preço unitário da veiculação é
+ * R$ 0,045 por exibição, de modo que a taxa sairia do que sobra para a plataforma e para o
+ * motorista.
+ *
+ * Mostrar o saldo aqui não é compra: é o número que explica por que uma campanha aprovada não
+ * está veiculando. Sem ele o anunciante veria "Aprovada" e nenhuma exibição, sem causa visível.
+ */
+export const credito = {
+  saldo: (signal?: AbortSignal) =>
+    ads.get<SaldoDeCredito>('/advertiser/credits/balance', signal),
 };
 
 export const inventario = {

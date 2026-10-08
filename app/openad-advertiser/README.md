@@ -22,6 +22,12 @@ npm install
 | --- | --- |
 | `EXPO_PUBLIC_HUB_API_URL` | API do **hub**: login, cadastro, refresh, perfil |
 | `EXPO_PUBLIC_ADS_API_URL` | API do **openad**: campanhas, criativos, relatórios |
+| `EXPO_PUBLIC_HUB_WEB_URL` | **Site** do hub (não a API): painel web onde o anunciante compra crédito por Pix |
+
+A terceira não é uma API: é o endereço que o app abre no navegador. A compra de crédito
+acontece **fora do app** por decisão de 2026-10-07 — dentro dele exigiria in-app purchase pela
+política do Google, com taxa de 15 a 30% sobre um preço unitário de R$ 0,045 por exibição. O app
+mostra o saldo e leva ao painel; a confirmação do pagamento nunca passa pelo cliente.
 
 O mesmo access token vale nas duas: os três serviços assinam HS256 com o mesmo `JWT_SECRET` e
 com `issuer`/`audience` iguais (`opendriverhub`). Quem **renova** é o hub, porque é ele que

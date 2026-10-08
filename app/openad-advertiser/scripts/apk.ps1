@@ -46,12 +46,16 @@ $env:ANDROID_SDK_ROOT = $Sdk
 $env:APP_VARIANT = $Variante
 $env:EXPO_PUBLIC_HUB_API_URL = 'https://hubapi.opendriver.com.br'
 $env:EXPO_PUBLIC_ADS_API_URL = 'https://adsapi.opendriver.com.br'
+# Site do hub (SPA), nao a API: e o painel web onde o anunciante compra credito por Pix. Vai no
+# bundle porque `EXPO_PUBLIC_*` e embutido em tempo de build.
+$env:EXPO_PUBLIC_HUB_WEB_URL = 'https://hub.opendriver.com.br'
 
 Write-Output "JDK:      $Jdk"
 Write-Output "SDK:      $Sdk"
 Write-Output "variante: $Variante"
 Write-Output "hub:      $env:EXPO_PUBLIC_HUB_API_URL"
 Write-Output "ads:      $env:EXPO_PUBLIC_ADS_API_URL"
+Write-Output "hub web:  $env:EXPO_PUBLIC_HUB_WEB_URL"
 
 Push-Location $raiz
 try {

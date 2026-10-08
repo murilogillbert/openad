@@ -6,6 +6,7 @@ interface Extra {
   variant?: Variant;
   hubApiUrl?: string;
   adsApiUrl?: string;
+  hubWebUrl?: string;
 }
 
 const extra = (Constants.expoConfig?.extra ?? {}) as Extra;
@@ -26,6 +27,16 @@ const hubApiUrl = strip(
 const adsApiUrl = strip(
   process.env.EXPO_PUBLIC_ADS_API_URL || extra.adsApiUrl || 'http://10.0.2.2:3000'
 );
+/**
+ * Site do hub (o SPA), não a API dele. É onde fica o painel de compra de crédito.
+ *
+ * Padrão de desenvolvimento aponta para o Vite na máquina, não para `10.0.2.2`: este endereço
+ * é aberto no **navegador do aparelho**, que resolve nomes públicos normalmente — ao contrário
+ * do `fetch` de dentro do emulador, que é o motivo do `10.0.2.2` nas URLs de API.
+ */
+const hubWebUrl = strip(
+  process.env.EXPO_PUBLIC_HUB_WEB_URL || extra.hubWebUrl || 'https://hub.opendriver.com.br'
+);
 
 export const env = {
   variant: (extra.variant ?? 'development') as Variant,
@@ -38,6 +49,9 @@ export const env = {
   /** Origem da API do openad (sem `/api/v1`). É onde moram campanhas e relatórios. */
   adsApiUrl,
   adsBaseUrl: `${adsApiUrl}/api/v1`,
+
+  /** Site do hub. Só para abrir no navegador; nenhuma chamada de API sai para cá. */
+  hubWebUrl,
 } as const;
 
 /** As lojas exigem URL pública de política de privacidade e canal de suporte. */
@@ -67,4 +81,19 @@ export const links = {
    * exigem canal de suporte funcional, e caixa morta é reprovação.
    */
   supportEmail: process.env.EXPO_PUBLIC_SUPPORT_EMAIL || 'murilogillbert@gmail.com',
+
+  /**
+   * Painel web onde o anunciante **compra** crédito de veiculação, por Pix.
+   *
+   * A compra não acontece no app de propósito. A política do Google exige in-app purchase para
+   * bem digital consumido dentro do app, com taxa de 15 a 30% — e o preço unitário da
+   * veiculação é R$ 0,045 por exibição, de modo que a taxa sairia do que sobra para a
+   * plataforma e para o motorista. Decisão de 2026-10-07: o app gerencia, a compra é na web.
+   *
+   * O painel vive no **hub**, e não no openad, porque é lá que mora a conta do ecossistema: o
+   * token que o painel guarda é exatamente o que a API do openad aceita na origem federada.
+   */
+  creditPanel:
+    process.env.EXPO_PUBLIC_CREDIT_PANEL_URL ||
+    `${hubWebUrl}/conta/credito-de-anuncio`,
 } as const;

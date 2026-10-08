@@ -44,6 +44,7 @@ $apps = @(
       APP_VARIANT             = 'production'
       EXPO_PUBLIC_HUB_API_URL = 'https://hubapi.opendriver.com.br'
       EXPO_PUBLIC_ADS_API_URL = 'https://adsapi.opendriver.com.br'
+      EXPO_PUBLIC_HUB_WEB_URL = 'https://hub.opendriver.com.br'
     }
   }
 )
