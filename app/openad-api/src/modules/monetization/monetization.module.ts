@@ -10,6 +10,8 @@ import { PlatformConfigModule } from '../platform-config/platform-config.module'
 import { CreditCycleJob } from './credit-cycle.job';
 import { CreditCycleService } from './credit-cycle.service';
 import { CreditLedgerService } from './credit-ledger.service';
+import { CreditPurchaseService } from './credit-purchase.service';
+import { PixChargeClient } from './pix-charge.client';
 
 /**
  * Dinheiro do anunciante: saldo, reserva por ciclo e débito da captura.
@@ -29,9 +31,18 @@ import { CreditLedgerService } from './credit-ledger.service';
     forwardRef(() => CampaignsModule),
     PlatformConfigModule,
   ],
-  providers: [CreditLedgerService, CreditCycleService, CreditCycleJob],
+  providers: [
+    CreditLedgerService,
+    CreditCycleService,
+    CreditCycleJob,
+    CreditPurchaseService,
+    PixChargeClient,
+  ],
   // O job não é exportado: ninguém o chama, o cron o dispara. Exportá-lo convidaria outro
   // módulo a invocar o ciclo por fora do lock.
-  exports: [CreditLedgerService, CreditCycleService],
+  //
+  // `PixChargeClient` também não: ele é detalhe de como a compra fala com o hub. Quem precisar
+  // de cobrança passa pelo `CreditPurchaseService`, que grava a compra antes de pedi-la.
+  exports: [CreditLedgerService, CreditCycleService, CreditPurchaseService],
 })
 export class MonetizationModule {}

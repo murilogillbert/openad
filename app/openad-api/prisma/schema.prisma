@@ -121,6 +121,9 @@ enum AdAdvertiserStatus {
 enum AdStore {
   apple
   google
+  /// Compra no painel web, por Pix. Decisao de 2026-10-07: a compra sai do app, o que evita a
+  /// taxa de 15 a 30% da loja e dispensa validacao de recibo.
+  pix
 
   @@schema("openad")
 }
@@ -202,12 +205,31 @@ model AdCreditPurchase {
   advertiserId String       @map("advertiser_id") @db.Uuid
   advertiser   AdAdvertiser @relation(fields: [advertiserId], references: [id], onDelete: Restrict)
 
-  store      AdStore
-  productSku String  @map("product_sku") @db.VarChar(120)
+  store AdStore
+  /// Nulo em compra por Pix: nao ha SKU de loja, o anunciante escolhe o valor. `NULL` significa
+  /// "nao e compra de loja", e nao "esqueci de preencher".
+  productSku String? @map("product_sku") @db.VarChar(120)
 
   creditCents   Int @map("credit_cents")
   priceCents    Int @map("price_cents")
   storeFeeCents Int @map("store_fee_cents")
+
+  /// Valor exato do credito em micro-reais. O credito e consumido a R$ 0,003/s, entao o saldo
+  /// precisa fechar com o gasto sem resto escondido.
+  creditMicros BigInt? @map("credit_micros")
+
+  /// Identificador da cobranca no provedor (Asaas) e o Pix copia-e-cola.
+  ///
+  /// O copia-e-cola e guardado para o painel reexibir a cobranca sem recria-la: sem ele,
+  /// recarregar a pagina geraria uma segunda cobranca para o mesmo pedido e o anunciante
+  /// ficaria com duas pendentes.
+  chargeExternalId String?   @unique(map: "ad_credit_purchases_charge_external_key") @map("charge_external_id") @db.VarChar(120)
+  pixCopyPaste     String?   @map("pix_copy_paste")
+  pixExpiresAt     DateTime? @map("pix_expires_at")
+
+  /// `public.users.id` de quem pediu a compra. Sem FK de proposito: e registro, e uma FK daria
+  /// ao openad poder de bloquear exclusao de usuario no hub por um dado informativo.
+  requestedBy String? @map("requested_by") @db.Uuid
 
   transactionId String          @map("transaction_id") @db.VarChar(200)
   receiptStatus AdReceiptStatus @default(pending) @map("receipt_status")
@@ -221,6 +243,7 @@ model AdCreditPurchase {
   @@unique([store, transactionId], map: "ad_credit_purchases_store_transaction_key")
   @@index([advertiserId, createdAt])
   @@index([receiptStatus])
+  @@index([advertiserId, receiptStatus, createdAt], map: "ad_credit_purchases_pendentes_idx")
   @@map("ad_credit_purchases")
   @@schema("openad")
 }

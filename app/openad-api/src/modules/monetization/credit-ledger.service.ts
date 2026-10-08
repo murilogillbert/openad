@@ -195,6 +195,103 @@ export class CreditLedgerService {
   }
 
   /**
+   * Credita uma compra confirmada. **Idempotente por `referenceId`.**
+   *
+   * Separado de `lancarAjuste` porque o motivo contábil é outro (`purchase`, não `adjustment`)
+   * e porque o lançamento aponta para a compra — o extrato precisa poder dizer *qual* compra
+   * gerou aquele crédito, e um ajuste genérico não responde isso.
+   */
+  async lancarCompra(params: {
+    advertiserId: string;
+    purchaseId: string;
+    amountMicros: number;
+    referenceId: string;
+  }): Promise<{ jaLancado: boolean }> {
+    const micros = Math.floor(params.amountMicros);
+    if (micros <= 0) {
+      return { jaLancado: false };
+    }
+    try {
+      await this.prisma.adCreditLedger.create({
+        data: {
+          advertiserId: params.advertiserId,
+          direction: 'credit',
+          amountCents: centavosDoLancamento(micros),
+          amountMicros: BigInt(micros),
+          reason: 'purchase',
+          purchaseId: params.purchaseId,
+          referenceId: params.referenceId,
+        },
+      });
+      return { jaLancado: false };
+    } catch (e: unknown) {
+      if (this.ehViolacaoDeUnicidade(e)) {
+        // O mesmo pagamento confirmado duas vezes. É o caminho esperado quando o provedor
+        // reenvia o evento, não um erro.
+        return { jaLancado: true };
+      }
+      throw e;
+    }
+  }
+
+  /**
+   * Estorna uma compra com um **lançamento compensatório**, não apagando o original.
+   *
+   * O ledger é append-only e é registro fiscal: remover o crédito apagaria a prova de que ele
+   * existiu, e o extrato passaria a não explicar o próprio saldo.
+   *
+   * O saldo pode ficar negativo, e isso é correto — o anunciante já gastou crédito que foi
+   * devolvido. Negativo impede nova reserva e fica visível para cobrança ou ajuste, o que é
+   * melhor do que zerar e perder a informação.
+   */
+  async lancarEstorno(params: {
+    advertiserId: string;
+    purchaseId: string;
+    amountMicros: number;
+    referenceId: string;
+    motivo: string;
+  }): Promise<{ jaLancado: boolean }> {
+    const micros = Math.floor(params.amountMicros);
+    if (micros <= 0) {
+      return { jaLancado: false };
+    }
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.adCreditLedger.create({
+          data: {
+            advertiserId: params.advertiserId,
+            direction: 'debit',
+            amountCents: centavosDoLancamento(micros),
+            amountMicros: BigInt(micros),
+            reason: 'refund',
+            purchaseId: params.purchaseId,
+            referenceId: params.referenceId,
+          },
+        });
+        await tx.auditLog.create({
+          data: {
+            actorId: null,
+            action: 'openad.credit.refund',
+            entityType: 'AdCreditPurchase',
+            entityId: params.purchaseId,
+            payloadJson: JSON.stringify({
+              advertiserId: params.advertiserId,
+              amountMicros: micros,
+              motivo: params.motivo,
+            }),
+          },
+        });
+      });
+      return { jaLancado: false };
+    } catch (e: unknown) {
+      if (this.ehViolacaoDeUnicidade(e)) {
+        return { jaLancado: true };
+      }
+      throw e;
+    }
+  }
+
+  /**
    * Violação de unicidade do Prisma (`P2002`).
    *
    * Comparar pelo código, e não pela mensagem: a mensagem muda entre versões e entre idiomas,

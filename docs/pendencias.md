@@ -238,3 +238,62 @@ não declara `driverPayout`, repassa o **piso de 30%**. Com isso o teto de R$ 40
 
 Duas saídas, as duas legítimas: reconferir a projeção do PDF, ou subir o piso para 0,5 no admin
 (`platform_config.monetization`). A segunda é uma edição de configuração, sem deploy.
+
+---
+
+## 8. Escopos novos na chave de serviço, para a compra de crédito por Pix — **Pendente**
+
+A Frente A (compra de crédito por Pix) atravessa os dois serviços, e cada direção precisa de um
+escopo que **ainda não existe nas chaves cadastradas**. Sem eles o fluxo responde `403` nas duas
+pontas, e o anunciante vê "não foi possível gerar a cobrança" sem causa aparente.
+
+| Direção | Rota | Escopo exigido | Onde fica a chave |
+| --- | --- | --- | --- |
+| openad → hub | `POST /api/v1/internal/ads/credit-charges` | `ads:credit:charge` | `ECOSYSTEM_SERVICE_API_KEY` no `.env` do openad |
+| hub → openad | `POST /api/v1/internal/ads/credits/:id/confirm` e `/refund` | `ads:credit:write` | `Internal:AccountSyncKey` em `integration_settings` |
+
+Os dois escopos foram acrescentados ao enum fechado de `createApiKeySchema`, então agora é
+possível **criar** chave com eles — mas as chaves que já existem em produção foram emitidas
+antes e não os têm. Chave de serviço não é editável por desenho: o valor em texto puro nunca é
+persistido, e o escopo faz parte do que foi emitido.
+
+### Como fechar
+
+1. Painel do hub → **Chaves de API** → criar uma chave nova com os escopos:
+   `account:read`, `account:purge`, `ads:earning:write`, `ads:payout:read`,
+   `ads:credit:charge`, `ads:credit:write`.
+   > Uma chave só para os dois sentidos, de propósito. Os três serviços validam contra a
+   > **mesma** `public.service_api_keys`, então emitir uma por direção dobraria o número de
+   > segredos a rotacionar sem reduzir o alcance de nenhum: quem tem uma já alcança os dois.
+2. Colar o valor em **Integrações → Comunicação entre serviços** (`Internal:AccountSyncKey`).
+3. Colar o **mesmo** valor em `ECOSYSTEM_SERVICE_API_KEY` no `.env` do openad e redeployar o
+   `openad-api`. Esta ponta é variável de ambiente, não configuração de banco — o openad lê
+   segredo de `integration_settings`, que é do hub, apenas pelas rotas do hub.
+4. Revogar a chave antiga **depois** de confirmar que a nova funciona, não antes: a chave antiga
+   ainda serve a exclusão de conta e o repasse ao motorista.
+
+### Risco de não fechar
+
+A compra por Pix não funciona, e a reserva de crédito não tem o que reservar — então campanha de
+anunciante não vai ao ar. O contorno existe e é o item 6: lançar crédito à mão em
+`POST /api/v1/internal/ads/credits/adjust`. Mas esse contorno **também** exige
+`ads:credit:write`, de modo que fechar este item é pré-requisito para qualquer veiculação paga.
+
+---
+
+## 9. `HUB_API_URL` no ambiente do openad-api — **Pendente**
+
+Variável nova, acrescentada em `docker-compose.prod.yml` e em
+`infra/server/15-provisionar.sh` com o padrão `https://hubapi.opendriver.com.br`. O contêiner em
+produção **não a tem** até o próximo deploy que recarregue o compose.
+
+Sem ela, `PixChargeClient.habilitado()` é `false` e a rota de compra responde `503` com
+`PIX_NOT_CONFIGURED` — mensagem que manda o anunciante ao suporte em vez de falhar calada. É
+degradação de uma função, de propósito: exigir a variável no boot trocaria uma função indisponível
+por um serviço que não sobe.
+
+Conferir depois do deploy:
+
+```
+docker exec openad-api printenv HUB_API_URL
+```

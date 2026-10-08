@@ -269,6 +269,19 @@ services:
       # reversível por um serviço que não sobe, o que é estritamente pior.
       ECOSYSTEM_SERVICE_API_KEY: ${ECOSYSTEM_SERVICE_API_KEY:-}
 
+      # API do hub, usada por `PixChargeClient` para pedir a cobrança Pix do crédito de
+      # veiculação. A conta do Asaas é do hub e as credenciais vivem em
+      # `public.integration_settings`, que é dele — então o openad pede, o hub cobra.
+      #
+      # Mesmo raciocínio do endereço do opendriver: domínio público, não nome de contêiner,
+      # porque o Coolify renomeia o contêiner em cada deploy e não registra alias pelo uuid.
+      #
+      # Sem `:?`: faltando a URL, `PixChargeClient.habilitado()` é `false` e a rota de compra
+      # responde 503 com `PIX_NOT_CONFIGURED` — mensagem que manda o anunciante ao suporte, e
+      # o operador ao lançamento manual em `/internal/ads/credits/adjust`. É degradação de uma
+      # função, não motivo para o serviço não subir.
+      HUB_API_URL: ${HUB_API_URL:-https://hubapi.opendriver.com.br}
+
       RABBITMQ_PROVISION_DEVICE_MQTT_USERS: 'true'
 
       # Primeiro `super_admin` do portal. `UsersService.seedAdminUser` só age quando a coleção

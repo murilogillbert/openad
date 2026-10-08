@@ -25,6 +25,12 @@ import { ReportingAggregationService } from '../analytics/services/reporting-agg
 import { MediaIngestionService } from '../media-ingestion/media-ingestion.service';
 import { MediaFolderProvisioningService } from '../media-ingestion/media-folder-provisioning.service';
 import { UploadSessionService } from '../media-ingestion/upload-session.service';
+import { CreditPurchaseService } from '../monetization/credit-purchase.service';
+import {
+  ComprarCreditoPixDto,
+  ExtratoQueryDto,
+} from '../monetization/dto/credit.dto';
+import { PlatformConfigRuntimeService } from '../platform-config/platform-config-runtime.service';
 import { AdvertiserCampaignsService } from './advertiser-campaigns.service';
 import { AdvertiserInventoryService } from './advertiser-inventory.service';
 import { anuncianteDaRequisicao } from './advertiser-principal';
@@ -58,7 +64,9 @@ export class AdvertiserController {
     private readonly relatorios: ReportingAggregationService,
     private readonly uploadSessions: UploadSessionService,
     private readonly mediaIngestion: MediaIngestionService,
-    private readonly folders: MediaFolderProvisioningService
+    private readonly folders: MediaFolderProvisioningService,
+    private readonly credito: CreditPurchaseService,
+    private readonly platform: PlatformConfigRuntimeService
   ) {}
 
   @Post('campaigns')
@@ -270,6 +278,81 @@ export class AdvertiserController {
     const data = await this.inventario.listarZonas({
       city: q.city,
       tier: q.tier,
+    });
+    return { data };
+  }
+
+  // ------------------------------------------------------------------ credito de veiculacao
+  //
+  // A compra e por **Pix, num painel web** (decisao de 2026-10-07). O app do anunciante fica so
+  // de gestao: a compra dentro do app exigiria in-app purchase pela politica do Google, com
+  // taxa de 15 a 30% — numa operacao cujo preco unitario e R$ 0,045 por exibicao, isso sai do
+  // que sobra para a plataforma e para o motorista.
+  //
+  // Estas rotas sao somente de leitura e de criacao de cobranca. Confirmacao e estorno chegam
+  // por `/internal/*`, autenticadas por chave de servico, porque quem as dispara e o hub depois
+  // de reconsultar o status no Asaas — nunca o cliente.
+
+  @Get('credits/balance')
+  @ApiOperation({ summary: 'Saldo de credito: total, retido e disponivel' })
+  async saldo(@Req() req: Request) {
+    const anunciante = anuncianteDaRequisicao(req);
+    const data = await this.credito.saldo(anunciante.advertiserId);
+    return { data };
+  }
+
+  @Get('credits/ledger')
+  @ApiOperation({ summary: 'Extrato do credito, do gasto mais recente para tras' })
+  async extrato(@Query() q: ExtratoQueryDto, @Req() req: Request) {
+    const anunciante = anuncianteDaRequisicao(req);
+    const data = await this.credito.extrato(
+      anunciante.advertiserId,
+      q.page ?? 1,
+      q.limit ?? 50
+    );
+    return { data };
+  }
+
+  @Get('credits/purchases')
+  @ApiOperation({ summary: 'Compras de credito do proprio anunciante' })
+  async compras(@Query() q: ExtratoQueryDto, @Req() req: Request) {
+    const anunciante = anuncianteDaRequisicao(req);
+    const data = await this.credito.compras(
+      anunciante.advertiserId,
+      q.page ?? 1,
+      q.limit ?? 20
+    );
+    return { data };
+  }
+
+  @Get('credits/pricing')
+  @ApiOperation({ summary: 'Tabela de preco por duracao e limites de compra' })
+  async tabelaDePrecos(@Req() req: Request) {
+    anuncianteDaRequisicao(req);
+    const data = this.credito.tabela(
+      this.platform.get().monetization.pricePerSecondMicros
+    );
+    return { data };
+  }
+
+  /**
+   * Abre uma cobranca Pix para comprar credito.
+   *
+   * Limitada no tempo porque cada chamada pode criar uma cobranca no provedor. O servico ainda
+   * reaproveita cobranca pendente nao vencida do mesmo valor — sem isso, recarregar a pagina de
+   * pagamento geraria uma segunda cobranca para o mesmo pedido e o anunciante poderia pagar as
+   * duas.
+   */
+  @Post('credits/pix')
+  @HttpCode(201)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @ApiOperation({ summary: 'Gera cobranca Pix para comprar credito de veiculacao' })
+  async comprarComPix(@Body() dto: ComprarCreditoPixDto, @Req() req: Request) {
+    const anunciante = anuncianteDaRequisicao(req);
+    const data = await this.credito.comprarComPix({
+      advertiserId: anunciante.advertiserId,
+      advertiserUserId: anunciante.userId,
+      amountCents: dto.amountCents,
     });
     return { data };
   }

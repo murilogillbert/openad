@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   HttpCode,
@@ -6,13 +7,25 @@ import {
   ParseUUIDPipe,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
+import type { Request } from 'express';
+import { CreditPurchaseService } from '../monetization/credit-purchase.service';
+import {
+  AjustarCreditoDto,
+  ConfirmarCreditoDto,
+  EstornarCreditoDto,
+} from '../monetization/dto/credit.dto';
 import { AccountPurgeService } from './account-purge.service';
 import { AdPayoutsReportService } from './ad-payouts-report.service';
-import { EscoposDeChave, ServiceApiKeyGuard } from './service-api-key.guard';
+import {
+  EscoposDeChave,
+  ServiceApiKeyGuard,
+  type PrincipalDeServico,
+} from './service-api-key.guard';
 import { PayoutsQueryDto } from './dto/payouts-query.dto';
 import { DriverPlaysQueryDto } from './dto/driver-plays-query.dto';
 
@@ -35,7 +48,8 @@ import { DriverPlaysQueryDto } from './dto/driver-plays-query.dto';
 export class InternalController {
   constructor(
     private readonly contas: AccountPurgeService,
-    private readonly payouts: AdPayoutsReportService
+    private readonly payouts: AdPayoutsReportService,
+    private readonly credito: CreditPurchaseService
   ) {}
 
   /**
@@ -108,5 +122,82 @@ export class InternalController {
       new Date(q.from),
       new Date(q.to)
     );
+  }
+
+  // ------------------------------------------------------------------ credito de veiculacao
+  //
+  // Confirmacao e estorno chegam **por aqui**, e nao por rota de anunciante, porque quem as
+  // dispara e o hub depois de reconsultar o status no Asaas. O corpo do webhook do provedor
+  // nunca e tratado como verdade: se fosse, bastaria a alguem forjar um POST para creditar
+  // saldo. A chave de servico com escopo e o que separa "o hub confirmou" de "alguem disse que
+  // pagou".
+
+  /**
+   * Confirma o pagamento de uma compra e credita o saldo. **Idempotente.**
+   *
+   * Responde `200` mesmo quando a compra ja estava confirmada, com `jaConfirmada: true`. Nao e
+   * tolerancia a erro: o provedor reenvia evento, e devolver `409` faria o hub registrar falha
+   * e tentar de novo para sempre num caso que esta, de fato, resolvido.
+   */
+  @Post('ads/credits/:purchaseId/confirm')
+  @EscoposDeChave('ads:credit:write')
+  @ApiOperation({ summary: 'Confirma pagamento de credito e lanca no ledger' })
+  async confirmarCredito(
+    @Param('purchaseId', ParseUUIDPipe) purchaseId: string,
+    @Body() dto: ConfirmarCreditoDto
+  ) {
+    const data = await this.credito.confirmarPagamento({
+      purchaseId,
+      externalId: dto.externalId ?? null,
+    });
+    return { data };
+  }
+
+  /**
+   * Estorna uma compra: lancamento compensatorio, nao apagamento.
+   *
+   * O saldo pode ficar negativo, e e o resultado correto quando o credito devolvido ja tinha
+   * sido gasto — negativo impede nova reserva e fica visivel para cobranca, o que e melhor do
+   * que zerar e perder a informacao.
+   */
+  @Post('ads/credits/:purchaseId/refund')
+  @EscoposDeChave('ads:credit:write')
+  @ApiOperation({ summary: 'Estorna compra de credito com lancamento compensatorio' })
+  async estornarCredito(
+    @Param('purchaseId', ParseUUIDPipe) purchaseId: string,
+    @Body() dto: EstornarCreditoDto
+  ) {
+    const data = await this.credito.estornar({
+      purchaseId,
+      motivo: dto.motivo,
+    });
+    return { data };
+  }
+
+  /**
+   * Lancamento manual de credito.
+   *
+   * E o caminho que destrava a veiculacao enquanto o Asaas nao esta configurado: o anunciante
+   * paga por fora, o operador confere no extrato e lanca aqui. Sem ele, nenhuma campanha
+   * veicularia ate a credencial existir, porque a reserva por ciclo nao teria o que reservar.
+   *
+   * O `actorId` registrado na trilha e a **chave de servico** que chamou, nao um usuario: nao
+   * ha pessoa autenticada nesta superficie, e inventar um id de usuario aqui tornaria a
+   * auditoria menos confiavel do que ela e.
+   */
+  @Post('ads/credits/adjust')
+  @EscoposDeChave('ads:credit:write')
+  @ApiOperation({ summary: 'Lanca credito ou debito manual no saldo do anunciante' })
+  async ajustarCredito(@Body() dto: AjustarCreditoDto, @Req() req: Request) {
+    const servico = (req as Request & { servico?: PrincipalDeServico }).servico;
+    const data = await this.credito.ajustar({
+      advertiserId: dto.advertiserId,
+      amountCents: dto.amountCents,
+      direction: dto.direction,
+      referenceId: dto.referenceId,
+      actorId: null,
+      motivo: `${dto.motivo} [chave: ${servico?.label ?? 'desconhecida'}]`,
+    });
+    return { data };
   }
 }

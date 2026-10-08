@@ -5,6 +5,7 @@ import { AuthModule } from '../auth/auth.module';
 import { CampaignsModule } from '../campaigns/campaigns.module';
 import { GeoZonesModule } from '../geo-zones/geo-zones.module';
 import { MediaIngestionModule } from '../media-ingestion/media-ingestion.module';
+import { MonetizationModule } from '../monetization/monetization.module';
 import { PlatformConfigModule } from '../platform-config/platform-config.module';
 import { VehiclesModule } from '../vehicles/vehicles.module';
 import {
@@ -41,6 +42,7 @@ import { AdvertiserOnboardingService } from './advertiser-onboarding.service';
     VehiclesModule,
     AnalyticsModule,
     PlatformConfigModule,
+    MonetizationModule,
   ],
   /**
    * `AdvertiserOnboardingController` vem **antes** do `AdvertiserController`.

@@ -1,7 +1,8 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CampaignsModule } from '../campaigns/campaigns.module';
 import { MediaIngestionModule } from '../media-ingestion/media-ingestion.module';
+import { MonetizationModule } from '../monetization/monetization.module';
 import { PlatformConfigModule } from '../platform-config/platform-config.module';
 import { VehiclesModule } from '../vehicles/vehicles.module';
 import {
@@ -35,6 +36,13 @@ import { ServiceApiKeyGuard } from './service-api-key.guard';
     MediaIngestionModule,
     VehiclesModule,
     PlatformConfigModule,
+    /**
+     * `forwardRef` porque o módulo de monetização importa o de campanhas, que por sua vez
+     * participa de ciclos de importação com esta borda. Sem o adiamento, o Nest resolveria um
+     * dos dois como `undefined` no boot e a injeção falharia com a mensagem genérica de
+     * dependência circular.
+     */
+    forwardRef(() => MonetizationModule),
   ],
   controllers: [InternalController],
   providers: [

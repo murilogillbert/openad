@@ -84,10 +84,20 @@ S3_SECRET_ACCESS_KEY=${MINIO_SECRET}
 # aqui quebraria o repasse em todo deploy do opendriver, e em silencio.
 OPENDRIVER_API_URL=https://api-app.opendriver.com.br
 
-# Chave de servico com escopo ads:earning:write. Criada em Admin -> Chaves de API no hub e
-# colada aqui; fica vazia na primeira execucao, e o repasse simplesmente nao e enviado (com
-# aviso em log) em vez de derrubar o lote de analytics.
+# Chave de servico usada nas duas direcoes: escopo ads:earning:write para creditar o repasse em
+# opendriver.driver_earnings, e ads:credit:charge para pedir ao hub a cobranca Pix do credito de
+# veiculacao. Criada em Admin -> Chaves de API no hub e colada aqui; fica vazia na primeira
+# execucao, e o repasse simplesmente nao e enviado (com aviso em log) em vez de derrubar o lote
+# de analytics.
 ECOSYSTEM_SERVICE_API_KEY=
+
+# API do hub. E la que mora a conta do Asaas, entao e o hub que emite a cobranca Pix do credito
+# de veiculacao: o openad grava a compra e pede a cobranca em
+# POST /api/v1/internal/ads/credit-charges.
+#
+# Dominio publico pelo mesmo motivo da URL acima. Sem ela a compra por Pix responde 503 com
+# PIX_NOT_CONFIGURED e o credito tem de ser lancado a mao em /internal/ads/credits/adjust.
+HUB_API_URL=https://hubapi.opendriver.com.br
 
 # Primeiro super_admin do portal. Gerado por 20-admin-inicial.sh quando ainda nao existe
 # nenhum usuario no Mongo; so tem efeito com a colecao vazia.
