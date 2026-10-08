@@ -562,6 +562,34 @@ de download na frota; é isso que decide a urgência.
 
 ## Frente G — rodar mais de uma instância da API
 
+> **G.1 a G.5 e G.7 aplicados** (2026-10-08 e 09). O que mudou, e o que **não** mudou:
+>
+> | Item | Estado | Como |
+> | --- | --- | --- |
+> | G.1 cobrança do play | feito | `findOneAndUpdate` atômico + `jobId` no `queue.add` |
+> | G.2 MQTT em toda instância | feito, **com ressalva** | flag `OPENAD_MQTT_INGEST_DISABLED`, não `$share` |
+> | G.3 Socket.IO sem adapter | feito | `@socket.io/redis-adapter`, ligado quando há `REDIS_URL` |
+> | G.4 `@Cron` em toda instância | feito | `SchedulerLockService` (`SET NX PX`) nos seis |
+> | G.5 upload em memória | feito | `diskStorage` + stream, sem mudar o contrato da rota |
+> | G.6 camada de dados única | **não feito** | é infraestrutura, não código |
+> | G.7 nome de consumidor e segredo | feito | `HOSTNAME` no nome; segredo exigido no boot |
+>
+> **A ressalva do G.2 importa.** Não usei `$share` porque o suporte no broker em uso **não está
+> confirmado**: produção roda RabbitMQ 4.3.6 com `rabbitmq_mqtt`, e a
+> [issue 8936](https://github.com/rabbitmq/rabbitmq-server/issues/8936) pediu assinatura
+> compartilhada justamente porque o MQTT 5.0 que entrou no 3.13 a deixou de fora. Assinar
+> `$share/...` sem suporte criaria uma assinatura num **tópico literal** com esse nome, que
+> nunca casa com nada — e a ingestão pararia em silêncio, que é o pior resultado possível aqui.
+>
+> O custo da escolha é operacional: ao subir a segunda réplica, ela precisa de
+> `OPENAD_MQTT_INGEST_DISABLED=true`. Confirmar o `$share` com um broker de teste e trocar a
+> flag por ele continua sendo a solução melhor; só não é uma que eu pudesse verificar agora.
+>
+> **O G.7 era mais grave do que "menor".** O segredo de assinatura das URLs de criativo caía
+> para `'dev-asset-url-secret-change-me'`, uma constante **do repositório** — e essas URLs são
+> buscadas pelos aparelhos **sem JWT**. Qualquer pessoa com acesso ao código podia assinar uma
+> URL válida por 24 h. Agora falta de segredo derruba o boot.
+
 ### O que já escala
 
 - **Plays:** entram por fila BullMQ (`playback-batch-ingest.service.ts:154-160`) e têm índice

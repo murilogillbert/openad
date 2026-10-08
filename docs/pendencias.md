@@ -8,7 +8,8 @@ O que entra aqui: o que **depende de uma ação externa** ou de uma decisão que
 credencial de terceiro, permissão em console de loja, aparelho físico, decisão de custo. O que é
 só trabalho de código vive no `plano-v2-ecossistema.md`, não aqui.
 
-Última revisão: 2026-10-08.
+Última revisão: 2026-10-08 (itens 12 e 13 acrescentados: migrations ensaiadas e à espera de
+autorização para produção; tablete bloqueado por PIN).
 
 ---
 
@@ -433,3 +434,136 @@ Hoje não dá problema porque o `android/` já existe e não é regenerado. Um `
 zero produziria um **segundo** aplicativo, e a frota pareada continuaria no antigo. Alinhar exige
 decidir qual dos dois vale, e trocar o `applicationId` obriga a desinstalar e reinstalar em cada
 tablete — por isso fica registrado em vez de corrigido no meio desta frente.
+
+---
+
+## 12. Aplicar as quatro migrations da v2 em produção — **Pendente (aguarda autorização)**
+
+Entra aqui, e não no plano, porque é a única etapa da leva que **não é trabalho de código**: é
+uma escrita irreversível no banco que três aplicativos publicados leem, e a decisão de quando
+fazer não é minha.
+
+### O que está pendente em produção
+
+Conferido em 2026-10-08 no container `l5bcr9slmgtmeefkqwg5amia`:
+
+| schema | está em | falta aplicar |
+| --- | --- | --- |
+| `openad` | `20261003000000_init_openad` | `20261008150000_ad_credit_holds`, `20261008170000_credito_por_pix` |
+| `public` (hub) | `20261002210000_push_tokens` | `20261009120000_estoque_por_unidade_e_horario`, `20261009140000_sem_avatar_de_terceiro` |
+| `opendriver` | `20261008120000_seed_vehicle_model_categories` | — em dia |
+
+### Ordem obrigatória, e o que acontece se for invertida
+
+`ad_credit_holds` tem de estar aplicada **antes** do deploy do openad-api. A reserva de crédito
+da frente H.4 consulta essa tabela ao montar o manifesto; sem ela, a consulta falha e **toda
+campanha com anunciante sai do manifesto** — a frota continuaria exibindo, mas só o que não tem
+anunciante. O inverso (tabela antes do código) é inofensivo: tabela vazia que ninguém lê.
+
+### O que já foi feito para reduzir o risco
+
+1. **Backup completo e verificado**, em `/root/backups/v2-20261008-203513Z`:
+   `globals.sql`, `hub.dump` (408 objetos no índice, `pg_restore --list` passou),
+   `hub-plain.sql.gz`, `mongo-openad.archive.gz`, `minio-data.tar.gz` (52 MB),
+   `integration_settings.sql` e a linha de base dos três schemas. `/root/backups/ULTIMO`
+   aponta para ele, que é de onde `10-migrations-producao.sh` lê o pré-requisito.
+
+2. **Sandbox recriado desse backup** e conferido fiel (`07-sandbox.sh`).
+
+3. **Ensaio com o comando de verdade.** O primeiro ensaio aplicou o SQL direto por `psql`, o
+   que prova que o SQL roda mas **não** prova que o Prisma registra o histórico — e é
+   `prisma migrate deploy` que vai rodar em produção. O sandbox foi recriado e o ensaio
+   refeito por `08-migrations-ensaio.sh`, que usa exatamente esse comando. Resultado:
+
+   - `openad` chegou a `20261008170000_credito_por_pix`, `public` a
+     `20261009140000_sem_avatar_de_terceiro`;
+   - o diff de `pg_dump --schema-only --schema=public` é **só aditivo**: `order_items` ganhou
+     `redeemed_store_id`; `partner_stores` ganhou `opening_hours`, `timezone` e `active`;
+     `product_store_stock` foi criada com a chave primária, o único de `(product_id, store_id)`
+     e o índice de `store_id`; **nada removido** ("objetos REMOVIDOS: nenhum");
+   - `opendriver` e `openad` **não** tocaram `public`, conforme o critério do script;
+   - as FKs de `product_store_stock` apontam para `products(id)` e `partner_stores(id)`, as
+     duas com `ON DELETE CASCADE`;
+   - o enum `AdStore` passou a `apple, google, pix`;
+   - `ad_credit_purchases.product_sku` ficou anulável e `credit_micros` existe;
+   - a migration de avatar limpou 40 linhas de `users` e 4 de `partners`, e a contagem de
+     endereços de terceiro (dicebear, ui-avatars, gravatar) caiu a zero nas duas tabelas.
+
+4. **Dois erros meus, corrigidos no caminho.** Ficam registrados porque os dois eram do tipo
+   que passa como "ok":
+
+   - a primeira versão da conferência olhava `public.stores`, tabela que **não existe** — a
+     do hub é `partner_stores`. O script respondia "a coluna não está lá" por estar olhando
+     o lugar errado, o que num ensaio é pior que não conferir;
+   - `07-sandbox.sh` comparava o sandbox com produção **ao vivo** e exigia igualdade. Como
+     `driver_earnings` recebe linha a cada repasse de receita de anúncio, a conferência
+     acusava divergência em toda execução (prod 1389, sandbox 1371) e reprovava um sandbox
+     que estava correto. Passou a declarar, por tabela, se ela deve estar `exato` ou se
+     `cresce` — e, nas que crescem, aceita sandbox menor e informa quantas escritas entraram
+     depois do dump, mas continua reprovando sandbox **maior**, que não teria explicação.
+
+### Como fechar
+
+Com autorização, nesta ordem:
+
+```bash
+# 1. migrations (hub -> opendriver -> bootstrap -> openad), com diff de public a cada passo
+bash /root/openad-infra/10-migrations-producao.sh
+
+# 2. scripts de dados do openad, os dois com --dry-run antes
+#    marcar-cobranca-aplicada.ts e OBRIGATÓRIO: sem ele a correção G.1 cobra em dobro o acervo
+# 3. deploy: openad-api, hub-backend, hub-frontend
+bash /root/openad-infra/24-coolify-deploy.sh
+```
+
+As pastas `prisma/` dos três repositórios já estão sincronizadas e conferidas por SHA-256 em
+`/root/openad-infra/prisma/` (`86-sincronizar-prisma.ps1`). Sem essa sincronização o
+`migrate deploy` aplicaria menos do que se espera e terminaria dizendo "ok" — a falha mais
+silenciosa possível neste caminho.
+
+### Risco de não fechar
+
+O código da v2 está commitado e testado, mas **nada dele funciona em produção**: compra de
+crédito por Pix, reserva de crédito, estoque por unidade, horário de funcionamento e a limpeza
+dos avatares de terceiro todos dependem destas quatro migrations.
+
+---
+
+## 13. Tablete da Vaio com bloqueio de tela — **Pendente**
+
+O tablete `4AH47852E` (Vaio TL10, Android 13) está com cabo ligado e `adb` autorizado, e os três
+APKs foram instalados com sucesso nesta leva:
+
+| pacote | app | resultado |
+| --- | --- | --- |
+| `br.com.opendriverhub.app.preview` | hub-mobile | `Success` (132,9 MB) |
+| `br.com.opendriver.app.preview` | opendriver mobile | `Success` (154,9 MB) |
+| `br.com.opendriver.ads.preview` | openad-advertiser | `Success` (106,2 MB) |
+| `com.openad` | player | já instalado, em exibição |
+
+A **verificação visual** das telas novas (gestão de produto no app do parceiro, avatar de
+iniciais, cartão de crédito de veiculação) está bloqueada: o aparelho pede PIN, e a tela de
+entrada do PIN tem `FLAG_SECURE` — `screencap` devolve arquivo inválido enquanto ela está à
+frente, então não há como capturar nem o aplicativo atrás dela.
+
+O que foi possível confirmar sem desbloquear, por `88-conferir-apps-tablet.ps1`:
+
+- a instalação dos três pacotes;
+- **os três sobem e continuam vivos**: processo de pé depois de 18 s, nenhuma exceção fatal,
+  nenhum erro vindo do JavaScript, nenhuma falha de rede na partida. Isso prova que o pacote
+  JavaScript carrega e que a navegação inicial não quebra; **não** prova que a tela está
+  desenhada certa, que continua exigindo o aparelho desbloqueado;
+- `br.com.opendriver.ads.preview` (app do anunciante) foi reconstruído nesta leva e carrega
+  `https://hub.opendriver.com.br/conta/credito-de-anuncio` no pacote — é o endereço que o
+  botão de comprar crédito abre. Conferido extraindo `index.android.bundle` do APK, não só
+  olhando o `eas.json`;
+- rede funcionando (ping a `hubapi.opendriver.com.br` com 0% de perda, 38 ms de média) mesmo
+  com o aparelho em modo avião, porque o Wi-Fi está ligado por cima;
+- o player estava em primeiro plano **exibindo um criativo** quando o aparelho foi encontrado,
+  o que é a evidência de que a frente F segue funcionando depois da troca de código;
+- o player estava em `mLockTaskModeState=PINNED` (tela fixada), o que impedia qualquer outro
+  aplicativo de vir à frente. Desafixado com `am task lock stop` — é reversível e não altera
+  configuração do aparelho.
+
+Para fechar: desbloquear o tablete (ou informar o PIN). Com ele desbloqueado a captura volta a
+funcionar e as três telas podem ser conferidas por imagem.

@@ -88,7 +88,15 @@ docker exec "$SANDBOX" psql -U postgres -q -c \
   "ALTER ROLE postgres WITH PASSWORD '$SANDBOX_PASS'" >/dev/null
 
 echo '--- criando o banco hub'
-docker exec "$SANDBOX" psql -U postgres -q -c 'DROP DATABASE IF EXISTS hub' >/dev/null
+# `client_min_messages=warning` cala o NOTICE "database hub does not exist, skipping" do
+# `IF EXISTS`. Ele sai em stderr, e stderr neste caminho e lido por quem roda o script de
+# fora: um aviso benigno ali faz a execucao parecer ter falhado.
+#
+# Vai por `PGOPTIONS`, nao por `--set`: `--set` define variavel do **psql**, nao parametro do
+# servidor, e o NOTICE continuava saindo. E nao por um segundo `-c "SET ..."` porque psql
+# agrupa varios `-c` numa transacao implicita, e `DROP DATABASE` nao roda em transacao.
+docker exec -e PGOPTIONS='-c client_min_messages=warning' "$SANDBOX" \
+  psql -U postgres -q -c 'DROP DATABASE IF EXISTS hub' >/dev/null
 docker exec "$SANDBOX" psql -U postgres -q -c 'CREATE DATABASE hub' >/dev/null
 
 echo '--- restaurando dados'
@@ -102,35 +110,63 @@ docker exec "$SANDBOX" pg_restore -U postgres -d hub \
 
 echo ''
 echo '=== conferencia: producao x sandbox ==='
+#
+# O que esta conferencia pode e nao pode afirmar.
+#
+# O sandbox e a restauracao de um dump tirado num instante. Producao continua escrevendo
+# depois desse instante — `driver_earnings` recebe linha a cada repasse de receita de
+# anuncio, que roda em cron. Exigir igualdade em tabela sob escrita faz o script acusar
+# divergencia em toda execucao, e um alerta que sempre dispara e um alerta que ninguem le.
+#
+# Entao cada tabela declara o que se espera dela nesta janela:
+#
+#   exato   a tabela nao deveria mudar entre o dump e agora. Diferenca de qualquer sinal e
+#           problema: ou o dump saiu incompleto, ou o restore perdeu linha.
+#   cresce  a tabela recebe insercao continua. Aceita-se sandbox MENOR que producao, porque
+#           e exatamente o que o tempo entre o dump e agora produz. Sandbox MAIOR, nao:
+#           nao ha como a copia ter mais linha que a origem, e isso indicaria restore sobre
+#           um banco que nao estava vazio.
 contar() {
   docker exec "$1" psql -U postgres -d hub -At -c "$2" 2>/dev/null | tr -d '[:space:]'
 }
 
 ok=1
 for par in \
-  'public.users|SELECT count(*) FROM public.users' \
-  'public.cashback_entries|SELECT count(*) FROM public.cashback_entries' \
-  'public.integration_settings|SELECT count(*) FROM public.integration_settings' \
-  'opendriver.rides|SELECT count(*) FROM opendriver.rides' \
-  'opendriver.driver_earnings|SELECT count(*) FROM opendriver.driver_earnings' \
-  'migrations public|SELECT count(*) FROM public._prisma_migrations' \
-  'migrations opendriver|SELECT count(*) FROM opendriver._prisma_migrations' \
+  'public.users|exato|SELECT count(*) FROM public.users' \
+  'public.integration_settings|exato|SELECT count(*) FROM public.integration_settings' \
+  'migrations public|exato|SELECT count(*) FROM public._prisma_migrations' \
+  'migrations opendriver|exato|SELECT count(*) FROM opendriver._prisma_migrations' \
+  'public.cashback_entries|cresce|SELECT count(*) FROM public.cashback_entries' \
+  'opendriver.rides|cresce|SELECT count(*) FROM opendriver.rides' \
+  'opendriver.driver_earnings|cresce|SELECT count(*) FROM opendriver.driver_earnings' \
 ; do
   rotulo="${par%%|*}"
-  sql="${par#*|}"
+  resto="${par#*|}"
+  regra="${resto%%|*}"
+  sql="${resto#*|}"
   a=$(contar "$PG_PROD" "$sql")
   b=$(contar "$SANDBOX" "$sql")
+
+  if [ -z "$a" ] || [ -z "$b" ]; then
+    printf '  ERRO    %-28s nao consegui contar (prod=%s sandbox=%s)\n' "$rotulo" "${a:-?}" "${b:-?}"
+    ok=0
+    continue
+  fi
+
   if [ "$a" = "$b" ]; then
     printf '  OK      %-28s prod=%s sandbox=%s\n' "$rotulo" "$a" "$b"
+  elif [ "$regra" = 'cresce' ] && [ "$b" -lt "$a" ]; then
+    printf '  OK      %-28s prod=%s sandbox=%s (+%s escritas apos o dump)\n' \
+      "$rotulo" "$a" "$b" "$((a - b))"
   else
-    printf '  DIVERGE %-28s prod=%s sandbox=%s\n' "$rotulo" "$a" "$b"
+    printf '  DIVERGE %-28s prod=%s sandbox=%s  [regra=%s]\n' "$rotulo" "$a" "$b" "$regra"
     ok=0
   fi
 done
 
 echo ''
 if [ "$ok" = 1 ]; then
-  echo "RESULTADO: sandbox fiel a producao. Container: $SANDBOX (sem porta publicada)"
+  echo "RESULTADO: sandbox fiel ao dump. Container: $SANDBOX (sem porta publicada)"
   echo "Acesso:    docker exec -it $SANDBOX psql -U postgres -d hub"
 else
   echo 'RESULTADO: houve divergencia — nao use este sandbox como referencia' >&2
