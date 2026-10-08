@@ -469,6 +469,29 @@ antes de ligar.
 
 ## Frente F — retomada de download: provar que funciona de ponta a ponta
 
+> **Medido e corrigido em 2026-10-09.** O que esta frente supunha estava **errado no diagnóstico
+> e certo na conclusão**: a retomada de fato não retomava, mas não por causa do CORS.
+>
+> - **CORS do storage: não era o problema.** `curl` com `Origin` e `Range` contra
+>   `storage.opendriver.com.br` devolve `206` com `content-range`, e
+>   `access-control-expose-headers` já inclui `Content-Range`, `Accept-Ranges`, `Content-Length`
+>   e `Etag`. O preflight aceita `range`. O item 2 do "o que fazer" abaixo **não é necessário**.
+> - **O defeito real: os bytes não eram persistidos, só o offset.** `resumable-download.service.ts`
+>   guardava o número em IndexedDB e os bytes num vetor local que nascia vazio a cada chamada.
+>   Retomar devolvia **apenas a cauda** do arquivo; o SHA-256 não fechava, o offset era apagado
+>   e tudo baixava de novo. Cada retomada custava um download parcial perdido mais um download
+>   inteiro — e o arquivo não tinha teste nenhum.
+> - **Consertado** persistindo os pedaços (store `downloadChunks`, versão 2 do banco) e tornando
+>   o offset derivado da soma deles. 12 testes novos.
+> - **`403` tratado como URL vencida** (medido: assinatura vencida responde `403
+>   InvalidAccessKeyId`), com renovação do manifesto uma vez por tentativa.
+> - **Rota `/file` agora responde `302`** para a URL pré-assinada, como o item 4 recomendava.
+> - **Log estruturado** (`download.retomando`, `download.resposta`, `download.concluido`), porque
+>   a falha era silenciosa.
+> - **Verificado no aparelho** (Vaio TL10, Android 13, WebView 155): os quatro criativos baixam,
+>   verificam e tocam. O que **falta** é o ensaio de interrupção, que exige um criativo grande —
+>   os atuais são imagens de 7 KB a 429 KB. Ver `docs/pendencias.md`, item 4b.
+
 > Correção de uma versão anterior desta frente, que afirmava que "todo byte passa pela API".
 > Isso vale só para a rota `/file`, que o tablet **não** usa para baixar. O caminho real é outro,
 > descrito abaixo.

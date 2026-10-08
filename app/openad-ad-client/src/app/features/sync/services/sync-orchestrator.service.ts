@@ -157,6 +157,42 @@ export class SyncOrchestratorService {
         mediaId: item.mediaId,
         expectedHash: item.hash,
         expectedSize: item.fileSize,
+        /**
+         * Renova a URL pre-assinada quando o storage responde `403`.
+         *
+         * A URL do manifesto vale 1 h. Um download longo (ou retomado depois de uma queda de
+         * rede demorada) atravessa esse prazo, e sem renovar o tablete ficaria sem o criativo
+         * ate o ciclo seguinte de sync — com os bytes ja baixados parados no IndexedDB.
+         *
+         * Pede o manifesto **completo** (`lastManifestVersion: undefined`): um delta nao
+         * necessariamente traz esta midia, e o que precisamos aqui e so a URL nova dela.
+         */
+        refreshUrl: async () => {
+          const atualizado = await this.manifestClient.fetchManifest({
+            deviceId,
+            lastManifestVersion: undefined,
+          });
+          /**
+           * `isDelta` é o discriminante da união. Pedimos o manifesto completo, então a
+           * resposta deveria ser `ManifestFullData` — mas checar em vez de afirmar é o que
+           * impede um servidor que decida mandar delta de virar erro em tempo de execução
+           * dentro de um `catch` de download.
+           */
+          if (!atualizado.success || atualizado.data.isDelta) {
+            return null;
+          }
+          const midia = atualizado.data.media.find((m) => m.mediaId === item.mediaId);
+          /**
+           * Hash diferente significa que o criativo foi **substituido** no servidor. Devolver a
+           * URL nova faria o download continuar de cima dos bytes do arquivo antigo, montando
+           * um arquivo que nunca existiu. Melhor desistir desta tentativa: o parcial e
+           * descartado na proxima, pelo hash que nao fecha.
+           */
+          if (!midia || midia.hash !== item.hash) {
+            return null;
+          }
+          return midia.downloadUrl;
+        },
       });
       await this.syncStorage.writeMediaFile(item.mediaId, buf);
       downloaded.push({

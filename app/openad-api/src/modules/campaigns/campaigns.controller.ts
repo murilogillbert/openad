@@ -15,7 +15,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Request, Response } from 'express';
-import * as path from 'path';
+
 import { memoryStorage } from 'multer';
 import { extractFleetAuditFromRequest } from '../../infrastructure/logging/fleet-audit.context';
 import { Throttle } from '@nestjs/throttler';
@@ -98,6 +98,36 @@ export class CampaignsController {
     });
   }
 
+  /**
+   * Arquivo do criativo. Responde **302** para o storage, em vez de servir os bytes.
+   *
+   * ============================================================================
+   * Por que redirecionar, e não implementar `Range` aqui
+   * ============================================================================
+   *
+   * A versão anterior fazia `stream.pipe(res)` sem `Range`, `206`, `Accept-Ranges`,
+   * `Content-Length` nem `ETag`. Quem baixasse por aqui não tinha como retomar: o downloader do
+   * tablete pede `Range: bytes=<offset>-`, e esta rota devolvia `200` com o arquivo inteiro
+   * toda vez.
+   *
+   * Reimplementar `Range` em Node seria reescrever o que o MinIO já faz certo — e foi medido
+   * (2026-10-09): o storage responde `206` com `content-range`, expõe `Content-Range`,
+   * `Accept-Ranges`, `Content-Length` e `ETag` no CORS, e o preflight aceita `range`. O
+   * redirecionamento entrega tudo isso de graça e tira os bytes do caminho da API.
+   *
+   * ============================================================================
+   * O que isto muda para quem já consome
+   * ============================================================================
+   *
+   * Hoje as únicas URLs desta rota saem no push de agenda por MQTT
+   * (`schedule-push.service.ts`) e no mapa da frota (`fleet-map.service.ts`), e nenhum leitor
+   * dela foi encontrado no código do tablete. `fetch` e `<video src>` seguem `302`
+   * automaticamente, então o redirecionamento é transparente para os dois.
+   *
+   * A autorização continua aqui: o `AssetDownloadGuard` roda antes, e só depois de passar é que
+   * a URL assinada é gerada. Ela vale 1 h — tempo suficiente para o download e curto o bastante
+   * para não virar um link público permanente.
+   */
   @Get(':campaignId/assets/:assetId/file')
   @UseGuards(AssetDownloadGuard)
   async downloadAsset(
@@ -110,13 +140,14 @@ export class CampaignsController {
       res.status(404).send('Not found');
       return;
     }
-    const stream = await this.assetStorage.openReadStream(asset.storageUrl);
-    res.setHeader('Content-Type', asset.mimeType);
-    res.setHeader(
-      'Content-Disposition',
-      `inline; filename="${path.basename(asset.filename)}"`
-    );
-    stream.pipe(res);
+    const url = await this.assetStorage.getPresignedGetUrl(asset.storageUrl, 3600);
+    /**
+     * `302` e não `301`: a URL de destino é assinada e expira, então ela **não** pode ser
+     * memorizada pelo cliente. Um `301` autorizaria o navegador a reusar o destino para sempre,
+     * e depois de uma hora a reutilização daria `403` sem passar por aqui de novo.
+     */
+    res.setHeader('Cache-Control', 'no-store');
+    res.redirect(302, url);
   }
 
   @Post(':campaignId/rules')

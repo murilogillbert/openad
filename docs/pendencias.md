@@ -337,3 +337,99 @@ desde o começo continua valendo: **nada no celular além dos APKs dos quatro ap
 ```
 pwsh app/openad-advertiser/scripts/apk.ps1 -Variante preview
 ```
+
+---
+
+## 4b. Retomada de download — o que foi medido em 2026-10-09
+
+Complemento do item 4, que registrava a pendência enquanto o tablete estava descarregado. O
+aparelho foi ligado por cabo em 09/10 e as duas dúvidas abertas foram resolvidas — uma delas
+revelando um defeito maior do que o suspeitado.
+
+### CORS do storage: **não era o problema** — Concluído
+
+Medido com `curl` contra `storage.opendriver.com.br`, com `Origin` e `Range`:
+
+```
+HTTP/1.1 206 Partial Content
+content-range: bytes 0-99/855019
+access-control-expose-headers: Date, Etag, Server, Connection, Accept-Ranges, Content-Range,
+  Content-Encoding, Content-Length, Content-Type, ... , *
+```
+
+E o preflight responde `204` com `access-control-allow-headers: range`.
+
+Ou seja, `Content-Range` **é** legível pelo WebView. A hipótese do plano (de que faltava
+`Access-Control-Expose-Headers` e por isso a retomada recomeçava do zero) estava errada, e
+configurar o CORS do MinIO — item 2 do "o que fazer" da Frente F — **não é necessário**.
+
+### URL pré-assinada vencida: `403` — Concluído
+
+Assinatura inválida/vencida responde `403` com `<Code>InvalidAccessKeyId</Code>`. Tratar `403`
+como "URL vencida, busque o manifesto de novo" é, portanto, a regra correta, e foi implementada.
+
+### O defeito de verdade: os bytes não eram persistidos — Concluído
+
+Medir o CORS fez sobrar uma pergunta: se o `Content-Range` sempre foi legível, por que ninguém
+viu a retomada funcionar? Lendo `resumable-download.service.ts` com essa pergunta na mão:
+
+**Só o offset era persistido. Os bytes ficavam num vetor local que nascia vazio a cada
+chamada.** Na retomada, `getOffset()` devolvia (digamos) 5 MB, o laço pedia `bytes=5242880-`,
+recebia a cauda, e devolvia **apenas a cauda** — sem os 5 MB do início. O `DownloadManagerService`
+conferia o SHA-256, não fechava, apagava o offset e baixava tudo de novo.
+
+Resultado: cada retomada custava um download parcial perdido **mais** um download inteiro, e
+nunca retomava. Nada falhava de forma visível — e o arquivo não tinha teste nenhum.
+
+Consertado persistindo os pedaços no IndexedDB (store `downloadChunks`, versão 2 do banco) e
+tornando o offset **derivado** da soma deles, de modo que não existe o estado em que o offset
+aponta para além dos bytes que temos. 12 testes novos, incluindo o caso "retomada entrega o
+arquivo inteiro, não só a cauda".
+
+### Verificado no tablete — Concluído em parte
+
+O tablete (Vaio TL10, Android 13, WebView 155) recebeu o APK com o conserto por cabo. Para
+forçar um download novo, a pasta de mídia foi apagada e o app reiniciado:
+
+```
+{"event":"download.resposta","status":200,"pediuRange":false,"contentRange":null,"offset":0}
+  (quatro vezes — um por criativo)
+{"event":"playback.current","mediaId":"a54725f6-…","kind":"image","src":"https://localhost/_capacitor_file_/…"}
+```
+
+Ou seja: os quatro criativos baixaram do storage, passaram pela conferência de SHA-256, foram
+gravados e voltaram à tela. O caminho de download está verificado **no aparelho**, com o código
+novo.
+
+O log estruturado (`download.retomando`, `download.resposta`, `download.concluido`) foi
+acrescentado nesta leva justamente porque a falha anterior era silenciosa. `adb logcat | findstr
+download.` agora responde "retomou de onde?" sem depurador.
+
+### O que ainda não foi provado no aparelho — **Pendente**
+
+**A ramificação de retomada em si.** Os quatro criativos em produção hoje são imagens de 7 KB a
+429 KB, que terminam numa única resposta `200` — não há janela para cortar a rede no meio. O
+ensaio que falta exige um criativo grande o bastante para o download durar alguns segundos.
+
+O que já sustenta a correção, enquanto esse criativo não existir:
+
+- 12 testes de unidade novos em `resumable-download.service.spec.ts`, incluindo "retomada
+  entrega o arquivo inteiro, não só a cauda", "erro de rede deixa os bytes guardados para a
+  próxima tentativa" e os três casos de `403`.
+- O comportamento do storage medido com `curl`: `206`, `Content-Range` presente e exposto no
+  CORS, preflight aceitando `Range`, e `403` em assinatura vencida.
+
+Para fazer o ensaio quando houver vídeo: subir um criativo de vídeo numa campanha, apagar
+`files/media` no aparelho, reiniciar o app, e durante o download rodar
+`adb shell svc wifi disable` seguido de `svc wifi enable`. O esperado no log é
+`download.retomando` com `offset` maior que zero e, em seguida, `download.resposta` com
+`status: 206` e `pediuRange: true`.
+
+### Inconsistência anotada de passagem
+
+`app/openad-ad-client/capacitor.config.ts` declara `appId: 'com.openad.adclient'`, mas o projeto
+Android gerado usa `com.openad` — que é o que está instalado e o que `62-apk-player.ps1` espera.
+Hoje não dá problema porque o `android/` já existe e não é regenerado. Um `cap add android` do
+zero produziria um **segundo** aplicativo, e a frota pareada continuaria no antigo. Alinhar exige
+decidir qual dos dois vale, e trocar o `applicationId` obriga a desinstalar e reinstalar em cada
+tablete — por isso fica registrado em vez de corrigido no meio desta frente.
