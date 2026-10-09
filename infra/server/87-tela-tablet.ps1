@@ -23,12 +23,21 @@ Add-Type -AssemblyName System.Drawing
 if (-not (Test-Path $Adb)) { throw "adb nao encontrado em $Adb" }
 
 if ($Pacote) {
-  & $Adb -s $Serial shell "am force-stop $Pacote" | Out-Null
+  & $Adb -s $Serial shell "am force-stop $Pacote" 2>&1 | Out-Null
   Start-Sleep -Seconds 1
-  # `monkey` as vezes nao sobe a atividade neste aparelho; `am start` pela categoria
-  # LAUNCHER resolve o nome da atividade sem a gente ter de saber qual e.
-  & $Adb -s $Serial shell "monkey -p $Pacote -c android.intent.category.LAUNCHER 1" 2>&1 | Out-Null
-  Write-Output "iniciado $Pacote; esperando $Espera s"
+
+  # `am start` com a atividade resolvida, nao `monkey`.
+  #
+  # O `monkey` escreve em stderr mesmo quando funciona ("args: [...]"), e o PowerShell trata
+  # stderr de executavel nativo como erro — com `$ErrorActionPreference = 'Stop'` isso aborta
+  # o script no meio de uma captura que teria dado certo. E `cmd package resolve-activity`
+  # dispensa a gente saber o nome da atividade.
+  $alvo = (& $Adb -s $Serial shell "cmd package resolve-activity --brief $Pacote" 2>&1 |
+    Where-Object { $_ -match "^$([regex]::Escape($Pacote))/" } | Select-Object -First 1)
+  if (-not $alvo) { throw "nao consegui resolver a atividade de $Pacote" }
+  & $Adb -s $Serial shell "am start -W -n $($alvo.Trim())" 2>&1 | Out-Null
+
+  Write-Output "iniciado $alvo; esperando $Espera s"
   Start-Sleep -Seconds $Espera
 }
 
