@@ -15,10 +15,11 @@ lista não precisar ser lida inteira para responder "o que falta".
 
 Itens 6, 8, 9, 10, 12 e 13 fecharam. Continuam abertos: 1, 2, 3, 4b, 5, 7 e 11 (em parte).
 
-A conferência visual no tablete foi feita e está na seção "Conferência visual no tablete". Ela
-achou um defeito na tela de preço, já corrigido e reimplantado, e deixou **uma** coisa em
-aberto: a Frente D não pôde ser vista porque produção não tem unidade nem produto, e eu não
-tenho credencial de parceiro.
+A conferência visual no tablete foi feita, em duas etapas, nas seções "Conferência visual no
+tablete" e "Frente D conferida no aparelho". As duas juntas acharam **dois** defeitos, os dois
+corrigidos e reimplantados: o painel dizia "R$ 0,00 por segundo de tela", e a lista de produtos
+do lojista dizia "todas as unidades" para produto restrito a uma. Nada ficou em aberto na
+conferência.
 
 ---
 
@@ -786,3 +787,123 @@ O aparelho voltou a bloquear por inatividade no meio da conferência. Ficou com
 `svc power stayon usb`, que mantém a tela acesa enquanto está no cabo — reversível e sem alterar
 configuração permanente. A tela de entrada do PIN tem `FLAG_SECURE`, então enquanto ela está à
 frente o `screencap` devolve arquivo inválido; é o que travou a primeira tentativa.
+
+---
+
+## Frente D conferida no aparelho — 2026-10-08
+
+Fechamento do que ficou aberto na seção anterior. Para conferir a Frente D era preciso um
+parceiro com unidade e produto, e produção tinha 4 parceiros com **zero** de cada.
+
+### Como o cenário foi montado
+
+Dois scripts novos, com a mesma divisão do `45-contas-demo.mjs`: **ato de usuário vai pela API,
+ato de operador vai por SQL**.
+
+- `100-parceiro-de-demonstracao.mjs` — cria o parceiro e a conta do dono por
+  `POST /auth/register/partner`, que é **autoatendimento do produto**. Só o vínculo da conta
+  `Financeiro` vai por SQL, porque não existe autoatendimento para o parceiro criar equipe.
+  Nasce **inativo**: parceiro ativo entra no catálogo público, e "por pouco tempo" não é
+  reversível. Tem `--ativar`, `--desativar`, `--estado` e `--remover`.
+- `101-semear-frente-d.mjs` — cria duas unidades e quatro produtos pelos **mesmos endpoints
+  que as telas chamam** (`POST /partner/stores`, `POST /partner/products`,
+  `PUT /partner/products/:id/stores`). Tem `--catalogo`, que confere o filtro do lado do
+  cliente.
+
+Os dados foram escolhidos para que **cada um exercite uma regra**:
+
+| | O que exercita |
+| --- | --- |
+| unidade "Centro", 08:00–18:00 | horário comum |
+| unidade "Noturna", 18:00–02:00 | intervalo que **cruza a meia-noite** |
+| produto "Lanche", só no Centro | declarado em uma unidade |
+| produto "Cafe", nas duas | declarado em várias |
+| produto "Salgado", sem declaração | **ausência de linha = disponível em todas** |
+| produto "Cartao brinde", digital | não é filtrado por unidade |
+
+### Um defeito encontrado, e era meu
+
+A lista "Meus produtos" no app mostrava **"todas as unidades"** para o Lanche, que está
+declarado em **uma**. `partnerService.myProducts` chamava `toProductDto(p)` sem a
+disponibilidade, e sem ela `storeStockDeclared` sai `false` — que significa, por desenho, "não
+declarado, logo em todas". A tela estava certa desde o começo; faltava o dado.
+
+O segundo efeito é pior que a etiqueta errada: o aviso de "declarado e esgotado em todas"
+depende de `declared === true`, então com o campo sempre falso ele **nunca** aparecia. Produto
+que acabou em todas as lojas ficava com aparência normal justamente na tela de quem precisa
+repor.
+
+A regra de "onde dá para retirar" era privada do `catalogService`, e é por isso que a lista do
+lojista não tinha acesso. Passou para `productStoreStockService.disponibilidadePorProduto`, que
+as duas leituras usam. Três testes novos, um por etiqueta; conferido que pegam o defeito
+restaurando-o. Corrigido e reimplantado (`80bbccd`). Comparar
+`v2-frenteD-produtos-no-app-DEFEITO.png` com `v2-frenteD-produtos-no-app-corrigido.png`.
+
+### O que ficou confirmado por imagem
+
+| Tela | Resultado | Captura |
+| --- | --- | --- |
+| app → Conta, seção "Loja parceira" | balcão, produtos e atalho da web; avatar "DP" | `v2-frenteD-secao-loja-parceira.png` |
+| app → Meus produtos | "1 unidade(s)", "2 unidade(s)", "todas as unidades", e digital **sem** etiqueta de unidade | `v2-frenteD-produtos-no-app-corrigido.png` |
+| app → Ajustar produto | "Estoque da rede" e "Onde dá para retirar" separados, com dois botões de salvar independentes | `v2-frenteD-ajustar-produto-e-disponibilidade.png` |
+| app, conta `Financeiro` | vê "Painel financeiro" e **não** o balcão — avatar "FP" | `v2-frenteD-papel-financeiro.png` |
+| web → Unidades, coluna "Agora" | Centro **"Fechada · abre sex 08:00"**, Noturna **"Aberta"** | `v2-frenteD-unidades-coluna-agora.png` |
+| web → Editar unidade | fuso "Campo Grande (GMT-4) — MS" com a explicação, e "Unidade em funcionamento" | `v2-frenteD-editar-unidade-fuso.png` |
+| web → Horário | dia por dia, "Fechada" no domingo, "+ intervalo", "copiar para os outros dias abertos" | `v2-frenteD-editor-de-horario.png` |
+
+O "Fechada · abre sex 08:00" é o detalhe que mais convence: era quinta, 22h51 em Campo Grande,
+já passava das 18h, e a próxima abertura do Centro é sexta às 08:00. O cálculo acertou o dia e
+a hora, com o fuso explícito da unidade.
+
+### O filtro do catálogo, medido
+
+```
+sem filtro             Cafe, Cartao brinde digital, Lanche, Salgado
+storeId = Centro       Cafe, Cartao brinde digital, Lanche, Salgado
+storeId = Noturna      Cafe, Cartao brinde digital,         Salgado     <- sem o Lanche
+openNow = true         Cafe, Cartao brinde digital,         Salgado     <- Centro fechado
+```
+
+O "sem o Lanche" é o que prova o filtro: os outros três apareceriam de qualquer forma. E
+Salgado e Cartão aparecendo em **todas** é a propriedade que impede o deploy desta frente de
+sumir com o catálogo — se ausência de linha significasse indisponível, o acervo inteiro de
+produção, que não tem nenhuma declaração, sairia do ar.
+
+### Três erros meus no caminho
+
+Os dois primeiros foram chute de nome de campo, por escrever o corpo da requisição de cabeça
+em vez de ler o contrato: `name` em vez de `title` no produto, e `stores` em vez de `items` na
+disponibilidade. Os dois responderam `400 Required`, que é falha barulhenta e barata.
+
+O terceiro foi mais perigoso: meu relatório filtrava por um `declaredHere` que **não existe**
+no DTO, e como `undefined !== false` é verdadeiro, o filtro passava tudo e o relatório dizia
+que o Lanche estava nas duas unidades. Quase registrei isso como defeito do catálogo — que
+está correto, porque lê as linhas reais e exige `active && quantity > 0`. O sinal de "nunca
+declarada" é `updatedAt === null`.
+
+### Estado em que o cenário ficou
+
+O parceiro está **inativo**, então não aparece no catálogo público — conferido depois
+(`--catalogo` devolve "nenhum [DEMO]" nas quatro consultas). As duas unidades, os quatro
+produtos e as três linhas de disponibilidade continuam lá, para a próxima conferência não
+precisar montar tudo de novo.
+
+Para usar outra vez: `--ativar`, conferir, `--desativar`. Para apagar: `--remover` nos dois
+scripts.
+
+### Observações que não são defeito, mas ficam anotadas
+
+1. **O navegador do tablete renderiza o painel num viewport mais estreito que a janela.** O
+   fundo do cabeçalho, o banner e o fundo da página são cortados no **mesmo** x, com o grupo
+   da direita pintado além dele — CSS não faz isso em três elementos empilhados de uma vez.
+   É composição do Brave neste aparelho, e persistiu após reiniciar o navegador. O efeito
+   prático foi deixar o botão "Sair" fora da tela. Contornado entrando por
+   `www.opendriver.com.br`, que é **outra origem** e portanto outra sessão — e ali a página
+   renderizou na largura inteira, o que confirma que o problema não é da página.
+2. **No editor de disponibilidade, unidade nunca declarada aparece ligada com quantidade 0.**
+   É o formulário mostrando o padrão de uma linha que não existe. Não muda comportamento
+   (`quantity 0` é indisponível para o catálogo do mesmo jeito), mas "ligada com 0" e "nunca
+   declarada" são estados diferentes que a tela desenha igual.
+3. **"Categoria" abre em "Selecione..."** ao editar uma unidade cuja categoria não está na
+   lista de categorias cadastradas, mesmo com o valor gravado e exibido na tabela. Salvar
+   assim responderia 400 (`category` exige texto), então não apaga dado em silêncio.
