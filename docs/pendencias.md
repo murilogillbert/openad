@@ -13,7 +13,12 @@ deploy dos três serviços, chave de serviço rotacionada e smoke verde. O resum
 do que continua aberto está na última seção, "Fechamento da leva v2" — ela existe para esta
 lista não precisar ser lida inteira para responder "o que falta".
 
-Itens 6, 8, 9, 10 e 12 fecharam. Continuam abertos: 1, 2, 3, 4b, 5, 7, 11 (em parte) e 13.
+Itens 6, 8, 9, 10, 12 e 13 fecharam. Continuam abertos: 1, 2, 3, 4b, 5, 7 e 11 (em parte).
+
+A conferência visual no tablete foi feita e está na seção "Conferência visual no tablete". Ela
+achou um defeito na tela de preço, já corrigido e reimplantado, e deixou **uma** coisa em
+aberto: a Frente D não pôde ser vista porque produção não tem unidade nem produto, e eu não
+tenho credencial de parceiro.
 
 ---
 
@@ -546,7 +551,13 @@ dos avatares de terceiro todos dependem destas quatro migrations.
 
 ---
 
-## 13. Tablete da Vaio com bloqueio de tela — **Pendente**
+## 13. Tablete da Vaio com bloqueio de tela — **Concluído em 2026-10-08**
+
+Resolvido: o aparelho foi desbloqueado e a conferência visual foi feita. O resultado está na
+seção "Conferência visual no tablete", no fim deste documento. Fica abaixo o registro de como
+o item apareceu.
+
+
 
 O tablete `4AH47852E` (Vaio TL10, Android 13) está com cabo ligado e `adb` autorizado, e os três
 APKs foram instalados com sucesso nesta leva:
@@ -688,3 +699,90 @@ do Asaas, o anunciante não compra crédito sozinho, e o lançamento continua se
 - **`origin: true` no CORS do openad.** Mais permissivo do que precisa. Não é exploração hoje
   (a API usa só `Authorization: Bearer`, sem cookie de sessão), mas apertar exige levantar
   todas as origens que já consomem a API.
+
+---
+
+## Conferência visual no tablete — 2026-10-08
+
+Feita no Vaio TL10 (Android 13), por `adb`, com capturas guardadas em `docs/lojas/capturas/`.
+As telas foram exercitadas **contra produção**, com as contas de demonstração das lojas.
+
+### O que foi confirmado por imagem
+
+| Frente | Tela | Resultado | Captura |
+| --- | --- | --- | --- |
+| C | hub-mobile → Conta | avatar **RP** em círculo roxo, sem DiceBear | `v2-avatar-iniciais-hub-mobile.png` |
+| C | hub-mobile → Dados pessoais | botão "Adicionar foto", e "Salvar" separado dele | `v2-trocar-foto-hub-mobile.png` |
+| C | opendriver → Conta | **mesmas** iniciais e **mesma** cor do hub | `v2-avatar-iniciais-opendriver.png` |
+| C | painel web → cabeçalho | avatar de iniciais também no SPA | `v2-painel-de-credito-web.png` |
+| A | app do anunciante → Conta | "Disponível para reservar R$ 491,00", "Reservado neste ciclo R$ 9,00", botão do painel | `v2-credito-no-app-do-anunciante.png` |
+| A | painel web de crédito | saldo, compra com valores sugeridos, QR/Pix, tabela de preço e extrato | `v2-painel-de-credito-web.png` |
+| F | player | criativo baixado, renderizando em paisagem | `v2-player-exibindo-criativo.png` |
+| D | hub-mobile → Catálogo | carrega e responde "0 resultados" | `v2-catalogo-vazio-em-producao.png` |
+
+"Mesma cor nos dois apps" é o ponto da cor determinística de lista fechada: a mesma pessoa fica
+igual em todo cliente, sem o servidor precisar guardar a escolha.
+
+Os números do cartão de crédito batem com o livro-caixa (R$ 500 de crédito menos o retido do
+ciclo) e **se movem**: a reserva aberta mudou entre leituras porque o ciclo de veiculação segue
+abrindo e fechando retenção. Não é tela estática.
+
+### Um defeito achado na tela, corrigido e reimplantado
+
+O título da tabela de preço dizia **"R$ 0,00 por segundo de tela"**, logo acima de uma tabela
+que cobrava R$ 0,0300 por dez segundos. O preço é R$ 0,003/s, e o título usava `formatCurrency`,
+que arredonda para centavo.
+
+Não é arredondamento inofensivo, porque o número é uma **taxa** e não um total: um total de
+R$ 0,004 mostrado como R$ 0,00 é "praticamente zero", mas uma taxa arredondada para zero diz ao
+anunciante que veicular é de graça. Comparar `v2-preco-por-segundo-DEFEITO.png` com
+`v2-preco-por-segundo-corrigido.png`.
+
+A regra dos quatro decimais já existia **duas vezes** na mesma tela, escrita solta na tabela e
+no extrato, e o título ficou de fora. Virou uma função. O app do anunciante não tem o problema
+(não exibe a taxa, só saldos, onde dois decimais é o certo) e o portal de gestão também não.
+
+Corrigido, build limpo, 143 testes do hub passando, e reimplantado (`0440b07`) — conferido na
+tela depois: "R$ 0,0030 por segundo de tela".
+
+### Um alarme meu que a medição desfez
+
+O extrato mostrava oito débitos de R$ 0,25 num único minuto, e minha primeira leitura foi que o
+crédito estava escoando. Medido com `99-ritmo-de-consumo.sh`: **34 veiculações por hora,
+R$ 8,50/h**, autonomia de dias e não de horas. O tablete de teste pareado veicula como um carro
+em rua, e debita como um — isso é o sistema funcionando, não vazamento.
+
+E o R$ 0,25 por exibição não é defeito do preço por segundo: é a tarifa `per_impression` das
+campanhas de demonstração, que **mantêm** o modelo com que foram criadas de propósito —
+reprecificar campanha no ar mudaria o contrato depois de aceito. Campanha nova nasce
+`per_second` a R$ 0,003/s, o que dá R$ 0,045 por exibição de 15 s, cerca de cinco vezes menos.
+
+### O que a conferência visual NÃO alcançou — **Pendente**
+
+**A Frente D, dos dois lados.** Produção tem 4 parceiros e **zero unidades e zero produtos**,
+então:
+
+- a tela de **gestão de produto** e a de **disponibilidade por unidade** exigem entrar com conta
+  de parceiro, e eu não tenho credencial de nenhum dos quatro;
+- o **catálogo** carrega e responde "0 resultados", o que prova que a tela não quebrou com os
+  parâmetros novos (`storeId`, `openNow`) mas **não** prova que o filtro por unidade funciona:
+  não há o que filtrar.
+
+O mesmo vale para o conserto do papel `financeiro` no balcão de resgate — ele é sobre uma rota
+que só existe para quem tem esse papel.
+
+Para fechar, uma das duas:
+
+1. credencial de um parceiro existente (e aí eu cadastro unidade e produto pela própria tela,
+   que é o teste de verdade); ou
+2. autorização para criar um parceiro de demonstração com uma unidade e um produto.
+
+A segunda escreve dado novo em produção e faria o parceiro aparecer no catálogo público, por
+isso não fiz por conta própria.
+
+### Nota operacional
+
+O aparelho voltou a bloquear por inatividade no meio da conferência. Ficou com
+`svc power stayon usb`, que mantém a tela acesa enquanto está no cabo — reversível e sem alterar
+configuração permanente. A tela de entrada do PIN tem `FLAG_SECURE`, então enquanto ela está à
+frente o `screencap` devolve arquivo inválido; é o que travou a primeira tentativa.
